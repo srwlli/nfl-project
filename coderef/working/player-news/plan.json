@@ -1,0 +1,612 @@
+{
+  "plan_name": "Player News Scraper & Integration",
+  "created_at": "2025-10-18",
+  "priority": "P1",
+  "estimated_duration": "4-6 hours",
+
+  "overview": {
+    "goal": "Add real-time player news scraping capability to enhance player profiles and create a dedicated news section on the platform",
+    "scope": "Build news scraper, create database tables, integrate with player profiles, display in news feed",
+    "data_sources": [
+      "ESPN NFL API (player news endpoint)",
+      "Sportsgrid API (potential alternative)",
+      "RotoWire (via web scraping if needed)"
+    ]
+  },
+
+  "current_state": {
+    "existing_infrastructure": [
+      "8 active scrapers (standings, game-stats, injuries, roster, live-games, betting, analytics, schedule)",
+      "Supabase PostgreSQL database with 41+ tables",
+      "Automated scheduler with cron jobs",
+      "Player profiles structure in coderef/working/player-profiles",
+      "ESPN API integration utilities (scripts/utils/espn-api.js)"
+    ],
+    "gaps": [
+      "No player_news table in database",
+      "No news scraper script",
+      "No news display in player profiles",
+      "No dedicated news section on platform",
+      "No news filtering/categorization"
+    ]
+  },
+
+  "requirements": {
+    "functional": [
+      "Scrape player news from ESPN API",
+      "Store news with metadata (headline, description, published date, source)",
+      "Associate news with specific players",
+      "Categorize news by type (injury, trade, performance, contract, personal)",
+      "Display recent news in player profiles",
+      "Create dedicated news feed section",
+      "Filter news by player, team, date, category",
+      "Real-time updates (hourly scraping)",
+      "Deduplication logic to avoid duplicate stories"
+    ],
+    "non_functional": [
+      "News scraping should complete in <30 seconds",
+      "Support 2000+ players with news",
+      "Historical news retained for 30 days minimum",
+      "Mobile-responsive news display",
+      "SEO-friendly news URLs",
+      "Rate limiting compliance with ESPN API"
+    ]
+  },
+
+  "database_schema": {
+    "new_tables": [
+      {
+        "table_name": "player_news",
+        "description": "Stores player-related news articles and updates",
+        "columns": [
+          {
+            "name": "news_id",
+            "type": "SERIAL PRIMARY KEY",
+            "description": "Auto-incrementing unique identifier"
+          },
+          {
+            "name": "player_id",
+            "type": "VARCHAR(50) NOT NULL",
+            "description": "References players.player_id",
+            "constraint": "FOREIGN KEY (player_id) REFERENCES players(player_id) ON DELETE CASCADE"
+          },
+          {
+            "name": "headline",
+            "type": "TEXT NOT NULL",
+            "description": "News headline/title"
+          },
+          {
+            "name": "description",
+            "type": "TEXT",
+            "description": "Full news description/body"
+          },
+          {
+            "name": "short_description",
+            "type": "VARCHAR(500)",
+            "description": "Truncated description for previews"
+          },
+          {
+            "name": "news_category",
+            "type": "news_category_enum NOT NULL",
+            "description": "Type of news (injury, trade, performance, contract, personal, other)",
+            "values": ["injury", "trade", "performance", "contract", "personal", "other"]
+          },
+          {
+            "name": "source",
+            "type": "VARCHAR(100)",
+            "description": "News source (ESPN, Rotoworld, etc.)"
+          },
+          {
+            "name": "source_url",
+            "type": "TEXT",
+            "description": "Original article URL"
+          },
+          {
+            "name": "published_at",
+            "type": "TIMESTAMP NOT NULL",
+            "description": "When the news was published"
+          },
+          {
+            "name": "external_id",
+            "type": "VARCHAR(100) UNIQUE",
+            "description": "External API identifier for deduplication"
+          },
+          {
+            "name": "is_breaking",
+            "type": "BOOLEAN DEFAULT FALSE",
+            "description": "Flag for breaking news"
+          },
+          {
+            "name": "priority",
+            "type": "INTEGER DEFAULT 0",
+            "description": "Higher number = higher priority (0-10)"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+          },
+          {
+            "name": "updated_at",
+            "type": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+          },
+          {
+            "name": "deleted_at",
+            "type": "TIMESTAMP DEFAULT NULL"
+          }
+        ],
+        "indexes": [
+          "CREATE INDEX idx_player_news_player ON player_news(player_id) WHERE deleted_at IS NULL",
+          "CREATE INDEX idx_player_news_published ON player_news(published_at DESC) WHERE deleted_at IS NULL",
+          "CREATE INDEX idx_player_news_category ON player_news(news_category) WHERE deleted_at IS NULL",
+          "CREATE INDEX idx_player_news_breaking ON player_news(is_breaking, published_at DESC) WHERE is_breaking = TRUE AND deleted_at IS NULL",
+          "CREATE INDEX idx_player_news_external ON player_news(external_id) WHERE deleted_at IS NULL"
+        ]
+      },
+      {
+        "table_name": "team_news",
+        "description": "Team-level news (optional enhancement)",
+        "columns": [
+          {
+            "name": "news_id",
+            "type": "SERIAL PRIMARY KEY"
+          },
+          {
+            "name": "team_id",
+            "type": "VARCHAR(10) NOT NULL",
+            "constraint": "FOREIGN KEY (team_id) REFERENCES teams(team_id)"
+          },
+          {
+            "name": "headline",
+            "type": "TEXT NOT NULL"
+          },
+          {
+            "name": "description",
+            "type": "TEXT"
+          },
+          {
+            "name": "news_category",
+            "type": "news_category_enum NOT NULL"
+          },
+          {
+            "name": "published_at",
+            "type": "TIMESTAMP NOT NULL"
+          },
+          {
+            "name": "external_id",
+            "type": "VARCHAR(100) UNIQUE"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+          }
+        ]
+      }
+    ],
+    "enums": [
+      {
+        "name": "news_category_enum",
+        "values": ["injury", "trade", "performance", "contract", "personal", "other"]
+      }
+    ]
+  },
+
+  "implementation_phases": [
+    {
+      "phase": 1,
+      "name": "Database Setup",
+      "duration": "30 minutes",
+      "tasks": [
+        {
+          "task_id": "DB-001",
+          "description": "Create news_category_enum type",
+          "file": "supabase/migrations/20250101000013_create_news_enum.sql",
+          "details": "CREATE TYPE news_category_enum AS ENUM ('injury', 'trade', 'performance', 'contract', 'personal', 'other')"
+        },
+        {
+          "task_id": "DB-002",
+          "description": "Create player_news table with indexes",
+          "file": "supabase/migrations/20250101000014_create_player_news_table.sql",
+          "details": "Full table creation with all columns, constraints, and indexes"
+        },
+        {
+          "task_id": "DB-003",
+          "description": "Create team_news table (optional)",
+          "file": "supabase/migrations/20250101000015_create_team_news_table.sql",
+          "details": "Team-level news table for roster moves, coaching changes, etc."
+        },
+        {
+          "task_id": "DB-004",
+          "description": "Push migrations to Supabase",
+          "command": "npx supabase db push",
+          "validation": "Verify tables exist in Supabase dashboard"
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "News Scraper Development",
+      "duration": "2-3 hours",
+      "tasks": [
+        {
+          "task_id": "SCRAPE-001",
+          "description": "Research ESPN News API endpoint",
+          "details": "Explore ESPN's player news endpoint: https://site.api.espn.com/apis/site/v2/sports/football/nfl/news",
+          "research_notes": [
+            "Check if player-specific news endpoint exists",
+            "Determine rate limits",
+            "Identify required parameters (playerId, limit, etc.)",
+            "Map ESPN news structure to our schema"
+          ]
+        },
+        {
+          "task_id": "SCRAPE-002",
+          "description": "Create player-news-scraper.js",
+          "file": "scripts/scrapers/player-news-scraper.js",
+          "functions": [
+            "fetchNewsFromESPN(playerId) - Fetch news for specific player",
+            "fetchAllPlayerNews() - Fetch news for all active players",
+            "transformNewsData(espnNews) - Map ESPN format to our schema",
+            "categorizeNews(headline, description) - Auto-categorize news by keywords",
+            "detectBreakingNews(publishedDate) - Flag news <1 hour old as breaking",
+            "deduplicateNews(newsItems) - Remove duplicates by external_id"
+          ],
+          "data_flow": [
+            "1. Query active players from database",
+            "2. For each player, call ESPN news API",
+            "3. Transform ESPN response to our schema",
+            "4. Categorize news automatically",
+            "5. Check for duplicates (external_id)",
+            "6. Upsert news records (batch insert)",
+            "7. Log summary (X new articles, Y players updated)"
+          ]
+        },
+        {
+          "task_id": "SCRAPE-003",
+          "description": "Add keyword-based auto-categorization",
+          "logic": {
+            "injury": ["injury", "injured", "out for", "placed on IR", "concussion", "surgery", "torn", "sprained", "fracture"],
+            "trade": ["traded", "trade", "acquired", "dealt to", "sends", "receives"],
+            "performance": ["yards", "touchdown", "TD", "reception", "passing", "rushing", "sack", "interception", "record", "career-high", "performance"],
+            "contract": ["contract", "extension", "signed", "deal", "million", "year deal", "franchise tag", "restructure"],
+            "personal": ["arrested", "suspension", "retirement", "retires", "personal", "family", "offseason"]
+          }
+        },
+        {
+          "task_id": "SCRAPE-004",
+          "description": "Add error handling and rate limiting",
+          "details": [
+            "Implement retry logic (3 attempts with exponential backoff)",
+            "Rate limit: 1 request per second to ESPN",
+            "Handle 429 (rate limit) errors gracefully",
+            "Log failed players for retry",
+            "Continue scraping even if individual players fail"
+          ]
+        },
+        {
+          "task_id": "SCRAPE-005",
+          "description": "Add news scraper tests",
+          "file": "scripts/test-player-news.js",
+          "tests": [
+            "Test single player news fetch (Patrick Mahomes)",
+            "Test news categorization logic",
+            "Test deduplication",
+            "Test breaking news detection",
+            "Verify database insert"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Scheduler Integration",
+      "duration": "30 minutes",
+      "tasks": [
+        {
+          "task_id": "SCHED-001",
+          "description": "Add news scraper to scheduler.js",
+          "file": "scripts/scheduler.js",
+          "schedule": "Every hour during business hours (6 AM - 11 PM ET)",
+          "cron": "0 6-23 * * *",
+          "function": "schedulePlayerNewsScraper()",
+          "dev_schedule": "Every 15 minutes for testing"
+        },
+        {
+          "task_id": "SCHED-002",
+          "description": "Add npm script for manual execution",
+          "file": "package.json",
+          "script": "scrape:player-news",
+          "command": "node scripts/scrapers/player-news-scraper.js"
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Player Profile Integration",
+      "duration": "1-2 hours",
+      "tasks": [
+        {
+          "task_id": "PROFILE-001",
+          "description": "Add news section to player profile structure",
+          "file": "coderef/working/player-profiles/player-profile-structure.md",
+          "section": "Player News Feed",
+          "content": [
+            "Recent News (last 30 days)",
+            "News categories filter",
+            "Breaking news badge",
+            "Link to full article",
+            "Timestamp (X hours ago)"
+          ]
+        },
+        {
+          "task_id": "PROFILE-002",
+          "description": "Create player news query utility",
+          "file": "scripts/utils/player-news-queries.js",
+          "functions": [
+            "getPlayerNews(playerId, limit=10) - Fetch news for specific player",
+            "getBreakingNews(limit=20) - Get all breaking news",
+            "getNewsByCategory(category, limit=50) - Filter by category",
+            "getNewsByTeam(teamId, limit=50) - Get all news for team's players",
+            "getRecentNews(hours=24, limit=100) - News from last X hours"
+          ]
+        },
+        {
+          "task_id": "PROFILE-003",
+          "description": "Create player profile news component HTML",
+          "file": "demo-player-profile-with-news.html",
+          "features": [
+            "News cards with headline, description, timestamp",
+            "Category badges (color-coded)",
+            "Breaking news indicator (red pulse)",
+            "Expandable descriptions (truncated by default)",
+            "Filter buttons (All, Injury, Trade, Performance, etc.)",
+            "Load more functionality",
+            "Empty state message"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": 5,
+      "name": "News Section/Feed Page",
+      "duration": "1-2 hours",
+      "tasks": [
+        {
+          "task_id": "NEWS-001",
+          "description": "Create news feed page structure",
+          "file": "news-feed.html",
+          "sections": [
+            "Breaking News (top section, auto-refresh)",
+            "All News (paginated, infinite scroll)",
+            "Filters (team, player, category, date range)",
+            "Search by player name or keyword"
+          ]
+        },
+        {
+          "task_id": "NEWS-002",
+          "description": "Create news feed generator script",
+          "file": "scripts/generate-news-feed.js",
+          "data_sources": [
+            "Query breaking news (is_breaking = true, last 24 hours)",
+            "Query recent news (last 7 days, sorted by published_at DESC)",
+            "Group by date (Today, Yesterday, This Week)",
+            "Include player info (name, team, position)",
+            "Include news metadata (category, source)"
+          ]
+        },
+        {
+          "task_id": "NEWS-003",
+          "description": "Add news section to main index.html",
+          "file": "index.html",
+          "placement": "After injuries section, before footer",
+          "content": "Top 10 breaking news items with inline display"
+        },
+        {
+          "task_id": "NEWS-004",
+          "description": "Style news components with Next Down Metrics theme",
+          "styles": [
+            "News card: dark background, neon border on hover",
+            "Breaking badge: pulsing red indicator",
+            "Category badges: color-coded (injury=red, trade=purple, performance=green, contract=blue)",
+            "Timestamp: relative time display (2h ago, 1d ago)",
+            "Hover effects: glow and lift animation"
+          ]
+        }
+      ]
+    }
+  ],
+
+  "api_endpoints": {
+    "espn_news": {
+      "base_url": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/news",
+      "parameters": [
+        {
+          "name": "limit",
+          "type": "integer",
+          "default": 50,
+          "description": "Number of news items to return"
+        }
+      ],
+      "response_structure": {
+        "articles": [
+          {
+            "headline": "string",
+            "description": "string",
+            "published": "ISO 8601 datetime",
+            "links": {
+              "web": {
+                "href": "string"
+              }
+            },
+            "categories": ["array"],
+            "athletes": [
+              {
+                "id": "number",
+                "name": "string"
+              }
+            ]
+          }
+        ]
+      },
+      "rate_limits": "Unknown - implement 1 req/sec to be safe"
+    },
+    "alternative_espn_endpoint": {
+      "url": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/athletes/{playerId}/news",
+      "description": "Player-specific news endpoint (if available)"
+    }
+  },
+
+  "testing_strategy": {
+    "unit_tests": [
+      "Test news categorization function with sample headlines",
+      "Test deduplication logic",
+      "Test breaking news detection (time-based)",
+      "Test ESPN API response parsing"
+    ],
+    "integration_tests": [
+      "End-to-end scraper test (fetch → transform → insert)",
+      "Test with real ESPN API (use rate limiting)",
+      "Verify database constraints work (foreign keys, unique external_id)"
+    ],
+    "manual_tests": [
+      "Run scraper for 10 high-profile players",
+      "Verify news appears in player profiles",
+      "Check news feed displays correctly",
+      "Test filtering and search functionality",
+      "Mobile responsive testing"
+    ]
+  },
+
+  "success_criteria": [
+    "Player news scraper successfully fetches and stores news from ESPN",
+    "News is automatically categorized with >80% accuracy",
+    "Duplicate news articles are prevented via external_id",
+    "Breaking news is flagged and displayed prominently",
+    "Player profiles show recent news (last 30 days)",
+    "Dedicated news feed page displays all news with filters",
+    "News updates hourly via scheduler",
+    "Mobile-responsive design matches Next Down Metrics theme",
+    "No rate limit violations with ESPN API"
+  ],
+
+  "rollout_plan": [
+    {
+      "step": 1,
+      "action": "Create database tables and push migrations",
+      "validation": "Tables exist in Supabase, indexes created"
+    },
+    {
+      "step": 2,
+      "action": "Develop and test player-news-scraper.js locally",
+      "validation": "Scraper successfully populates player_news table with test data"
+    },
+    {
+      "step": 3,
+      "action": "Integrate scraper into scheduler (dev mode first)",
+      "validation": "News updates every 15 minutes in development"
+    },
+    {
+      "step": 4,
+      "action": "Create player profile news display",
+      "validation": "News appears correctly in demo player profile HTML"
+    },
+    {
+      "step": 5,
+      "action": "Build news feed page",
+      "validation": "News feed displays all news with working filters"
+    },
+    {
+      "step": 6,
+      "action": "Add news section to main index.html",
+      "validation": "Breaking news visible on homepage"
+    },
+    {
+      "step": 7,
+      "action": "Switch scheduler to production mode (hourly)",
+      "validation": "News scraper runs every hour successfully"
+    },
+    {
+      "step": 8,
+      "action": "Monitor for 48 hours",
+      "validation": "No errors, rate limits respected, news updating consistently"
+    }
+  ],
+
+  "risks_and_mitigations": [
+    {
+      "risk": "ESPN API may not have player-specific news endpoint",
+      "impact": "high",
+      "mitigation": "Use general NFL news endpoint and filter by player mentions in description. Alternative: scrape ESPN website or use Sportsgrid API"
+    },
+    {
+      "risk": "Rate limiting from ESPN",
+      "impact": "medium",
+      "mitigation": "Implement 1 req/sec rate limit, retry logic with exponential backoff, cache results"
+    },
+    {
+      "risk": "News categorization accuracy low",
+      "impact": "low",
+      "mitigation": "Start with keyword-based approach, collect training data for ML model later"
+    },
+    {
+      "risk": "Duplicate news from multiple sources",
+      "impact": "medium",
+      "mitigation": "Use external_id as unique constraint, implement fuzzy matching on headlines"
+    },
+    {
+      "risk": "Performance issues with 2000+ players",
+      "impact": "medium",
+      "mitigation": "Batch processing (100 players at a time), prioritize active roster players, use database indexes"
+    }
+  ],
+
+  "future_enhancements": [
+    "Add news sentiment analysis (positive/negative/neutral)",
+    "Integrate multiple news sources (Rotoworld, CBS, Fox Sports)",
+    "Add news notifications/alerts for breaking news",
+    "Create news archive/search functionality",
+    "Add user bookmarking/favorites for news",
+    "Implement news recommendation engine",
+    "Add news summary generation using AI",
+    "Create news API endpoint for frontend consumption",
+    "Add news analytics (most viewed, trending players)"
+  ],
+
+  "documentation": [
+    {
+      "file": "PLAYER-NEWS-README.md",
+      "content": "Overview of player news feature, API usage, database schema"
+    },
+    {
+      "file": "scripts/scrapers/player-news-scraper.js",
+      "content": "Inline comments explaining logic, data flow, and API calls"
+    },
+    {
+      "file": "NEWS-SCRAPER-GUIDE.md",
+      "content": "Setup guide, testing instructions, troubleshooting tips"
+    }
+  ],
+
+  "dependencies": {
+    "new_packages": [
+      {
+        "name": "cheerio",
+        "version": "^1.0.0",
+        "purpose": "HTML parsing if web scraping needed",
+        "optional": true
+      }
+    ],
+    "existing_packages": [
+      "axios - HTTP requests to ESPN API",
+      "dotenv - Environment variables",
+      "@supabase/supabase-js - Database operations",
+      "winston - Logging"
+    ]
+  },
+
+  "estimated_costs": {
+    "development_time": "4-6 hours",
+    "api_costs": "Free (ESPN API is public)",
+    "database_storage": "Minimal (~5KB per news item, ~100MB for 20K items)",
+    "ongoing_maintenance": "1-2 hours/month for monitoring and updates"
+  }
+}
