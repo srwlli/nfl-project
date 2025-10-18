@@ -204,7 +204,7 @@ function generateHTML(data) {
   const passingStats = playerStats.filter(p => p.passing_attempts && p.passing_attempts > 0)
   const rushingStats = playerStats.filter(p => p.rushing_attempts && p.rushing_attempts > 0)
   const receivingStats = playerStats.filter(p => p.receptions && p.receptions > 0)
-  const defenseStats = playerStats.filter(p => p.total_tackles && p.total_tackles > 0)
+  const defenseStats = playerStats.filter(p => p.tackles_total && p.tackles_total > 0)
 
   // Betting data
   const openingSpread = bettingLines.find(bl => bl.spread_lines?.some(sl => sl.is_opening_line))
@@ -1150,11 +1150,11 @@ function generateHTML(data) {
                                 <span class="player-name">${stat.player.full_name}</span>
                                 <span class="team-abbr">${stat.player.team_id}</span>
                             </td>
-                            <td class="stat-highlight">${stat.total_tackles || 0}</td>
-                            <td>${stat.solo_tackles || 0}</td>
-                            <td>${stat.assisted_tackles || 0}</td>
+                            <td class="stat-highlight">${stat.tackles_total || 0}</td>
+                            <td>--</td>
+                            <td>--</td>
                             <td>${stat.sacks || 0}</td>
-                            <td>${stat.tackles_for_loss || 0}</td>
+                            <td>--</td>
                             <td>${stat.interceptions || 0}</td>
                         </tr>
                         `).join('')}
