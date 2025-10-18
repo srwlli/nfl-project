@@ -5,6 +5,7 @@
  * Populates tables needed for the completed game template.
  *
  * Data fetched:
+ * - Quarter-by-quarter scores (games table columns)
  * - Team game statistics (team_game_stats table)
  * - Player game statistics (player_game_stats table)
  *   - Passing: completions, attempts, yards, TDs, INTs
@@ -13,7 +14,8 @@
  *   - Defense: tackles, sacks, interceptions
  *   - Kicking: field goals made/attempted
  * - Scoring plays (scoring_plays table)
- * - Game weather info (game_weather table)
+ * - Game weather info with enhanced parsing (game_weather table)
+ *   - Temperature, wind speed/direction, precipitation, conditions
  *
  * Usage:
  * - Manual: npm run scrape:game-stats
@@ -164,6 +166,44 @@ function parseClockToSeconds(clockStr) {
 }
 
 /**
+ * Extract quarter-by-quarter scores
+ * Maps to games table quarter score columns
+ */
+function extractQuarterScores(gameSummary, gameId) {
+  const competition = gameSummary.header?.competitions?.[0]
+  const homeTeam = competition?.competitors?.find(c => c.homeAway === 'home')
+  const awayTeam = competition?.competitors?.find(c => c.homeAway === 'away')
+
+  if (!homeTeam || !awayTeam) {
+    logger.warn(`Missing team data for quarter scores in game ${gameId}`)
+    return null
+  }
+
+  // ESPN provides linescores array: [Q1, Q2, Q3, Q4, OT, FINAL]
+  const homeLineScores = homeTeam.linescores || []
+  const awayLineScores = awayTeam.linescores || []
+
+  const parseScore = (score) => {
+    if (score === null || score === undefined || score.value === null || score.value === undefined) return 0
+    return parseInt(score.value) || 0
+  }
+
+  return {
+    game_id: `espn-${gameId}`,
+    home_q1_score: homeLineScores[0] ? parseScore(homeLineScores[0]) : 0,
+    home_q2_score: homeLineScores[1] ? parseScore(homeLineScores[1]) : 0,
+    home_q3_score: homeLineScores[2] ? parseScore(homeLineScores[2]) : 0,
+    home_q4_score: homeLineScores[3] ? parseScore(homeLineScores[3]) : 0,
+    home_ot_score: homeLineScores[4] ? parseScore(homeLineScores[4]) : 0,
+    away_q1_score: awayLineScores[0] ? parseScore(awayLineScores[0]) : 0,
+    away_q2_score: awayLineScores[1] ? parseScore(awayLineScores[1]) : 0,
+    away_q3_score: awayLineScores[2] ? parseScore(awayLineScores[2]) : 0,
+    away_q4_score: awayLineScores[3] ? parseScore(awayLineScores[3]) : 0,
+    away_ot_score: awayLineScores[4] ? parseScore(awayLineScores[4]) : 0
+  }
+}
+
+/**
  * Extract game weather info
  * Maps to game_weather table schema
  */
@@ -175,13 +215,42 @@ function extractGameWeather(gameSummary, gameId) {
     return null
   }
 
+  // Parse temperature from display value if needed
+  let temperature = weather.temperature
+  if (!temperature && weather.displayValue) {
+    // Try to extract temperature from string like "55°F Cloudy"
+    const tempMatch = weather.displayValue.match(/(\d+)°?F?/i)
+    if (tempMatch) {
+      temperature = parseInt(tempMatch[1])
+    }
+  }
+
+  // Try to parse wind from displayValue if available
+  let windSpeed = null
+  let windDirection = null
+  if (weather.displayValue) {
+    // Look for wind patterns like "Wind 15 MPH" or "Wind NW 10 mph"
+    const windMatch = weather.displayValue.match(/wind\s+([NSEW]{1,3})?\s*(\d+)/i)
+    if (windMatch) {
+      if (windMatch[1]) windDirection = windMatch[1].toUpperCase()
+      windSpeed = parseInt(windMatch[2])
+    }
+  }
+
+  // Detect precipitation from conditions string
+  let precipitation = null
+  const conditionsLower = (weather.displayValue || '').toLowerCase()
+  if (conditionsLower.includes('rain')) precipitation = 'rain'
+  else if (conditionsLower.includes('snow')) precipitation = 'snow'
+  else if (conditionsLower.includes('sleet')) precipitation = 'sleet'
+
   return {
     game_id: `espn-${gameId}`,
-    temperature_fahrenheit: weather.temperature || null,
+    temperature_fahrenheit: temperature || null,
     humidity_percentage: null, // ESPN doesn't provide this
-    wind_speed_mph: null, // ESPN doesn't provide this in structured format
-    wind_direction: null,
-    precipitation: null,
+    wind_speed_mph: windSpeed,
+    wind_direction: windDirection,
+    precipitation: precipitation,
     conditions: weather.displayValue || null
   }
 }
@@ -320,7 +389,28 @@ async function scrapeGameStats(gameId) {
       teamStats: 0,
       scoringPlays: 0,
       gameWeather: 0,
-      playerStats: 0
+      playerStats: 0,
+      quarterScores: 0
+    }
+
+    // Extract and update quarter scores
+    logger.info('Processing quarter-by-quarter scores...')
+    const quarterScores = extractQuarterScores(gameSummary, gameId)
+    if (quarterScores) {
+      const supabase = getSupabaseClient()
+      const { error } = await supabase
+        .from('games')
+        .update(quarterScores)
+        .eq('game_id', `espn-${gameId}`)
+
+      if (error) {
+        logger.error(`Failed to update quarter scores: ${error.message}`)
+      } else {
+        results.quarterScores = 1
+        logger.info(`✓ Updated quarter scores`)
+      }
+    } else {
+      logger.info('ℹ No quarter scores available')
     }
 
     // Extract and insert team statistics
@@ -467,6 +557,7 @@ async function main() {
       logger.info('═'.repeat(60))
       logger.info('SINGLE GAME SCRAPE SUMMARY')
       logger.info('═'.repeat(60))
+      logger.info(`✓ Quarter scores: ${result.quarterScores ? 'Updated' : 'Skipped'}`)
       logger.info(`✓ Team stats: ${result.teamStats} records`)
       logger.info(`✓ Scoring plays: ${result.scoringPlays} records`)
       logger.info(`✓ Player stats: ${result.playerStats} records`)

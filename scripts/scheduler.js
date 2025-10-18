@@ -5,9 +5,12 @@
  *
  * Schedule Overview:
  * - Daily 6:00 AM ET: Injuries scraper
+ * - Daily 7:00 AM ET: Standings scraper
+ * - Daily 10:00 AM ET: Betting odds scraper
  * - Daily 5:00 PM ET: Roster updates scraper
  * - Game Days: Live games scraper (30-second intervals during game windows)
- * - Weekly: Schedule refresh (Monday 3 AM ET)
+ * - Weekly Monday 3:00 AM ET: Schedule refresh
+ * - Weekly Tuesday 6:00 AM ET: Advanced analytics scraper (EPA, WP)
  *
  * Usage:
  * - Start scheduler: npm run scheduler
@@ -16,6 +19,7 @@
  * Environment Variables:
  * - SCHEDULER_MODE: 'production' (full schedule) or 'development' (testing)
  * - LIVE_GAMES_ENABLED: 'true' to enable live game polling
+ * - THE_ODDS_API_KEY: Required for betting scraper
  */
 
 import cron from 'node-cron'
@@ -226,6 +230,63 @@ function scheduleWeeklyScheduleRefresh() {
 }
 
 /**
+ * Schedule: Daily standings scraper at 7:00 AM ET
+ * (After all games settled from previous night)
+ */
+function scheduleStandingsScraper() {
+  // Cron: 0 7 * * * (7 AM daily)
+  const schedule = MODE === 'development' ? '*/12 * * * *' : '0 7 * * *'
+
+  cron.schedule(schedule, async () => {
+    logger.info('⏰ Scheduled task: Standings scraper')
+    await runScript('standings-scraper.js')
+  }, {
+    timezone: TIMEZONE
+  })
+
+  logger.info(`✓ Scheduled: Standings scraper (${MODE === 'development' ? 'every 12 min' : 'daily 7 AM ET'})`)
+}
+
+/**
+ * Schedule: Daily betting odds scraper at 10:00 AM ET
+ * (Before game day, captures opening lines)
+ */
+function scheduleBettingScraper() {
+  // Cron: 0 10 * * * (10 AM daily)
+  const schedule = MODE === 'development' ? '*/20 * * * *' : '0 10 * * *'
+
+  cron.schedule(schedule, async () => {
+    logger.info('⏰ Scheduled task: Betting odds scraper')
+    await runScript('betting-scraper.js')
+  }, {
+    timezone: TIMEZONE
+  })
+
+  logger.info(`✓ Scheduled: Betting odds scraper (${MODE === 'development' ? 'every 20 min' : 'daily 10 AM ET'})`)
+}
+
+/**
+ * Schedule: Weekly advanced analytics scraper (Tuesday 6:00 AM ET)
+ * (After nflverse data updated, typically Monday night/Tuesday morning)
+ */
+function scheduleAnalyticsScraper() {
+  // Cron: 0 6 * * 2 (6 AM every Tuesday)
+  const schedule = MODE === 'development' ? '*/30 * * * *' : '0 6 * * 2'
+
+  cron.schedule(schedule, async () => {
+    logger.info('⏰ Scheduled task: Advanced analytics scraper')
+    const week = getCurrentWeek()
+    // Process previous week's data
+    const prevWeek = Math.max(1, week - 1)
+    await runScript('advanced-analytics-scraper.js', `--week=${prevWeek}`)
+  }, {
+    timezone: TIMEZONE
+  })
+
+  logger.info(`✓ Scheduled: Advanced analytics scraper (${MODE === 'development' ? 'every 30 min' : 'Tuesday 6 AM ET'})`)
+}
+
+/**
  * Manual trigger: Run specific scraper on demand
  */
 function setupManualTriggers() {
@@ -289,6 +350,9 @@ async function main() {
   scheduleRosterUpdatesScraper()
   scheduleLiveGamesScraper()
   scheduleWeeklyScheduleRefresh()
+  scheduleStandingsScraper()
+  scheduleBettingScraper()
+  scheduleAnalyticsScraper()
   setupManualTriggers()
   startStatusMonitoring()
 

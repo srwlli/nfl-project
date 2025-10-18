@@ -17,7 +17,8 @@
       "Bash(node scripts/show-game-data.js)",
       "Bash(node scripts/scrapers/live-games-scraper.js --week=7)",
       "Bash(node scripts/test-player-stats.js)",
-      "Bash(node scripts/scrapers/standings-scraper.js)"
+      "Bash(node scripts/scrapers/standings-scraper.js)",
+      "Bash(node scripts/generate-index-with-data.js)"
     ],
     "deny": [],
     "ask": []
