@@ -906,12 +906,21 @@ function generateHTML(data) {
             .quarter-breakdown {
                 margin-top: 24px;
                 padding-top: 24px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
             }
 
             .quarter-grid {
-                grid-template-columns: repeat(6, 1fr);
+                display: flex;
+                flex-wrap: wrap;
                 gap: 4px;
                 font-size: 10px;
+                min-width: 480px;
+            }
+
+            .quarter-grid > div {
+                flex: 1 1 auto;
+                min-width: 60px;
             }
 
             .quarter-header {
