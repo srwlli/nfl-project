@@ -486,19 +486,43 @@ node scripts/generate-comprehensive-index.js
 - ✅ Added mobile responsive design (768px, 480px breakpoints)
 - ✅ Created player news feature plan (645 lines)
 
-### Total Scripts Created: 18
+### Session 3 (October 18, 2025 - Evening):
+- ✅ Enhanced game-stats-scraper.js with venue/stadium extraction
+  - Added extractAndUpsertVenue() function
+  - Extracts stadium info from ESPN gameInfo.venue
+  - Upserts to stadiums table (stadium_name, city, state, capacity, surface_type, roof_type)
+  - Updates games.stadium_id with foreign key reference
+- ✅ Created demo-game-page-with-players.html with team-separated player stats
+  - Generate script: generate-demo-game-page.js (1,500+ lines)
+  - Team-level tabs (Pittsburgh Steelers | Cincinnati Bengals)
+  - Nested stat tabs (Passing | Rushing | Receiving | Defense)
+  - Players properly separated by team
+  - Next Down Metrics theme (monochrome + neon HUD)
+  - Mobile responsive (flexbox quarter grid, no horizontal scroll)
+- ✅ Created greatest-games-algo.md
+  - Comprehensive formula to identify/rank most memorable games
+  - 6 components: Drama Score, Stakes Multiplier, Offensive Fireworks, Historical Significance, Execution Excellence, Contextual Factors
+  - Tier rankings: Legendary (350+), Epic (250-349), Memorable (175-249), Exciting (100-174), Standard (<100)
+  - Real-world examples analyzed (Super Bowl LI: ~455 pts, 1958 Championship: ~380 pts, Bills comeback: ~350 pts)
+  - Database schema recommendations
+  - Automation strategy for real-time calculation
+  - UI/UX recommendations
+
+### Total Scripts Created: 20
 - 4 seed scripts
 - 8 scraper scripts (7 implemented, 1 planned)
 - 1 scheduler
 - 4 utility modules
-- 1 comprehensive index generator
+- 2 index/demo page generators
+- 1 greatest games algorithm document
 
-### Total Lines of Code: ~7,500+
-- Scrapers: ~4,000 lines
+### Total Lines of Code: ~9,500+
+- Scrapers: ~4,500 lines
 - Seeds: ~800 lines
 - Utils: ~500 lines
 - Config: ~200 lines
-- Index generators: ~2,000 lines
+- Index/demo generators: ~3,500 lines
+- Documentation: ~355 lines (greatest-games-algo.md)
 
 ### Database Growth:
 - Tables: 41 → 46 (added 5 betting tables)
@@ -564,7 +588,7 @@ The comprehensive data showcase displays:
 Built with **Claude Code** (Anthropic)
 October 18, 2025
 
-Sessions: 2
-Total Development Time: ~12 hours
-Commits: 5+
-Lines of Code: 7,500+
+Sessions: 3
+Total Development Time: ~16 hours
+Commits: 10+
+Lines of Code: 9,500+
