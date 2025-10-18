@@ -204,6 +204,54 @@ function extractQuarterScores(gameSummary, gameId) {
 }
 
 /**
+ * Extract and upsert venue/stadium information
+ * Updates both stadiums table and games.stadium_id
+ */
+async function extractAndUpsertVenue(gameSummary, gameId) {
+  const venue = gameSummary.gameInfo?.venue
+
+  if (!venue || !venue.id) {
+    return null
+  }
+
+  const stadiumId = `espn-${venue.id}`
+
+  // Prepare stadium record
+  const stadiumData = {
+    stadium_id: stadiumId,
+    stadium_name: venue.fullName || null,
+    city: venue.address?.city || null,
+    state: venue.address?.state || null,
+    capacity: venue.capacity ? parseInt(venue.capacity) : null,
+    surface_type: venue.grass ? 'Grass' : 'Turf',
+    roof_type: venue.indoor ? 'Dome' : 'Open'
+  }
+
+  // Upsert stadium
+  const supabase = getSupabaseClient()
+  const { error: stadiumError } = await supabase
+    .from('stadiums')
+    .upsert([stadiumData], { onConflict: 'stadium_id' })
+
+  if (stadiumError) {
+    logger.warn(`Failed to upsert stadium ${stadiumId}: ${stadiumError.message}`)
+  }
+
+  // Update game with stadium_id
+  const { error: gameError } = await supabase
+    .from('games')
+    .update({ stadium_id: stadiumId })
+    .eq('game_id', `espn-${gameId}`)
+
+  if (gameError) {
+    logger.warn(`Failed to update game stadium_id: ${gameError.message}`)
+    return null
+  }
+
+  return stadiumId
+}
+
+/**
  * Extract game weather info
  * Maps to game_weather table schema
  */
@@ -390,7 +438,18 @@ async function scrapeGameStats(gameId) {
       scoringPlays: 0,
       gameWeather: 0,
       playerStats: 0,
-      quarterScores: 0
+      quarterScores: 0,
+      venue: 0
+    }
+
+    // Extract and upsert venue
+    logger.info('Processing venue information...')
+    const stadiumId = await extractAndUpsertVenue(gameSummary, gameId)
+    if (stadiumId) {
+      results.venue = 1
+      logger.info(`✓ Upserted venue: ${stadiumId}`)
+    } else {
+      logger.info('ℹ No venue data available')
     }
 
     // Extract and update quarter scores

@@ -210,7 +210,23 @@ function generateHTML(data) {
     ? `${weather.temperature_fahrenheit || '--'}°F${weather.wind_speed_mph ? `, Wind ${weather.wind_direction || ''} ${weather.wind_speed_mph} mph` : ''}${weather.conditions ? `, ${weather.conditions}` : ''}`
     : 'N/A'
 
-  // Separate player stats by category
+  // Separate player stats by team and category
+  const homePlayerStats = playerStats.filter(p => p.player.team_id === game.home_team_id)
+  const awayPlayerStats = playerStats.filter(p => p.player.team_id === game.away_team_id)
+
+  // Home team stats by category
+  const homePassingStats = homePlayerStats.filter(p => p.passing_attempts && p.passing_attempts > 0)
+  const homeRushingStats = homePlayerStats.filter(p => p.rushing_attempts && p.rushing_attempts > 0)
+  const homeReceivingStats = homePlayerStats.filter(p => p.receptions && p.receptions > 0)
+  const homeDefenseStats = homePlayerStats.filter(p => p.tackles_total && p.tackles_total > 0)
+
+  // Away team stats by category
+  const awayPassingStats = awayPlayerStats.filter(p => p.passing_attempts && p.passing_attempts > 0)
+  const awayRushingStats = awayPlayerStats.filter(p => p.rushing_attempts && p.rushing_attempts > 0)
+  const awayReceivingStats = awayPlayerStats.filter(p => p.receptions && p.receptions > 0)
+  const awayDefenseStats = awayPlayerStats.filter(p => p.tackles_total && p.tackles_total > 0)
+
+  // Keep combined stats for reference (not used in template anymore)
   const passingStats = playerStats.filter(p => p.passing_attempts && p.passing_attempts > 0)
   const rushingStats = playerStats.filter(p => p.rushing_attempts && p.rushing_attempts > 0)
   const receivingStats = playerStats.filter(p => p.receptions && p.receptions > 0)
@@ -906,8 +922,6 @@ function generateHTML(data) {
             .quarter-breakdown {
                 margin-top: 24px;
                 padding-top: 24px;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
             }
 
             .quarter-grid {
@@ -915,12 +929,11 @@ function generateHTML(data) {
                 flex-wrap: wrap;
                 gap: 4px;
                 font-size: 10px;
-                min-width: 480px;
             }
 
             .quarter-grid > div {
                 flex: 1 1 auto;
-                min-width: 60px;
+                min-width: 0;
             }
 
             .quarter-header {
@@ -1119,137 +1132,258 @@ function generateHTML(data) {
         <div class="section">
             <h3 class="section-header">Player Statistics</h3>
 
+            <!-- Team Tabs -->
             <div class="tabs">
-                <button class="tab active" onclick="showTab('passing')">Passing</button>
-                <button class="tab" onclick="showTab('rushing')">Rushing</button>
-                <button class="tab" onclick="showTab('receiving')">Receiving</button>
-                <button class="tab" onclick="showTab('defense')">Defense</button>
+                <button class="team-tab active" onclick="showTeamTab('away-team')">${game.away_team.full_name}</button>
+                <button class="team-tab" onclick="showTeamTab('home-team')">${game.home_team.full_name}</button>
             </div>
 
-            <!-- PASSING -->
-            <div id="passing" class="tab-content active">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Player</th>
-                            <th>C/ATT</th>
-                            <th>YDS</th>
-                            <th>TD</th>
-                            <th>INT</th>
-                            <th>RTG</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${passingStats.map(stat => `
-                        <tr>
-                            <td>
-                                <span class="player-name">${stat.player.full_name}</span>
-                                <span class="team-abbr">${stat.player.team_id}</span>
-                            </td>
-                            <td>${stat.passing_completions || 0}/${stat.passing_attempts || 0}</td>
-                            <td class="stat-highlight">${stat.passing_yards || 0}</td>
-                            <td>${stat.passing_touchdowns || 0}</td>
-                            <td>${stat.passing_interceptions || 0}</td>
-                            <td>${stat.passer_rating ? stat.passer_rating.toFixed(1) : '--'}</td>
-                        </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
+            <!-- AWAY TEAM -->
+            <div id="away-team" class="team-tab-content active">
+                <div class="tabs" style="margin-top: 16px;">
+                    <button class="stat-tab active" onclick="showStatTab('away-team', 'passing')">Passing</button>
+                    <button class="stat-tab" onclick="showStatTab('away-team', 'rushing')">Rushing</button>
+                    <button class="stat-tab" onclick="showStatTab('away-team', 'receiving')">Receiving</button>
+                    <button class="stat-tab" onclick="showStatTab('away-team', 'defense')">Defense</button>
+                </div>
+
+                <!-- Away Passing -->
+                <div id="away-team-passing" class="stat-tab-content active">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>C/ATT</th>
+                                <th>YDS</th>
+                                <th>TD</th>
+                                <th>INT</th>
+                                <th>RTG</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${awayPassingStats.map(stat => `
+                            <tr>
+                                <td><span class="player-name">${stat.player.full_name}</span></td>
+                                <td>${stat.passing_completions || 0}/${stat.passing_attempts || 0}</td>
+                                <td class="stat-highlight">${stat.passing_yards || 0}</td>
+                                <td>${stat.passing_touchdowns || 0}</td>
+                                <td>${stat.passing_interceptions || 0}</td>
+                                <td>${stat.passer_rating ? stat.passer_rating.toFixed(1) : '--'}</td>
+                            </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Away Rushing -->
+                <div id="away-team-rushing" class="stat-tab-content">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>CAR</th>
+                                <th>YDS</th>
+                                <th>AVG</th>
+                                <th>TD</th>
+                                <th>LONG</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${awayRushingStats.map(stat => `
+                            <tr>
+                                <td><span class="player-name">${stat.player.full_name}</span></td>
+                                <td>${stat.rushing_attempts || 0}</td>
+                                <td class="stat-highlight">${stat.rushing_yards || 0}</td>
+                                <td>${stat.rushing_attempts > 0 ? (stat.rushing_yards / stat.rushing_attempts).toFixed(1) : '--'}</td>
+                                <td>${stat.rushing_touchdowns || 0}</td>
+                                <td>${stat.rushing_long || 0}</td>
+                            </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Away Receiving -->
+                <div id="away-team-receiving" class="stat-tab-content">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>REC</th>
+                                <th>TGT</th>
+                                <th>YDS</th>
+                                <th>AVG</th>
+                                <th>TD</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${awayReceivingStats.map(stat => `
+                            <tr>
+                                <td><span class="player-name">${stat.player.full_name}</span></td>
+                                <td>${stat.receptions || 0}</td>
+                                <td>${stat.targets || 0}</td>
+                                <td class="stat-highlight">${stat.receiving_yards || 0}</td>
+                                <td>${stat.receptions > 0 ? (stat.receiving_yards / stat.receptions).toFixed(1) : '--'}</td>
+                                <td>${stat.receiving_touchdowns || 0}</td>
+                            </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Away Defense -->
+                <div id="away-team-defense" class="stat-tab-content">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>TOT</th>
+                                <th>SOLO</th>
+                                <th>ASST</th>
+                                <th>SACKS</th>
+                                <th>TFL</th>
+                                <th>INT</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${awayDefenseStats.map(stat => `
+                            <tr>
+                                <td><span class="player-name">${stat.player.full_name}</span></td>
+                                <td class="stat-highlight">${stat.tackles_total || 0}</td>
+                                <td>--</td>
+                                <td>--</td>
+                                <td>${stat.sacks || 0}</td>
+                                <td>--</td>
+                                <td>${stat.interceptions || 0}</td>
+                            </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            <!-- RUSHING -->
-            <div id="rushing" class="tab-content">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Player</th>
-                            <th>CAR</th>
-                            <th>YDS</th>
-                            <th>AVG</th>
-                            <th>TD</th>
-                            <th>LONG</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${rushingStats.map(stat => `
-                        <tr>
-                            <td>
-                                <span class="player-name">${stat.player.full_name}</span>
-                                <span class="team-abbr">${stat.player.team_id}</span>
-                            </td>
-                            <td>${stat.rushing_attempts || 0}</td>
-                            <td class="stat-highlight">${stat.rushing_yards || 0}</td>
-                            <td>${stat.rushing_attempts > 0 ? (stat.rushing_yards / stat.rushing_attempts).toFixed(1) : '--'}</td>
-                            <td>${stat.rushing_touchdowns || 0}</td>
-                            <td>${stat.rushing_long || 0}</td>
-                        </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
+            <!-- HOME TEAM -->
+            <div id="home-team" class="team-tab-content">
+                <div class="tabs" style="margin-top: 16px;">
+                    <button class="stat-tab active" onclick="showStatTab('home-team', 'passing')">Passing</button>
+                    <button class="stat-tab" onclick="showStatTab('home-team', 'rushing')">Rushing</button>
+                    <button class="stat-tab" onclick="showStatTab('home-team', 'receiving')">Receiving</button>
+                    <button class="stat-tab" onclick="showStatTab('home-team', 'defense')">Defense</button>
+                </div>
 
-            <!-- RECEIVING -->
-            <div id="receiving" class="tab-content">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Player</th>
-                            <th>REC</th>
-                            <th>TGT</th>
-                            <th>YDS</th>
-                            <th>AVG</th>
-                            <th>TD</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${receivingStats.map(stat => `
-                        <tr>
-                            <td>
-                                <span class="player-name">${stat.player.full_name}</span>
-                                <span class="team-abbr">${stat.player.team_id}</span>
-                            </td>
-                            <td>${stat.receptions || 0}</td>
-                            <td>${stat.targets || 0}</td>
-                            <td class="stat-highlight">${stat.receiving_yards || 0}</td>
-                            <td>${stat.receptions > 0 ? (stat.receiving_yards / stat.receptions).toFixed(1) : '--'}</td>
-                            <td>${stat.receiving_touchdowns || 0}</td>
-                        </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
+                <!-- Home Passing -->
+                <div id="home-team-passing" class="stat-tab-content active">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>C/ATT</th>
+                                <th>YDS</th>
+                                <th>TD</th>
+                                <th>INT</th>
+                                <th>RTG</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${homePassingStats.map(stat => `
+                            <tr>
+                                <td><span class="player-name">${stat.player.full_name}</span></td>
+                                <td>${stat.passing_completions || 0}/${stat.passing_attempts || 0}</td>
+                                <td class="stat-highlight">${stat.passing_yards || 0}</td>
+                                <td>${stat.passing_touchdowns || 0}</td>
+                                <td>${stat.passing_interceptions || 0}</td>
+                                <td>${stat.passer_rating ? stat.passer_rating.toFixed(1) : '--'}</td>
+                            </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
 
-            <!-- DEFENSE -->
-            <div id="defense" class="tab-content">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Player</th>
-                            <th>TOT</th>
-                            <th>SOLO</th>
-                            <th>ASST</th>
-                            <th>SACKS</th>
-                            <th>TFL</th>
-                            <th>INT</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${defenseStats.map(stat => `
-                        <tr>
-                            <td>
-                                <span class="player-name">${stat.player.full_name}</span>
-                                <span class="team-abbr">${stat.player.team_id}</span>
-                            </td>
-                            <td class="stat-highlight">${stat.tackles_total || 0}</td>
-                            <td>--</td>
-                            <td>--</td>
-                            <td>${stat.sacks || 0}</td>
-                            <td>--</td>
-                            <td>${stat.interceptions || 0}</td>
-                        </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
+                <!-- Home Rushing -->
+                <div id="home-team-rushing" class="stat-tab-content">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>CAR</th>
+                                <th>YDS</th>
+                                <th>AVG</th>
+                                <th>TD</th>
+                                <th>LONG</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${homeRushingStats.map(stat => `
+                            <tr>
+                                <td><span class="player-name">${stat.player.full_name}</span></td>
+                                <td>${stat.rushing_attempts || 0}</td>
+                                <td class="stat-highlight">${stat.rushing_yards || 0}</td>
+                                <td>${stat.rushing_attempts > 0 ? (stat.rushing_yards / stat.rushing_attempts).toFixed(1) : '--'}</td>
+                                <td>${stat.rushing_touchdowns || 0}</td>
+                                <td>${stat.rushing_long || 0}</td>
+                            </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Home Receiving -->
+                <div id="home-team-receiving" class="stat-tab-content">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>REC</th>
+                                <th>TGT</th>
+                                <th>YDS</th>
+                                <th>AVG</th>
+                                <th>TD</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${homeReceivingStats.map(stat => `
+                            <tr>
+                                <td><span class="player-name">${stat.player.full_name}</span></td>
+                                <td>${stat.receptions || 0}</td>
+                                <td>${stat.targets || 0}</td>
+                                <td class="stat-highlight">${stat.receiving_yards || 0}</td>
+                                <td>${stat.receptions > 0 ? (stat.receiving_yards / stat.receptions).toFixed(1) : '--'}</td>
+                                <td>${stat.receiving_touchdowns || 0}</td>
+                            </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Home Defense -->
+                <div id="home-team-defense" class="stat-tab-content">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>TOT</th>
+                                <th>SOLO</th>
+                                <th>ASST</th>
+                                <th>SACKS</th>
+                                <th>TFL</th>
+                                <th>INT</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${homeDefenseStats.map(stat => `
+                            <tr>
+                                <td><span class="player-name">${stat.player.full_name}</span></td>
+                                <td class="stat-highlight">${stat.tackles_total || 0}</td>
+                                <td>--</td>
+                                <td>--</td>
+                                <td>${stat.sacks || 0}</td>
+                                <td>--</td>
+                                <td>${stat.interceptions || 0}</td>
+                            </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -1309,19 +1443,37 @@ function generateHTML(data) {
     </div>
 
     <script>
-        function showTab(tabName) {
-            // Hide all tab contents
-            document.querySelectorAll('.tab-content').forEach(content => {
+        function showTeamTab(teamName) {
+            // Hide all team tab contents
+            document.querySelectorAll('.team-tab-content').forEach(content => {
                 content.classList.remove('active')
             })
 
-            // Remove active from all tabs
-            document.querySelectorAll('.tab').forEach(tab => {
+            // Remove active from all team tabs
+            document.querySelectorAll('.team-tab').forEach(tab => {
                 tab.classList.remove('active')
             })
 
-            // Show selected tab content
-            document.getElementById(tabName).classList.add('active')
+            // Show selected team tab content
+            document.getElementById(teamName).classList.add('active')
+
+            // Mark clicked tab as active
+            event.target.classList.add('active')
+        }
+
+        function showStatTab(teamName, statType) {
+            // Hide all stat tab contents within this team
+            document.querySelectorAll('#' + teamName + ' .stat-tab-content').forEach(content => {
+                content.classList.remove('active')
+            })
+
+            // Remove active from all stat tabs within this team
+            document.querySelectorAll('#' + teamName + ' .stat-tab').forEach(tab => {
+                tab.classList.remove('active')
+            })
+
+            // Show selected stat tab content
+            document.getElementById(teamName + '-' + statType).classList.add('active')
 
             // Mark clicked tab as active
             event.target.classList.add('active')
