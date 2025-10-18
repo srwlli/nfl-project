@@ -6,6 +6,12 @@
  *
  * Data fetched:
  * - Team game statistics (team_game_stats table)
+ * - Player game statistics (player_game_stats table)
+ *   - Passing: completions, attempts, yards, TDs, INTs
+ *   - Rushing: attempts, yards, TDs
+ *   - Receiving: receptions, yards, TDs
+ *   - Defense: tackles, sacks, interceptions
+ *   - Kicking: field goals made/attempted
  * - Scoring plays (scoring_plays table)
  * - Game weather info (game_weather table)
  *
@@ -181,6 +187,126 @@ function extractGameWeather(gameSummary, gameId) {
 }
 
 /**
+ * Extract player game statistics from boxscore
+ * Maps to player_game_stats table schema
+ */
+function extractPlayerStats(gameSummary, gameId) {
+  const boxscore = gameSummary.boxscore
+  if (!boxscore || !boxscore.players) {
+    logger.warn(`No player stats in boxscore for game ${gameId}`)
+    return []
+  }
+
+  const competition = gameSummary.header?.competitions?.[0]
+  const homeTeam = competition?.competitors?.find(c => c.homeAway === 'home')
+  const awayTeam = competition?.competitors?.find(c => c.homeAway === 'away')
+
+  const allPlayerStats = []
+
+  // Process each team's player stats
+  boxscore.players.forEach(teamData => {
+    const teamAbbr = teamData.team.abbreviation
+    const isHome = teamAbbr === homeTeam?.team?.abbreviation
+    const opponentTeamId = isHome ? awayTeam?.team?.abbreviation : homeTeam?.team?.abbreviation
+
+    // Process each statistical category (passing, rushing, receiving, etc.)
+    const statistics = teamData.statistics || []
+
+    // Helper to parse stat values
+    const parseStat = (statStr, index) => {
+      if (!statStr || statStr === '-' || statStr === '') return 0
+      // Handle fractional stats like "18/26" -> return the first number
+      if (statStr.includes('/')) {
+        const parts = statStr.split('/')
+        return parseFloat(parts[index === 0 ? 0 : 1]) || 0
+      }
+      return parseFloat(statStr) || 0
+    }
+
+    // Build a map of player stats by player ID
+    const playerStatsMap = new Map()
+
+    statistics.forEach(category => {
+      const categoryName = category.name
+      const labels = category.labels || []
+      const athletes = category.athletes || []
+
+      athletes.forEach(athleteData => {
+        const playerId = `espn-${athleteData.athlete?.id}`
+        const stats = athleteData.stats || []
+
+        // Get or create player stats record
+        if (!playerStatsMap.has(playerId)) {
+          playerStatsMap.set(playerId, {
+            player_id: playerId,
+            game_id: `espn-${gameId}`,
+            season: SEASON_YEAR,
+            team_id: teamAbbr,
+            opponent_team_id: opponentTeamId,
+            started: false, // ESPN doesn't provide this easily
+            // Initialize all stats to 0
+            passing_attempts: 0,
+            passing_completions: 0,
+            passing_yards: 0,
+            passing_touchdowns: 0,
+            passing_interceptions: 0,
+            rushing_attempts: 0,
+            rushing_yards: 0,
+            rushing_touchdowns: 0,
+            receptions: 0,
+            receiving_yards: 0,
+            receiving_touchdowns: 0,
+            tackles_total: 0,
+            sacks: 0,
+            interceptions: 0,
+            field_goals_made: 0,
+            field_goals_attempted: 0
+          })
+        }
+
+        const playerStats = playerStatsMap.get(playerId)
+
+        // Map stats based on category
+        if (categoryName === 'passing') {
+          // Labels: C/ATT, YDS, AVG, TD, INT, SACKS, QBR, RTG
+          playerStats.passing_completions = parseStat(stats[0], 0) // C from "C/ATT"
+          playerStats.passing_attempts = parseStat(stats[0], 1) // ATT from "C/ATT"
+          playerStats.passing_yards = parseStat(stats[1], 0) // YDS
+          playerStats.passing_touchdowns = parseStat(stats[3], 0) // TD
+          playerStats.passing_interceptions = parseStat(stats[4], 0) // INT
+        } else if (categoryName === 'rushing') {
+          // Labels: CAR, YDS, AVG, TD, LONG
+          playerStats.rushing_attempts = parseStat(stats[0], 0) // CAR
+          playerStats.rushing_yards = parseStat(stats[1], 0) // YDS
+          playerStats.rushing_touchdowns = parseStat(stats[3], 0) // TD
+        } else if (categoryName === 'receiving') {
+          // Labels: REC, YDS, AVG, TD, LONG, TGTS
+          playerStats.receptions = parseStat(stats[0], 0) // REC
+          playerStats.receiving_yards = parseStat(stats[1], 0) // YDS
+          playerStats.receiving_touchdowns = parseStat(stats[3], 0) // TD
+        } else if (categoryName === 'defensive') {
+          // Labels: TOT, SOLO, SACKS, TFL, PD, QB HTS, TD
+          playerStats.tackles_total = parseStat(stats[0], 0) // TOT
+          playerStats.sacks = parseStat(stats[2], 0) // SACKS
+        } else if (categoryName === 'interceptions') {
+          // Labels: INT, YDS, TD
+          playerStats.interceptions = parseStat(stats[0], 0) // INT
+        } else if (categoryName === 'kicking') {
+          // Labels: FG, PCT, LONG, XP, PTS
+          playerStats.field_goals_made = parseStat(stats[0], 0) // FG from "FG/ATT"
+          playerStats.field_goals_attempted = parseStat(stats[0], 1) // ATT from "FG/ATT"
+        }
+      })
+    })
+
+    // Add all player stats for this team
+    allPlayerStats.push(...Array.from(playerStatsMap.values()))
+  })
+
+  return allPlayerStats
+}
+
+/**
  * Main scraper function
  */
 async function scrapeGameStats(gameId) {
@@ -193,7 +319,8 @@ async function scrapeGameStats(gameId) {
     const results = {
       teamStats: 0,
       scoringPlays: 0,
-      gameWeather: 0
+      gameWeather: 0,
+      playerStats: 0
     }
 
     // Extract and insert team statistics
@@ -237,6 +364,18 @@ async function scrapeGameStats(gameId) {
       logger.info(`✓ Upserted game weather`)
     } else {
       logger.info('ℹ No weather data available')
+    }
+
+    // Extract and insert player statistics
+    logger.info('Processing player statistics...')
+    const playerStats = extractPlayerStats(gameSummary, gameId)
+    if (playerStats.length > 0) {
+      logger.info(`  Found ${playerStats.length} player stat records`)
+      const result = await upsertBatch('player_game_stats', playerStats, ['player_id', 'game_id', 'season'])
+      results.playerStats = result.success
+      logger.info(`✓ Upserted ${result.success} player stat records`)
+    } else {
+      logger.info('ℹ No player stats available')
     }
 
     return results
@@ -330,6 +469,7 @@ async function main() {
       logger.info('═'.repeat(60))
       logger.info(`✓ Team stats: ${result.teamStats} records`)
       logger.info(`✓ Scoring plays: ${result.scoringPlays} records`)
+      logger.info(`✓ Player stats: ${result.playerStats} records`)
       logger.info(`✓ Game weather: ${result.gameWeather ? 'Updated' : 'Skipped'}`)
       logger.info('═'.repeat(60))
 

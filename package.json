@@ -14,6 +14,7 @@
     "scrape:live": "node scripts/scrapers/live-games-scraper.js",
     "scrape:injuries": "node scripts/scrapers/injuries-scraper.js",
     "scrape:roster": "node scripts/scrapers/roster-updates-scraper.js",
+    "scrape:standings": "node scripts/scrapers/standings-scraper.js",
     "scheduler": "node scripts/scheduler.js",
     "test:db": "node scripts/utils/test-connection.js"
   },

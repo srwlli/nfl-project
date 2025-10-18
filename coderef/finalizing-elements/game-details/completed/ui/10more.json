@@ -1,0 +1,104 @@
+{
+  "themes": [
+    {
+      "name": "Fourth & Forever",
+      "concept": "A gritty, high-impact design inspired by game-deciding fourth downs. Bold, energetic, RedZone-style urgency.",
+      "visualStyle": "Dark mode with red, green, and amber accents. High contrast UI and condensed slab serif headlines.",
+      "typography": {
+        "headline": "Anton",
+        "body": "Inter"
+      },
+      "designNotes": "Table rows hover like scoreboard flips. Charts and badges pulse in real-time."
+    },
+    {
+      "name": "Gridiron Legacy",
+      "concept": "Vintage-inspired layout echoing NFL history, tradition, and storytelling. Ideal for legacy-rich matchups.",
+      "visualStyle": "Light parchment background, deep navy and gold accents, ticket stub cards, serifed headlines.",
+      "typography": {
+        "headline": "Libre Baskerville",
+        "body": "Lato"
+      },
+      "designNotes": "Cards resemble trading cards. Uses badge patches, textured overlays, and a 'legacy tracker' callout."
+    },
+    {
+      "name": "Next Down Metrics",
+      "concept": "Futuristic, data-first dashboard for advanced analytics and sideline-tech aesthetics.",
+      "visualStyle": "Monochrome + neon glow gradients. HUD-style scorebug and analytics overlays.",
+      "typography": {
+        "headline": "Space Grotesk",
+        "body": "Manrope"
+      },
+      "designNotes": "Live-updating stats, animated progress arcs, and minimal chromatic UI with bright analytic pulses."
+    },
+    {
+      "name": "Sunday Lights",
+      "concept": "Cinematic primetime vibe — moody, immersive, and made for the big stage.",
+      "visualStyle": "Midnight blue gradients, backlit glows, slow transitions and Netflix-style hero content.",
+      "typography": {
+        "headline": "Bebas Neue",
+        "body": "DM Sans"
+      },
+      "designNotes": "Fade-ins from black. Hover effects mimic spotlight beams. Strong use of promo banners."
+    },
+    {
+      "name": "Two-Minute Drill",
+      "concept": "Fast, focused, clean design with quick-glance summaries and streamlined UI flow.",
+      "visualStyle": "White background, bold red/navy highlights, compact UI elements, minimal friction.",
+      "typography": {
+        "headline": "Roboto Condensed",
+        "body": "IBM Plex Sans"
+      },
+      "designNotes": "Auto-expanding summaries, sticky navigation, and drill-down into plays via modal views."
+    },
+    {
+      "name": "The War Room",
+      "concept": "Inspired by front office draft rooms and coordinators’ booths. Tactical, sharp, and utilitarian.",
+      "visualStyle": "Gunmetal grid UI, blueprint overlays, digital-paper textures, clipboard-style cards.",
+      "typography": {
+        "headline": "Rajdhani",
+        "body": "Sora"
+      },
+      "designNotes": "Grid-aligned play breakdowns, multi-tab playbook viewers, whiteboard marker-style overlays."
+    },
+    {
+      "name": "Victory Formation",
+      "concept": "Elegant, minimal, celebratory theme built for big wins, milestones, and postseason drama.",
+      "visualStyle": "White and gold palette, thin line icons, trophy badges, and high-end type hierarchy.",
+      "typography": {
+        "headline": "Cormorant Garamond",
+        "body": "Outfit"
+      },
+      "designNotes": "Subtle animations, confetti glows, and milestone moments displayed in gold card formats."
+    },
+    {
+      "name": "Chalk Talk",
+      "concept": "Coaches’ breakdown meets fan access — educational and visual for in-depth analysis.",
+      "visualStyle": "Dry erase board visuals, zone color mapping, diagrammed plays over real footage.",
+      "typography": {
+        "headline": "Titillium Web",
+        "body": "Poppins"
+      },
+      "designNotes": "Interactive arrows, zone heatmaps, clickable play moments with rewind+analyze panels."
+    },
+    {
+      "name": "Any Given Sunday",
+      "concept": "Vibrant, emotional theme that captures drama, unpredictability, and heart-pounding moments.",
+      "visualStyle": "Bright turf greens, sideline oranges, big iconography, dynamic typography shifts.",
+      "typography": {
+        "headline": "Bangers",
+        "body": "Cabin"
+      },
+      "designNotes": "Momentum meters, lead change animations, and emotional player quotes overlayed on key plays."
+    },
+    {
+      "name": "The Vault",
+      "concept": "Museum-like aesthetic for historical matchups, franchise records, and storytelling.",
+      "visualStyle": "Muted metallics, stone backgrounds, serif type, golden overlays.",
+      "typography": {
+        "headline": "Merriweather",
+        "body": "Source Sans Pro"
+      },
+      "designNotes": "Timeline-based UI, trophy room components, and milestone counters with reveal animations."
+    }
+  ]
+}
