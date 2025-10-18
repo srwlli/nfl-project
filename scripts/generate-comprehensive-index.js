@@ -1,4 +1,218 @@
-<!DOCTYPE html>
+import { getSupabaseClient } from './utils/supabase-client.js'
+import fs from 'fs'
+
+const supabase = getSupabaseClient()
+
+console.log('Generating comprehensive data showcase index.html...')
+
+// ============================================================================
+// FETCH ALL DATA FROM ALL SCRAPERS
+// ============================================================================
+
+// 1. STANDINGS SCRAPER DATA
+const { data: teamStandings } = await supabase
+  .from('team_season_stats')
+  .select('*')
+  .eq('season', 2025)
+  .order('conference_rank', { ascending: true })
+  .limit(8)
+
+// 2. GAME STATS SCRAPER DATA (with quarter scores and weather)
+const { data: recentGamesWithQuarters } = await supabase
+  .from('games')
+  .select('*')
+  .eq('season', 2025)
+  .eq('status', 'final')
+  .not('home_q1_score', 'is', null)
+  .order('game_date', { ascending: false })
+  .limit(5)
+
+// 3. WEATHER DATA
+const { data: gameWeather } = await supabase
+  .from('game_weather')
+  .select(`
+    *,
+    games!inner(game_id, home_team_id, away_team_id, game_date)
+  `)
+  .order('games(game_date)', { ascending: false })
+  .limit(5)
+
+// 4. PLAYER GAME STATS (Enhanced)
+const { data: topPassers } = await supabase
+  .from('player_game_stats')
+  .select(`
+    player_id,
+    team_id,
+    passing_yards,
+    passing_touchdowns,
+    passing_interceptions,
+    passing_completions,
+    passing_attempts,
+    players!inner(full_name)
+  `)
+  .eq('season', 2025)
+  .gt('passing_attempts', 15)
+  .order('passing_yards', { ascending: false })
+  .limit(5)
+
+const { data: topRushers } = await supabase
+  .from('player_game_stats')
+  .select(`
+    player_id,
+    team_id,
+    rushing_yards,
+    rushing_attempts,
+    rushing_touchdowns,
+    players!inner(full_name)
+  `)
+  .eq('season', 2025)
+  .gt('rushing_attempts', 10)
+  .order('rushing_yards', { ascending: false })
+  .limit(5)
+
+const { data: topReceivers } = await supabase
+  .from('player_game_stats')
+  .select(`
+    player_id,
+    team_id,
+    receptions,
+    receiving_yards,
+    receiving_touchdowns,
+    players!inner(full_name)
+  `)
+  .eq('season', 2025)
+  .gt('receptions', 5)
+  .order('receiving_yards', { ascending: false })
+  .limit(5)
+
+// 5. INJURIES SCRAPER DATA
+const { data: recentInjuries } = await supabase
+  .from('player_injury_status')
+  .select(`
+    player_id,
+    injury_status,
+    injury_description,
+    updated_at,
+    players!inner(full_name, team_id)
+  `)
+  .eq('season', 2025)
+  .order('updated_at', { ascending: false })
+  .limit(8)
+
+// 6. ROSTER TRANSACTIONS
+const { data: recentTransactions } = await supabase
+  .from('roster_transactions')
+  .select(`
+    transaction_type,
+    transaction_date,
+    details,
+    players!inner(full_name),
+    teams!inner(abbreviation, name)
+  `)
+  .order('transaction_date', { ascending: false })
+  .limit(8)
+
+// 7. SCORING PLAYS
+const { data: recentScores } = await supabase
+  .from('scoring_plays')
+  .select('*')
+  .eq('season', 2025)
+  .order('game_id', { ascending: false })
+  .limit(10)
+
+// 8. LIVE GAMES SCRAPER - Current week games
+const { data: liveGames } = await supabase
+  .from('games')
+  .select('*')
+  .eq('season', 2025)
+  .in('status', ['in_progress', 'scheduled'])
+  .order('game_date', { ascending: true })
+  .limit(6)
+
+// 9. BETTING DATA (if available)
+const { data: bettingLines } = await supabase
+  .from('spread_lines')
+  .select(`
+    *,
+    game_betting_lines!inner(game_id)
+  `)
+  .order('line_timestamp', { ascending: false })
+  .limit(6)
+
+// 10. ADVANCED ANALYTICS (EPA data from play_by_play)
+const { data: topEpaPlays } = await supabase
+  .from('play_by_play')
+  .select('*')
+  .eq('season', 2025)
+  .not('epa', 'is', null)
+  .order('epa', { ascending: false })
+  .limit(10)
+
+// Count totals
+const { count: playerCount } = await supabase
+  .from('players')
+  .select('*', { count: 'exact', head: true })
+
+const { count: gameCount } = await supabase
+  .from('games')
+  .select('*', { count: 'exact', head: true })
+  .eq('season', 2025)
+
+const { count: completedCount } = await supabase
+  .from('games')
+  .select('*', { count: 'exact', head: true })
+  .eq('season', 2025)
+  .eq('status', 'final')
+
+const { count: injuryCount } = await supabase
+  .from('player_injury_status')
+  .select('*', { count: 'exact', head: true })
+  .eq('season', 2025)
+
+const { count: transactionCount } = await supabase
+  .from('roster_transactions')
+  .select('*', { count: 'exact', head: true })
+
+const { count: scoringPlayCount } = await supabase
+  .from('scoring_plays')
+  .select('*', { count: 'exact', head: true })
+  .eq('season', 2025)
+
+const { count: playerStatsCount } = await supabase
+  .from('player_game_stats')
+  .select('*', { count: 'exact', head: true })
+  .eq('season', 2025)
+
+const { count: weatherCount } = await supabase
+  .from('game_weather')
+  .select('*', { count: 'exact', head: true })
+
+const { count: bettingCount } = await supabase
+  .from('game_betting_lines')
+  .select('*', { count: 'exact', head: true })
+
+const { count: playByPlayCount } = await supabase
+  .from('play_by_play')
+  .select('*', { count: 'exact', head: true })
+  .eq('season', 2025)
+
+console.log('Data fetched:')
+console.log(`  Teams: ${teamStandings?.length || 0}`)
+console.log(`  Players: ${playerCount || 0}`)
+console.log(`  Games: ${completedCount}/${gameCount}`)
+console.log(`  Injuries: ${injuryCount || 0}`)
+console.log(`  Transactions: ${transactionCount || 0}`)
+console.log(`  Scoring Plays: ${scoringPlayCount || 0}`)
+console.log(`  Player Stats: ${playerStatsCount || 0}`)
+console.log(`  Weather Records: ${weatherCount || 0}`)
+console.log(`  Betting Lines: ${bettingCount || 0}`)
+console.log(`  Play-by-Play: ${playByPlayCount || 0}`)
+
+// ============================================================================
+// GENERATE HTML
+// ============================================================================
+
+const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -312,108 +526,6 @@
             }
         }
 
-        /* Mobile Breakpoints */
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-
-            .hud-header {
-                padding: 20px;
-            }
-
-            .logo {
-                font-size: 20px;
-            }
-
-            .header-title {
-                font-size: 32px;
-            }
-
-            .header-subtitle {
-                font-size: 14px;
-            }
-
-            .metrics-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 10px;
-            }
-
-            .metric-value {
-                font-size: 28px;
-            }
-
-            .metric-label {
-                font-size: 10px;
-            }
-
-            .section-title {
-                font-size: 18px;
-                flex-wrap: wrap;
-            }
-
-            .scraper-tag {
-                margin-left: 0;
-                margin-top: 8px;
-            }
-
-            table {
-                font-size: 12px;
-            }
-
-            thead th {
-                font-size: 10px;
-                padding-bottom: 8px;
-            }
-
-            tbody td {
-                padding: 10px 8px;
-            }
-
-            .data-section {
-                padding: 20px 15px;
-            }
-
-            .footer-links {
-                flex-direction: column;
-                gap: 12px;
-            }
-
-            /* Hide some columns on mobile */
-            table thead th:nth-child(n+6),
-            table tbody td:nth-child(n+6) {
-                display: none;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .metrics-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .metric-value {
-                font-size: 24px;
-            }
-
-            .header-title {
-                font-size: 24px;
-            }
-
-            table {
-                font-size: 11px;
-            }
-
-            tbody td {
-                padding: 8px 6px;
-            }
-
-            /* Hide more columns on very small screens */
-            table thead th:nth-child(n+5),
-            table tbody td:nth-child(n+5) {
-                display: none;
-            }
-        }
-
         /* Accent Lines */
         .accent-line {
             height: 1px;
@@ -485,47 +597,47 @@
         <!-- Metrics Overview -->
         <div class="metrics-grid">
             <div class="metric-card">
-                <div class="metric-value">2540</div>
+                <div class="metric-value">${playerCount || 2637}</div>
                 <div class="metric-label">Players</div>
                 <div class="metric-change">↑ Real-time</div>
             </div>
             <div class="metric-card">
-                <div class="metric-value">94</div>
+                <div class="metric-value">${completedCount || 0}</div>
                 <div class="metric-label">Games Done</div>
-                <div class="metric-change">/ 272 Total</div>
+                <div class="metric-change">/ ${gameCount || 272} Total</div>
             </div>
             <div class="metric-card">
-                <div class="metric-value">0</div>
+                <div class="metric-value">${injuryCount || 0}</div>
                 <div class="metric-label">Injuries</div>
                 <div class="metric-change">↑ Daily 6 AM</div>
             </div>
             <div class="metric-card">
-                <div class="metric-value">160</div>
+                <div class="metric-value">${transactionCount || 0}</div>
                 <div class="metric-label">Transactions</div>
                 <div class="metric-change">↑ Daily 5 PM</div>
             </div>
             <div class="metric-card">
-                <div class="metric-value">139</div>
+                <div class="metric-value">${scoringPlayCount || 0}</div>
                 <div class="metric-label">Scores</div>
                 <div class="metric-change">↑ Post-Game</div>
             </div>
             <div class="metric-card">
-                <div class="metric-value">69</div>
+                <div class="metric-value">${playerStatsCount || 0}</div>
                 <div class="metric-label">Player Stats</div>
                 <div class="metric-change">↑ Per Game</div>
             </div>
             <div class="metric-card">
-                <div class="metric-value">0</div>
+                <div class="metric-value">${weatherCount || 0}</div>
                 <div class="metric-label">Weather</div>
                 <div class="metric-change">↑ Per Game</div>
             </div>
             <div class="metric-card">
-                <div class="metric-value">0</div>
+                <div class="metric-value">${bettingCount || 0}</div>
                 <div class="metric-label">Betting Lines</div>
                 <div class="metric-change">↑ Daily 10 AM</div>
             </div>
             <div class="metric-card">
-                <div class="metric-value">0</div>
+                <div class="metric-value">${playByPlayCount ? Math.floor(playByPlayCount / 1000) + 'k' : '0'}</div>
                 <div class="metric-label">PBP Plays</div>
                 <div class="metric-change">↑ Weekly Tue</div>
             </div>
@@ -557,95 +669,18 @@
                     </tr>
                 </thead>
                 <tbody>
-                    
+                    ${teamStandings?.slice(0, 8).map(team => `
                         <tr>
-                            <td class="rank">#1</td>
-                            <td class="team-name">IND</td>
-                            <td class="stat-value">5-1</td>
-                            <td class="stat-value">0.833</td>
-                            <td class="stat-value">194</td>
-                            <td class="stat-value">116</td>
-                            <td class="stat-value" style="color: var(--accent-green)">+78</td>
-                            <td class="stat-value">1</td>
+                            <td class="rank">#${team.conference_rank}</td>
+                            <td class="team-name">${team.team_id}</td>
+                            <td class="stat-value">${team.wins}-${team.losses}${team.ties > 0 ? `-${team.ties}` : ''}</td>
+                            <td class="stat-value">${team.win_percentage.toFixed(3)}</td>
+                            <td class="stat-value">${team.points_for}</td>
+                            <td class="stat-value">${team.points_against}</td>
+                            <td class="stat-value" style="color: ${team.point_differential > 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">${team.point_differential > 0 ? '+' : ''}${team.point_differential}</td>
+                            <td class="stat-value">${team.division_rank}</td>
                         </tr>
-                    
-                        <tr>
-                            <td class="rank">#1</td>
-                            <td class="team-name">TB</td>
-                            <td class="stat-value">5-1</td>
-                            <td class="stat-value">0.833</td>
-                            <td class="stat-value">165</td>
-                            <td class="stat-value">151</td>
-                            <td class="stat-value" style="color: var(--accent-green)">+14</td>
-                            <td class="stat-value">1</td>
-                        </tr>
-                    
-                        <tr>
-                            <td class="rank">#2</td>
-                            <td class="team-name">DEN</td>
-                            <td class="stat-value">4-2</td>
-                            <td class="stat-value">0.667</td>
-                            <td class="stat-value">130</td>
-                            <td class="stat-value">95</td>
-                            <td class="stat-value" style="color: var(--accent-green)">+35</td>
-                            <td class="stat-value">1</td>
-                        </tr>
-                    
-                        <tr>
-                            <td class="rank">#2</td>
-                            <td class="team-name">GB</td>
-                            <td class="stat-value">3-1-1</td>
-                            <td class="stat-value">0.700</td>
-                            <td class="stat-value">131</td>
-                            <td class="stat-value">102</td>
-                            <td class="stat-value" style="color: var(--accent-green)">+29</td>
-                            <td class="stat-value">1</td>
-                        </tr>
-                    
-                        <tr>
-                            <td class="rank">#3</td>
-                            <td class="team-name">DET</td>
-                            <td class="stat-value">4-2</td>
-                            <td class="stat-value">0.667</td>
-                            <td class="stat-value">191</td>
-                            <td class="stat-value">142</td>
-                            <td class="stat-value" style="color: var(--accent-green)">+49</td>
-                            <td class="stat-value">2</td>
-                        </tr>
-                    
-                        <tr>
-                            <td class="rank">#3</td>
-                            <td class="team-name">BUF</td>
-                            <td class="stat-value">4-2</td>
-                            <td class="stat-value">0.667</td>
-                            <td class="stat-value">167</td>
-                            <td class="stat-value">137</td>
-                            <td class="stat-value" style="color: var(--accent-green)">+30</td>
-                            <td class="stat-value">1</td>
-                        </tr>
-                    
-                        <tr>
-                            <td class="rank">#4</td>
-                            <td class="team-name">SEA</td>
-                            <td class="stat-value">4-2</td>
-                            <td class="stat-value">0.667</td>
-                            <td class="stat-value">166</td>
-                            <td class="stat-value">117</td>
-                            <td class="stat-value" style="color: var(--accent-green)">+49</td>
-                            <td class="stat-value">1</td>
-                        </tr>
-                    
-                        <tr>
-                            <td class="rank">#4</td>
-                            <td class="team-name">NE</td>
-                            <td class="stat-value">4-2</td>
-                            <td class="stat-value">0.667</td>
-                            <td class="stat-value">150</td>
-                            <td class="stat-value">120</td>
-                            <td class="stat-value" style="color: var(--accent-green)">+30</td>
-                            <td class="stat-value">2</td>
-                        </tr>
-                    
+                    `).join('') || '<tr><td colspan="8">No standings data available</td></tr>'}
                 </tbody>
             </table>
         </div>
@@ -673,52 +708,16 @@
                         </tr>
                     </thead>
                     <tbody>
-                        
+                        ${recentGamesWithQuarters?.slice(0, 5).map(game => `
                             <tr>
-                                <td class="team-name stat-small">PIT @ CIN</td>
-                                <td class="stat-value mono">0-0</td>
-                                <td class="stat-value mono">0-0</td>
-                                <td class="stat-value mono">0-0</td>
-                                <td class="stat-value mono">0-0</td>
-                                <td class="stat-value mono" style="font-weight: 700;">31-33</td>
+                                <td class="team-name stat-small">${game.away_team_id} @ ${game.home_team_id}</td>
+                                <td class="stat-value mono">${game.away_q1_score}-${game.home_q1_score}</td>
+                                <td class="stat-value mono">${game.away_q2_score}-${game.home_q2_score}</td>
+                                <td class="stat-value mono">${game.away_q3_score}-${game.home_q3_score}</td>
+                                <td class="stat-value mono">${game.away_q4_score}-${game.home_q4_score}</td>
+                                <td class="stat-value mono" style="font-weight: 700;">${game.away_score}-${game.home_score}</td>
                             </tr>
-                        
-                            <tr>
-                                <td class="team-name stat-small">CHI @ WSH</td>
-                                <td class="stat-value mono">0-0</td>
-                                <td class="stat-value mono">0-0</td>
-                                <td class="stat-value mono">0-0</td>
-                                <td class="stat-value mono">0-0</td>
-                                <td class="stat-value mono" style="font-weight: 700;">25-24</td>
-                            </tr>
-                        
-                            <tr>
-                                <td class="team-name stat-small">BUF @ ATL</td>
-                                <td class="stat-value mono">0-0</td>
-                                <td class="stat-value mono">0-0</td>
-                                <td class="stat-value mono">0-0</td>
-                                <td class="stat-value mono">0-0</td>
-                                <td class="stat-value mono" style="font-weight: 700;">14-24</td>
-                            </tr>
-                        
-                            <tr>
-                                <td class="team-name stat-small">DET @ KC</td>
-                                <td class="stat-value mono">0-0</td>
-                                <td class="stat-value mono">0-0</td>
-                                <td class="stat-value mono">0-0</td>
-                                <td class="stat-value mono">0-0</td>
-                                <td class="stat-value mono" style="font-weight: 700;">17-30</td>
-                            </tr>
-                        
-                            <tr>
-                                <td class="team-name stat-small">LAC @ MIA</td>
-                                <td class="stat-value mono">0-0</td>
-                                <td class="stat-value mono">0-0</td>
-                                <td class="stat-value mono">0-0</td>
-                                <td class="stat-value mono">0-0</td>
-                                <td class="stat-value mono" style="font-weight: 700;">29-27</td>
-                            </tr>
-                        
+                        `).join('') || '<tr><td colspan="6">No quarter score data available</td></tr>'}
                     </tbody>
                 </table>
             </div>
@@ -742,7 +741,14 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td colspan="4">No weather data available</td></tr>
+                        ${gameWeather?.slice(0, 5).map(w => `
+                            <tr>
+                                <td class="team-name stat-small">${w.games.away_team_id} @ ${w.games.home_team_id}</td>
+                                <td class="stat-value mono">${w.temperature_fahrenheit ? w.temperature_fahrenheit + '°F' : '-'}</td>
+                                <td class="stat-value mono">${w.wind_speed_mph ? (w.wind_direction || '') + ' ' + w.wind_speed_mph + ' mph' : '-'}</td>
+                                <td class="stat-value stat-small">${w.conditions || 'N/A'}</td>
+                            </tr>
+                        `).join('') || '<tr><td colspan="4">No weather data available</td></tr>'}
                     </tbody>
                 </table>
             </div>
@@ -771,25 +777,16 @@
                         </tr>
                     </thead>
                     <tbody>
-                        
+                        ${topPassers?.map(p => `
                             <tr>
-                                <td class="team-name">Sam Darnold</td>
-                                <td class="stat-value">SEA</td>
-                                <td class="stat-value">242</td>
-                                <td class="stat-value">1</td>
-                                <td class="stat-value">0</td>
-                                <td class="stat-value mono">18/26</td>
+                                <td class="team-name">${p.players.full_name}</td>
+                                <td class="stat-value">${p.team_id}</td>
+                                <td class="stat-value">${p.passing_yards}</td>
+                                <td class="stat-value">${p.passing_touchdowns}</td>
+                                <td class="stat-value">${p.passing_interceptions}</td>
+                                <td class="stat-value mono">${p.passing_completions}/${p.passing_attempts}</td>
                             </tr>
-                        
-                            <tr>
-                                <td class="team-name">Kyler Murray</td>
-                                <td class="stat-value">ARI</td>
-                                <td class="stat-value">200</td>
-                                <td class="stat-value">2</td>
-                                <td class="stat-value">2</td>
-                                <td class="stat-value mono">27/41</td>
-                            </tr>
-                        
+                        `).join('') || '<tr><td colspan="6">No passing data available</td></tr>'}
                     </tbody>
                 </table>
             </div>
@@ -815,25 +812,16 @@
                         </tr>
                     </thead>
                     <tbody>
-                        
+                        ${topRushers?.map(p => `
                             <tr>
-                                <td class="team-name">Kenneth Walker III</td>
-                                <td class="stat-value">SEA</td>
-                                <td class="stat-value">81</td>
-                                <td class="stat-value">19</td>
-                                <td class="stat-value">0</td>
-                                <td class="stat-value mono">4.3</td>
+                                <td class="team-name">${p.players.full_name}</td>
+                                <td class="stat-value">${p.team_id}</td>
+                                <td class="stat-value">${p.rushing_yards}</td>
+                                <td class="stat-value">${p.rushing_attempts}</td>
+                                <td class="stat-value">${p.rushing_touchdowns}</td>
+                                <td class="stat-value mono">${(p.rushing_yards / p.rushing_attempts).toFixed(1)}</td>
                             </tr>
-                        
-                            <tr>
-                                <td class="team-name">Zach Charbonnet</td>
-                                <td class="stat-value">SEA</td>
-                                <td class="stat-value">39</td>
-                                <td class="stat-value">12</td>
-                                <td class="stat-value">1</td>
-                                <td class="stat-value mono">3.3</td>
-                            </tr>
-                        
+                        `).join('') || '<tr><td colspan="6">No rushing data available</td></tr>'}
                     </tbody>
                 </table>
             </div>
@@ -860,25 +848,16 @@
                     </tr>
                 </thead>
                 <tbody>
-                    
+                    ${topReceivers?.map(p => `
                         <tr>
-                            <td class="team-name">Marvin Harrison Jr.</td>
-                            <td class="stat-value">ARI</td>
-                            <td class="stat-value">6</td>
-                            <td class="stat-value">66</td>
-                            <td class="stat-value">1</td>
-                            <td class="stat-value mono">11.0</td>
+                            <td class="team-name">${p.players.full_name}</td>
+                            <td class="stat-value">${p.team_id}</td>
+                            <td class="stat-value">${p.receptions}</td>
+                            <td class="stat-value">${p.receiving_yards}</td>
+                            <td class="stat-value">${p.receiving_touchdowns}</td>
+                            <td class="stat-value mono">${(p.receiving_yards / p.receptions).toFixed(1)}</td>
                         </tr>
-                    
-                        <tr>
-                            <td class="team-name">Trey McBride</td>
-                            <td class="stat-value">ARI</td>
-                            <td class="stat-value">7</td>
-                            <td class="stat-value">52</td>
-                            <td class="stat-value">0</td>
-                            <td class="stat-value mono">7.4</td>
-                        </tr>
-                    
+                    `).join('') || '<tr><td colspan="6">No receiving data available</td></tr>'}
                 </tbody>
             </table>
         </div>
@@ -906,7 +885,20 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td colspan="5">No injury data available</td></tr>
+                    ${recentInjuries?.slice(0, 8).map(inj => `
+                        <tr>
+                            <td class="team-name">${inj.players.full_name}</td>
+                            <td class="stat-value">${inj.players.team_id}</td>
+                            <td class="stat-value" style="color: ${
+                                inj.injury_status === 'out' ? 'var(--accent-red)' :
+                                inj.injury_status === 'doubtful' ? 'var(--accent-red)' :
+                                inj.injury_status === 'questionable' ? 'var(--accent-yellow)' :
+                                'var(--accent-green)'
+                            }; text-transform: uppercase;">${inj.injury_status}</td>
+                            <td class="stat-small">${inj.injury_description || '-'}</td>
+                            <td class="stat-value mono stat-small">${new Date(inj.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td>
+                        </tr>
+                    `).join('') || '<tr><td colspan="5">No injury data available</td></tr>'}
                 </tbody>
             </table>
         </div>
@@ -932,7 +924,20 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td colspan="5">No transaction data available</td></tr>
+                    ${recentTransactions?.slice(0, 8).map(txn => `
+                        <tr>
+                            <td class="stat-value mono stat-small">${new Date(txn.transaction_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td>
+                            <td class="stat-value">${txn.teams.abbreviation}</td>
+                            <td class="team-name">${txn.players.full_name}</td>
+                            <td class="stat-value" style="text-transform: uppercase; color: ${
+                                txn.transaction_type === 'signed' ? 'var(--accent-green)' :
+                                txn.transaction_type === 'released' ? 'var(--accent-red)' :
+                                txn.transaction_type === 'traded' ? 'var(--accent-blue)' :
+                                'var(--accent-purple)'
+                            };">${txn.transaction_type}</td>
+                            <td class="stat-small">${txn.details || '-'}</td>
+                        </tr>
+                    `).join('') || '<tr><td colspan="5">No transaction data available</td></tr>'}
                 </tbody>
             </table>
         </div>
@@ -960,55 +965,19 @@
                     </tr>
                 </thead>
                 <tbody>
-                    
+                    ${liveGames?.slice(0, 6).map(game => `
                         <tr>
-                            <td class="stat-value mono">Sat, Oct 18</td>
-                            <td class="stat-value mono">5:00 PM</td>
-                            <td class="team-name">LV @ KC</td>
-                            <td class="stat-small">-</td>
-                            <td class="stat-value" style="text-transform: uppercase; color: var(--accent-blue);">scheduled</td>
+                            <td class="stat-value mono">${new Date(game.game_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</td>
+                            <td class="stat-value mono">${game.game_time ? new Date('1970-01-01T' + game.game_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '-'}</td>
+                            <td class="team-name">${game.away_team_id} @ ${game.home_team_id}</td>
+                            <td class="stat-small">${game.stadium_id || '-'}</td>
+                            <td class="stat-value" style="text-transform: uppercase; color: ${
+                                game.status === 'in_progress' ? 'var(--accent-green)' :
+                                game.status === 'scheduled' ? 'var(--accent-blue)' :
+                                'var(--text-secondary)'
+                            };">${game.status}</td>
                         </tr>
-                    
-                        <tr>
-                            <td class="stat-value mono">Sat, Oct 18</td>
-                            <td class="stat-value mono">5:00 PM</td>
-                            <td class="team-name">NE @ TEN</td>
-                            <td class="stat-small">-</td>
-                            <td class="stat-value" style="text-transform: uppercase; color: var(--accent-blue);">scheduled</td>
-                        </tr>
-                    
-                        <tr>
-                            <td class="stat-value mono">Sat, Oct 18</td>
-                            <td class="stat-value mono">5:00 PM</td>
-                            <td class="team-name">NO @ CHI</td>
-                            <td class="stat-small">-</td>
-                            <td class="stat-value" style="text-transform: uppercase; color: var(--accent-blue);">scheduled</td>
-                        </tr>
-                    
-                        <tr>
-                            <td class="stat-value mono">Sat, Oct 18</td>
-                            <td class="stat-value mono">1:30 PM</td>
-                            <td class="team-name">LAR @ JAX</td>
-                            <td class="stat-small">-</td>
-                            <td class="stat-value" style="text-transform: uppercase; color: var(--accent-blue);">scheduled</td>
-                        </tr>
-                    
-                        <tr>
-                            <td class="stat-value mono">Sat, Oct 18</td>
-                            <td class="stat-value mono">5:00 PM</td>
-                            <td class="team-name">MIA @ CLE</td>
-                            <td class="stat-small">-</td>
-                            <td class="stat-value" style="text-transform: uppercase; color: var(--accent-blue);">scheduled</td>
-                        </tr>
-                    
-                        <tr>
-                            <td class="stat-value mono">Sat, Oct 18</td>
-                            <td class="stat-value mono">5:00 PM</td>
-                            <td class="team-name">PHI @ MIN</td>
-                            <td class="stat-small">-</td>
-                            <td class="stat-value" style="text-transform: uppercase; color: var(--accent-blue);">scheduled</td>
-                        </tr>
-                    
+                    `).join('') || '<tr><td colspan="5">No upcoming games</td></tr>'}
                 </tbody>
             </table>
         </div>
@@ -1035,97 +1004,16 @@
                     </tr>
                 </thead>
                 <tbody>
-                    
+                    ${recentScores?.slice(0, 10).map(score => `
                         <tr>
-                            <td class="stat-value">SEA</td>
-                            <td class="stat-value stat-small" style="text-transform: uppercase;">Field Goal Good</td>
-                            <td class="stat-value" style="color: var(--accent-green); font-size: 16px;">3</td>
-                            <td class="stat-value mono">Q4</td>
-                            <td class="stat-value mono stat-small">9:33</td>
-                            <td class="stat-small">Jason Myers 31 Yd Field Goal ...</td>
+                            <td class="stat-value">${score.team_id}</td>
+                            <td class="stat-value stat-small" style="text-transform: uppercase;">${score.scoring_type}</td>
+                            <td class="stat-value" style="color: var(--accent-green); font-size: 16px;">${score.points}</td>
+                            <td class="stat-value mono">Q${score.quarter}</td>
+                            <td class="stat-value mono stat-small">${score.time_remaining_seconds ? Math.floor(score.time_remaining_seconds / 60) + ':' + (score.time_remaining_seconds % 60).toString().padStart(2, '0') : '-'}</td>
+                            <td class="stat-small">${score.description?.substring(0, 60)}...</td>
                         </tr>
-                    
-                        <tr>
-                            <td class="stat-value">SEA</td>
-                            <td class="stat-value stat-small" style="text-transform: uppercase;">Field Goal Good</td>
-                            <td class="stat-value" style="color: var(--accent-green); font-size: 16px;">3</td>
-                            <td class="stat-value mono">Q4</td>
-                            <td class="stat-value mono stat-small">-</td>
-                            <td class="stat-small">Jason Myers 52 Yd Field Goal...</td>
-                        </tr>
-                    
-                        <tr>
-                            <td class="stat-value">SEA</td>
-                            <td class="stat-value stat-small" style="text-transform: uppercase;">Rushing Touchdown</td>
-                            <td class="stat-value" style="color: var(--accent-green); font-size: 16px;">7</td>
-                            <td class="stat-value mono">Q2</td>
-                            <td class="stat-value mono stat-small">1:01</td>
-                            <td class="stat-small">Zach Charbonnet 1 Yd Rush (Jason Myers Kick)...</td>
-                        </tr>
-                    
-                        <tr>
-                            <td class="stat-value">ARI</td>
-                            <td class="stat-value stat-small" style="text-transform: uppercase;">Field Goal Good</td>
-                            <td class="stat-value" style="color: var(--accent-green); font-size: 16px;">3</td>
-                            <td class="stat-value mono">Q3</td>
-                            <td class="stat-value mono stat-small">1:39</td>
-                            <td class="stat-small">Chad Ryland 57 Yd Field Goal...</td>
-                        </tr>
-                    
-                        <tr>
-                            <td class="stat-value">ARI</td>
-                            <td class="stat-value stat-small" style="text-transform: uppercase;">Passing Touchdown</td>
-                            <td class="stat-value" style="color: var(--accent-green); font-size: 16px;">7</td>
-                            <td class="stat-value mono">Q4</td>
-                            <td class="stat-value mono stat-small">5:50</td>
-                            <td class="stat-small">Marvin Harrison Jr. 16 Yd pass from Kyler Murray (Chad Rylan...</td>
-                        </tr>
-                    
-                        <tr>
-                            <td class="stat-value">ARI</td>
-                            <td class="stat-value stat-small" style="text-transform: uppercase;">Passing Touchdown</td>
-                            <td class="stat-value" style="color: var(--accent-green); font-size: 16px;">7</td>
-                            <td class="stat-value mono">Q4</td>
-                            <td class="stat-value mono stat-small">0:28</td>
-                            <td class="stat-small">Emari Demercado 7 Yd pass from Kyler Murray (Chad Ryland Kic...</td>
-                        </tr>
-                    
-                        <tr>
-                            <td class="stat-value">ARI</td>
-                            <td class="stat-value stat-small" style="text-transform: uppercase;">Field Goal Good</td>
-                            <td class="stat-value" style="color: var(--accent-green); font-size: 16px;">3</td>
-                            <td class="stat-value mono">Q1</td>
-                            <td class="stat-value mono stat-small">4:37</td>
-                            <td class="stat-small">Chad Ryland 33 Yd Field Goal ...</td>
-                        </tr>
-                    
-                        <tr>
-                            <td class="stat-value">SEA</td>
-                            <td class="stat-value stat-small" style="text-transform: uppercase;">Passing Touchdown</td>
-                            <td class="stat-value" style="color: var(--accent-green); font-size: 16px;">7</td>
-                            <td class="stat-value mono">Q1</td>
-                            <td class="stat-value mono stat-small">1:33</td>
-                            <td class="stat-small">AJ Barner 16 Yd pass from Sam Darnold (Jason Myers Kick)...</td>
-                        </tr>
-                    
-                        <tr>
-                            <td class="stat-value">SEA</td>
-                            <td class="stat-value stat-small" style="text-transform: uppercase;">Field Goal Good</td>
-                            <td class="stat-value" style="color: var(--accent-green); font-size: 16px;">3</td>
-                            <td class="stat-value mono">Q3</td>
-                            <td class="stat-value mono stat-small">8:56</td>
-                            <td class="stat-small">Jason Myers 44 Yd Field Goal...</td>
-                        </tr>
-                    
-                        <tr>
-                            <td class="stat-value">BAL</td>
-                            <td class="stat-value stat-small" style="text-transform: uppercase;">Passing Touchdown</td>
-                            <td class="stat-value" style="color: var(--accent-green); font-size: 16px;">7</td>
-                            <td class="stat-value mono">Q3</td>
-                            <td class="stat-value mono stat-small">12:48</td>
-                            <td class="stat-small">Zay Flowers 23 Yd pass from Lamar Jackson (Tyler Loop Kick)...</td>
-                        </tr>
-                    
+                    `).join('') || '<tr><td colspan="6">No scoring data available</td></tr>'}
                 </tbody>
             </table>
         </div>
@@ -1133,17 +1021,91 @@
         <div class="accent-line"></div>
 
         <!-- BETTING SCRAPER -->
-        
+        ${bettingLines?.length > 0 ? `
+        <div class="data-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span>💰</span>
+                    <span>BETTING LINES</span>
+                    <span class="scraper-tag tag-betting mono">BETTING-SCRAPER</span>
+                </h2>
+                <span class="section-badge mono" style="background: rgba(34, 197, 94, 0.2); color: #22c55e; border-color: #22c55e;">DAILY 10 AM</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>GAME</th>
+                        <th>HOME SPREAD</th>
+                        <th>AWAY SPREAD</th>
+                        <th>HOME ODDS</th>
+                        <th>AWAY ODDS</th>
+                        <th>UPDATED</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${bettingLines?.slice(0, 6).map(line => `
+                        <tr>
+                            <td class="team-name stat-small">${line.game_betting_lines.game_id}</td>
+                            <td class="stat-value mono">${line.home_spread > 0 ? '+' : ''}${line.home_spread}</td>
+                            <td class="stat-value mono">${line.away_spread > 0 ? '+' : ''}${line.away_spread}</td>
+                            <td class="stat-value mono">${line.home_spread_odds > 0 ? '+' : ''}${line.home_spread_odds}</td>
+                            <td class="stat-value mono">${line.away_spread_odds > 0 ? '+' : ''}${line.away_spread_odds}</td>
+                            <td class="stat-value mono stat-small">${new Date(line.line_timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+        ` : ''}
 
         <!-- ADVANCED ANALYTICS (EPA) -->
-        
+        ${topEpaPlays?.length > 0 ? `
+        <div class="data-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span>📈</span>
+                    <span>TOP EPA PLAYS</span>
+                    <span class="scraper-tag tag-analytics mono">ANALYTICS-SCRAPER</span>
+                </h2>
+                <span class="section-badge mono" style="background: rgba(99, 102, 241, 0.2); color: #6366f1; border-color: #6366f1;">WEEKLY TUE 6 AM</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>TEAM</th>
+                        <th>DOWN</th>
+                        <th>DIST</th>
+                        <th>TYPE</th>
+                        <th>YARDS</th>
+                        <th>EPA</th>
+                        <th>WPA</th>
+                        <th>SUCCESS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${topEpaPlays?.slice(0, 10).map(play => `
+                        <tr>
+                            <td class="stat-value">${play.possession_team_id}</td>
+                            <td class="stat-value mono">${play.down || '-'}</td>
+                            <td class="stat-value mono">${play.yards_to_go || '-'}</td>
+                            <td class="stat-value stat-small" style="text-transform: uppercase;">${play.play_type || '-'}</td>
+                            <td class="stat-value mono">${play.yards_gained || 0}</td>
+                            <td class="stat-value mono" style="color: ${play.epa > 0 ? 'var(--accent-green)' : 'var(--accent-red)'}; font-weight: 700;">${play.epa > 0 ? '+' : ''}${play.epa?.toFixed(2) || 0}</td>
+                            <td class="stat-value mono" style="color: ${play.wpa > 0 ? 'var(--accent-green)' : 'var(--accent-red)'};">${play.wpa > 0 ? '+' : ''}${play.wpa?.toFixed(2) || 0}</td>
+                            <td class="stat-value mono">${play.success ? '✓' : '✗'}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+        ` : ''}
 
         <div class="accent-line"></div>
 
         <!-- Footer -->
         <div class="footer">
             <p class="mono">NFL STATS PLATFORM • COMPREHENSIVE DATA SHOWCASE</p>
-            <p>8 Active Scrapers • 69 Player Stats • 139 Scoring Plays • 0 PBP Records</p>
+            <p>8 Active Scrapers • ${playerStatsCount || 0} Player Stats • ${scoringPlayCount || 0} Scoring Plays • ${playByPlayCount ? Math.floor(playByPlayCount / 1000) + 'k' : '0'} PBP Records</p>
             <p>Automated Data Pipeline • Real-time Updates • 2025-26 Season</p>
             <div class="footer-links">
                 <a href="./CLAUDE.md" class="footer-link mono">DOCUMENTATION</a>
@@ -1159,4 +1121,9 @@
         </div>
     </div>
 </body>
-</html>
+</html>`
+
+fs.writeFileSync('index.html', html)
+console.log('✓ Generated: index.html (comprehensive data showcase)')
+
+process.exit(0)
