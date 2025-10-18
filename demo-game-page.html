@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEA @ ARI - Week 4 | NFL Stats Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .game-meta {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+
+        .matchup {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 12px 0;
+        }
+
+        .scoreboard {
+            background: white;
+            padding: 32px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .score-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .team {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .team-logo {
+            width: 60px;
+            height: 60px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .team-info h3 {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .team-record {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .score {
+            font-size: 48px;
+            font-weight: bold;
+            color: #333;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .winner {
+            color: #10b981;
+        }
+
+        .quarters {
+            margin-top: 24px;
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+
+        .quarters-header {
+            display: grid;
+            grid-template-columns: 2fr repeat(4, 1fr) 1.5fr;
+            gap: 12px;
+            font-weight: 600;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .quarters-row {
+            display: grid;
+            grid-template-columns: 2fr repeat(4, 1fr) 1.5fr;
+            gap: 12px;
+            padding: 8px 0;
+            text-align: center;
+        }
+
+        .quarters-row .team-name {
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .stats-section {
+            padding: 32px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #667eea;
+            display: inline-block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-top: 20px;
+        }
+
+        .team-stats {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .team-stats h4 {
+            font-size: 18px;
+            margin-bottom: 16px;
+            color: #667eea;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .scoring-plays {
+            padding: 32px;
+        }
+
+        .quarter-group {
+            margin-bottom: 24px;
+        }
+
+        .quarter-label {
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 12px;
+        }
+
+        .play {
+            background: #f9fafb;
+            padding: 16px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 12px;
+            border-radius: 4px;
+        }
+
+        .play-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .play-time {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .play-points {
+            background: #10b981;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .play-description {
+            color: #374151;
+            line-height: 1.5;
+        }
+
+        .play-type {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .data-coverage {
+            background: #fef3c7;
+            padding: 24px;
+            margin: 24px 32px;
+            border-radius: 8px;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .data-coverage h4 {
+            color: #92400e;
+            margin-bottom: 12px;
+        }
+
+        .coverage-list {
+            list-style: none;
+            margin-top: 12px;
+        }
+
+        .coverage-list li {
+            padding: 6px 0;
+            color: #78350f;
+        }
+
+        .coverage-list li:before {
+            content: "✓ ";
+            color: #10b981;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .missing-list li:before {
+            content: "⚠ ";
+            color: #f59e0b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="game-meta">
+                Week 4 • September 26, 2025 • 12:15 AM ET • Prime Video
+            </div>
+            <div class="matchup">Seattle Seahawks @ Arizona Cardinals</div>
+            <div class="game-meta">FINAL</div>
+        </div>
+
+        <!-- Scoreboard -->
+        <div class="scoreboard">
+            <div class="score-row">
+                <div class="team">
+                    <div class="team-logo">SEA</div>
+                    <div class="team-info">
+                        <h3>Seattle Seahawks</h3>
+                        <div class="team-record">Away</div>
+                    </div>
+                </div>
+                <div class="score winner">23</div>
+            </div>
+
+            <div class="score-row">
+                <div class="team">
+                    <div class="team-logo">ARI</div>
+                    <div class="team-info">
+                        <h3>Arizona Cardinals</h3>
+                        <div class="team-record">Home</div>
+                    </div>
+                </div>
+                <div class="score">20</div>
+            </div>
+
+            <!-- Quarter by Quarter -->
+            <div class="quarters">
+                <div class="quarters-header">
+                    <div></div>
+                    <div>Q1</div>
+                    <div>Q2</div>
+                    <div>Q3</div>
+                    <div>Q4</div>
+                    <div>FINAL</div>
+                </div>
+                <div class="quarters-row">
+                    <div class="team-name">SEA</div>
+                    <div>7</div>
+                    <div>7</div>
+                    <div>3</div>
+                    <div>6</div>
+                    <div><strong>23</strong></div>
+                </div>
+                <div class="quarters-row">
+                    <div class="team-name">ARI</div>
+                    <div>3</div>
+                    <div>0</div>
+                    <div>3</div>
+                    <div>14</div>
+                    <div><strong>20</strong></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Statistics -->
+        <div class="stats-section">
+            <h2 class="section-title">Team Statistics</h2>
+
+            <div class="stats-grid">
+                <div class="team-stats">
+                    <h4>SEA Seahawks (Winner)</h4>
+                    <div class="stat-row">
+                        <span class="stat-label">Total Yards</span>
+                        <span class="stat-value">384</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Yards Allowed</span>
+                        <span class="stat-value">253</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Turnovers</span>
+                        <span class="stat-value">1</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Turnovers Forced</span>
+                        <span class="stat-value">2</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Time of Possession</span>
+                        <span class="stat-value">32:24</span>
+                    </div>
+                </div>
+
+                <div class="team-stats">
+                    <h4>ARI Cardinals</h4>
+                    <div class="stat-row">
+                        <span class="stat-label">Total Yards</span>
+                        <span class="stat-value">253</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Yards Allowed</span>
+                        <span class="stat-value">384</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Turnovers</span>
+                        <span class="stat-value">2</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Turnovers Forced</span>
+                        <span class="stat-value">1</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Time of Possession</span>
+                        <span class="stat-value">27:36</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scoring Plays -->
+        <div class="scoring-plays">
+            <h2 class="section-title">Scoring Summary</h2>
+
+            <!-- Quarter 1 -->
+            <div class="quarter-group">
+                <div class="quarter-label">1st Quarter</div>
+
+                <div class="play">
+                    <div class="play-header">
+                        <span class="play-time">4:37 - ARI</span>
+                        <span class="play-points">3 PTS</span>
+                    </div>
+                    <div class="play-description">
+                        <span class="play-type">Field Goal Good:</span> Chad Ryland 33 Yd Field Goal
+                    </div>
+                </div>
+
+                <div class="play">
+                    <div class="play-header">
+                        <span class="play-time">1:33 - SEA</span>
+                        <span class="play-points">7 PTS</span>
+                    </div>
+                    <div class="play-description">
+                        <span class="play-type">Passing Touchdown:</span> AJ Barner 16 Yd pass from Sam Darnold (Jason Myers Kick)
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quarter 2 -->
+            <div class="quarter-group">
+                <div class="quarter-label">2nd Quarter</div>
+
+                <div class="play">
+                    <div class="play-header">
+                        <span class="play-time">1:01 - SEA</span>
+                        <span class="play-points">7 PTS</span>
+                    </div>
+                    <div class="play-description">
+                        <span class="play-type">Rushing Touchdown:</span> Zach Charbonnet 1 Yd Rush (Jason Myers Kick)
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quarter 3 -->
+            <div class="quarter-group">
+                <div class="quarter-label">3rd Quarter</div>
+
+                <div class="play">
+                    <div class="play-header">
+                        <span class="play-time">8:56 - SEA</span>
+                        <span class="play-points">3 PTS</span>
+                    </div>
+                    <div class="play-description">
+                        <span class="play-type">Field Goal Good:</span> Jason Myers 44 Yd Field Goal
+                    </div>
+                </div>
+
+                <div class="play">
+                    <div class="play-header">
+                        <span class="play-time">1:39 - ARI</span>
+                        <span class="play-points">3 PTS</span>
+                    </div>
+                    <div class="play-description">
+                        <span class="play-type">Field Goal Good:</span> Chad Ryland 57 Yd Field Goal
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quarter 4 -->
+            <div class="quarter-group">
+                <div class="quarter-label">4th Quarter</div>
+
+                <div class="play">
+                    <div class="play-header">
+                        <span class="play-time">9:33 - SEA</span>
+                        <span class="play-points">3 PTS</span>
+                    </div>
+                    <div class="play-description">
+                        <span class="play-type">Field Goal Good:</span> Jason Myers 31 Yd Field Goal
+                    </div>
+                </div>
+
+                <div class="play">
+                    <div class="play-header">
+                        <span class="play-time">5:50 - ARI</span>
+                        <span class="play-points">7 PTS</span>
+                    </div>
+                    <div class="play-description">
+                        <span class="play-type">Passing Touchdown:</span> Marvin Harrison Jr. 16 Yd pass from Kyler Murray (Chad Ryland Kick)
+                    </div>
+                </div>
+
+                <div class="play">
+                    <div class="play-header">
+                        <span class="play-time">0:28 - ARI</span>
+                        <span class="play-points">7 PTS</span>
+                    </div>
+                    <div class="play-description">
+                        <span class="play-type">Passing Touchdown:</span> Emari Demercado 7 Yd pass from Kyler Murray (Chad Ryland Kick)
+                    </div>
+                </div>
+
+                <div class="play">
+                    <div class="play-header">
+                        <span class="play-time">0:00 - SEA</span>
+                        <span class="play-points">3 PTS</span>
+                    </div>
+                    <div class="play-description">
+                        <span class="play-type">Field Goal Good:</span> Jason Myers 52 Yd Field Goal (Game Winner!)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Coverage Info -->
+        <div class="data-coverage">
+            <h4>📊 Current Data Coverage (from ESPN API)</h4>
+            <p><strong>Data Successfully Scraped & Displayed:</strong></p>
+            <ul class="coverage-list">
+                <li>Game metadata (week, date, time, network, status)</li>
+                <li>Final score with quarter-by-quarter breakdown</li>
+                <li>Team statistics (yards, turnovers, possession time)</li>
+                <li>Complete scoring summary (9 plays with descriptions)</li>
+            </ul>
+
+            <p style="margin-top: 16px;"><strong>Not Yet Implemented (Future Enhancements):</strong></p>
+            <ul class="coverage-list missing-list">
+                <li>Player statistics (passing, rushing, receiving, defense)</li>
+                <li>Season context (team records, standings, playoff status)</li>
+                <li>Betting data (spread, over/under, moneyline results)</li>
+                <li>Advanced analytics (EPA, win probability charts)</li>
+                <li>Weather conditions and stadium details</li>
+                <li>Officials information</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

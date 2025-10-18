@@ -188,7 +188,7 @@ CREATE OR REPLACE FUNCTION search_players(
 RETURNS TABLE (
   player_id VARCHAR,
   full_name VARCHAR,
-  position VARCHAR,
+  player_position VARCHAR,
   current_team VARCHAR,
   status player_status
 ) AS $$
@@ -197,7 +197,7 @@ BEGIN
   SELECT
     p.player_id,
     p.full_name,
-    p.primary_position as position,
+    p.primary_position as player_position,
     COALESCE(
       (SELECT team_id FROM player_teams pt
        WHERE pt.player_id = p.player_id

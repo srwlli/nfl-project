@@ -1,0 +1,1113 @@
+{
+  "templateVersion": "1.0.0",
+  "templateName": "NFL Completed Game Details - Full Comprehensive Layout",
+  "description": "Complete template for NFL game details pages with all sections, data fields, and UI components. Only style/design changes between implementations - 100% of content structure remains identical.",
+  "sections": [
+    {
+      "id": "top-meta-info",
+      "order": 1,
+      "title": "Top Meta Information Bar",
+      "required": true,
+      "priority": "P0",
+      "layout": "horizontal-flex",
+      "fields": [
+        { "name": "week", "type": "string", "example": "WEEK 7", "required": true },
+        {
+          "name": "date",
+          "type": "string",
+          "format": "Day, Month DD, YYYY",
+          "example": "Sunday, October 20, 2024",
+          "required": true
+        },
+        { "name": "time", "type": "string", "format": "HH:MM AM/PM TZ", "example": "4:25 PM ET", "required": true },
+        { "name": "network", "type": "string", "example": "CBS", "required": true },
+        { "name": "gameStatus", "type": "badge", "value": "FINAL", "required": true }
+      ]
+    },
+    {
+      "id": "main-scorebug",
+      "order": 2,
+      "title": "Main Score Display / Scorebug",
+      "required": true,
+      "priority": "P0",
+      "layout": "three-column-grid",
+      "components": {
+        "awayTeam": {
+          "fields": [
+            { "name": "teamName", "type": "string", "example": "San Francisco 49ers", "required": true },
+            { "name": "teamAbbr", "type": "string", "example": "SF", "required": true },
+            { "name": "recordBefore", "type": "string", "format": "W-L", "example": "5-2", "required": true },
+            { "name": "recordAfter", "type": "string", "format": "W-L", "example": "5-3", "required": true },
+            { "name": "homeAway", "type": "string", "value": "Away", "required": true },
+            { "name": "finalScore", "type": "number", "example": 28, "required": true },
+            {
+              "name": "teamLogo",
+              "type": "component",
+              "description": "Team logo or abbreviation badge",
+              "required": true
+            }
+          ]
+        },
+        "homeTeam": {
+          "fields": [
+            { "name": "teamName", "type": "string", "example": "Kansas City Chiefs", "required": true },
+            { "name": "teamAbbr", "type": "string", "example": "KC", "required": true },
+            { "name": "recordBefore", "type": "string", "format": "W-L", "example": "6-1", "required": true },
+            { "name": "recordAfter", "type": "string", "format": "W-L", "example": "7-1", "required": true },
+            { "name": "homeAway", "type": "string", "value": "Home", "required": true },
+            { "name": "finalScore", "type": "number", "example": 35, "required": true },
+            {
+              "name": "teamLogo",
+              "type": "component",
+              "description": "Team logo or abbreviation badge",
+              "required": true
+            }
+          ]
+        },
+        "divider": {
+          "type": "visual-separator",
+          "label": "VS"
+        }
+      },
+      "subComponents": {
+        "quarterByQuarter": {
+          "title": "Quarter by Quarter Breakdown",
+          "required": true,
+          "layout": "five-column-grid",
+          "quarters": [
+            { "quarter": "Q1", "awayScore": 7, "homeScore": 7, "display": "7-7" },
+            { "quarter": "Q2", "awayScore": 7, "homeScore": 7, "display": "14-14" },
+            { "quarter": "Q3", "awayScore": 7, "homeScore": 7, "display": "21-21" },
+            { "quarter": "Q4", "awayScore": 0, "homeScore": 7, "display": "0-7" },
+            { "quarter": "FINAL", "awayScore": 28, "homeScore": 35, "display": "28-35", "emphasized": true }
+          ]
+        }
+      }
+    },
+    {
+      "id": "game-info-cards",
+      "order": 3,
+      "title": "Game Information Quick Cards",
+      "required": true,
+      "priority": "P0",
+      "layout": "three-column-grid",
+      "cards": [
+        { "label": "VENUE", "value": "Arrowhead Stadium", "required": true },
+        { "label": "WEATHER", "value": "72°F, Clear", "required": true },
+        { "label": "ATTENDANCE", "value": "76,416", "required": true }
+      ]
+    },
+    {
+      "id": "season-context",
+      "order": 4,
+      "title": "Season Context & Playoff Implications",
+      "required": true,
+      "priority": "P0",
+      "layout": "two-column-grid",
+      "teams": [
+        {
+          "team": "home",
+          "fields": [
+            { "name": "teamName", "type": "string", "example": "Kansas City Chiefs", "required": true },
+            {
+              "name": "playoffStatus",
+              "type": "badge",
+              "value": "CLINCHED PLAYOFFS",
+              "badgeColor": "green",
+              "required": true
+            },
+            {
+              "name": "divisionStanding",
+              "type": "object",
+              "fields": [
+                { "name": "rank", "type": "string", "example": "1st", "required": true },
+                { "name": "division", "type": "string", "example": "AFC West", "required": true },
+                { "name": "record", "type": "string", "example": "7-1", "required": true }
+              ]
+            },
+            {
+              "name": "conferenceStanding",
+              "type": "object",
+              "fields": [
+                { "name": "rank", "type": "string", "example": "1st", "required": true },
+                { "name": "conference", "type": "string", "example": "AFC", "required": true },
+                { "name": "record", "type": "string", "example": "7-1", "required": true }
+              ]
+            },
+            { "name": "playoffProbability", "type": "percentage", "example": "99.8%", "required": true },
+            { "name": "currentStreak", "type": "string", "example": "W4", "required": true },
+            {
+              "name": "recordBreakdown",
+              "type": "object",
+              "fields": [
+                { "name": "home", "type": "string", "example": "4-0", "required": true },
+                { "name": "away", "type": "string", "example": "3-1", "required": true },
+                { "name": "division", "type": "string", "example": "2-0", "required": true }
+              ]
+            }
+          ]
+        },
+        {
+          "team": "away",
+          "fields": [
+            { "name": "teamName", "type": "string", "example": "San Francisco 49ers", "required": true },
+            {
+              "name": "playoffStatus",
+              "type": "badge",
+              "value": "IN THE HUNT",
+              "badgeColor": "amber",
+              "required": true
+            },
+            {
+              "name": "divisionStanding",
+              "type": "object",
+              "fields": [
+                { "name": "rank", "type": "string", "example": "2nd", "required": true },
+                { "name": "division", "type": "string", "example": "NFC West", "required": true },
+                { "name": "record", "type": "string", "example": "5-3", "required": true }
+              ]
+            },
+            {
+              "name": "conferenceStanding",
+              "type": "object",
+              "fields": [
+                { "name": "rank", "type": "string", "example": "5th", "required": true },
+                { "name": "conference", "type": "string", "example": "NFC", "required": true },
+                { "name": "record", "type": "string", "example": "5-3", "required": true }
+              ]
+            },
+            { "name": "playoffProbability", "type": "percentage", "example": "72.4%", "required": true },
+            { "name": "currentStreak", "type": "string", "example": "L1", "required": true },
+            {
+              "name": "recordBreakdown",
+              "type": "object",
+              "fields": [
+                { "name": "home", "type": "string", "example": "3-1", "required": true },
+                { "name": "away", "type": "string", "example": "2-2", "required": true },
+                { "name": "division", "type": "string", "example": "1-1", "required": true }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "betting-results",
+      "order": 5,
+      "title": "Betting Results",
+      "required": true,
+      "priority": "P1",
+      "layout": "three-column-grid",
+      "cards": [
+        {
+          "type": "spread",
+          "title": "SPREAD",
+          "fields": [
+            { "name": "openingLine", "type": "string", "example": "KC -3.5", "required": true },
+            { "name": "closingLine", "type": "string", "example": "KC -4.0", "required": true },
+            { "name": "actualMargin", "type": "string", "example": "KC +7", "required": true },
+            { "name": "result", "type": "badge", "value": "KC COVERED", "badgeColor": "green", "required": true }
+          ]
+        },
+        {
+          "type": "total",
+          "title": "TOTAL (O/U)",
+          "fields": [
+            { "name": "openingTotal", "type": "number", "example": 48.5, "required": true },
+            { "name": "closingTotal", "type": "number", "example": 49.0, "required": true },
+            { "name": "actualTotal", "type": "number", "example": 63, "required": true },
+            { "name": "result", "type": "badge", "value": "OVER", "badgeColor": "green", "required": true }
+          ]
+        },
+        {
+          "type": "moneyline",
+          "title": "MONEYLINE",
+          "fields": [
+            { "name": "homeOdds", "type": "string", "example": "-185", "team": "KC", "required": true },
+            { "name": "awayOdds", "type": "string", "example": "+155", "team": "SF", "required": true },
+            { "name": "winner", "type": "badge", "value": "KC -185", "badgeColor": "green", "required": true }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "player-milestones",
+      "order": 6,
+      "title": "Player Milestones & Achievements",
+      "required": true,
+      "priority": "P1",
+      "layout": "two-column-grid",
+      "milestones": [
+        {
+          "player": "Patrick Mahomes",
+          "team": "Kansas City Chiefs",
+          "position": "QB",
+          "icon": "🏆",
+          "iconColor": "amber",
+          "milestone": "300th Career TD Pass",
+          "description": "Became 7th QB in NFL history to reach 300 career touchdown passes"
+        },
+        {
+          "player": "Travis Kelce",
+          "team": "Kansas City Chiefs",
+          "position": "TE",
+          "icon": "⭐",
+          "iconColor": "green",
+          "milestone": "100th Career TD Reception",
+          "description": "First tight end in Chiefs history to reach 100 career receiving touchdowns"
+        },
+        {
+          "player": "Christian McCaffrey",
+          "team": "San Francisco 49ers",
+          "position": "RB",
+          "icon": "📊",
+          "iconColor": "blue",
+          "milestone": "5th Consecutive 100-Yard Game",
+          "description": "Extended streak of 100+ rushing yards to 5 games"
+        },
+        {
+          "player": "Patrick Mahomes",
+          "team": "Kansas City Chiefs",
+          "position": "QB",
+          "icon": "🎯",
+          "iconColor": "purple",
+          "milestone": "Perfect Passer Rating",
+          "description": "Achieved 158.3 passer rating (28/35, 342 YDS, 4 TD, 0 INT)"
+        }
+      ]
+    },
+    {
+      "id": "game-narrative",
+      "order": 7,
+      "title": "Game Narrative",
+      "required": true,
+      "priority": "P1",
+      "subSections": [
+        {
+          "id": "game-summary",
+          "title": "Game Summary",
+          "type": "paragraph",
+          "content": "Patrick Mahomes threw for 342 yards and 4 touchdowns as the Kansas City Chiefs defeated the San Francisco 49ers 35-28 in a thrilling AFC-NFC showdown at Arrowhead Stadium. The Chiefs defense forced a crucial fourth-quarter interception to seal the victory and improve to 7-1 on the season.",
+          "required": true
+        },
+        {
+          "id": "turning-points",
+          "title": "Key Turning Points",
+          "type": "numbered-list",
+          "required": true,
+          "items": [
+            {
+              "number": 1,
+              "title": "Mahomes 300th TD Pass (Q2, 11:23)",
+              "description": "Historic 24-yard touchdown to Rashee Rice gave KC momentum and a 14-7 lead, marking Mahomes' 300th career TD pass"
+            },
+            {
+              "number": 2,
+              "title": "McDuffie Interception (Q4, 6:42)",
+              "description": "Trent McDuffie's interception of Brock Purdy ended SF's comeback attempt and set up KC's game-sealing drive"
+            },
+            {
+              "number": 3,
+              "title": "Kelce 100th TD (Q4, 2:18)",
+              "description": "Travis Kelce's milestone 100th career TD reception extended KC's lead to 35-28 and put the game out of reach"
+            }
+          ]
+        },
+        {
+          "id": "star-performers",
+          "title": "Star Performers",
+          "type": "three-column-grid",
+          "required": true,
+          "performers": [
+            {
+              "player": "Patrick Mahomes",
+              "team": "KC",
+              "position": "QB",
+              "icon": "⭐",
+              "stats": "28/35, 342 YDS, 4 TD",
+              "highlight": "158.3 Rating",
+              "highlightColor": "green"
+            },
+            {
+              "player": "Travis Kelce",
+              "team": "KC",
+              "position": "TE",
+              "icon": "⭐",
+              "stats": "9 REC, 124 YDS, 2 TD",
+              "highlight": "100th Career TD",
+              "highlightColor": "amber"
+            },
+            {
+              "player": "Christian McCaffrey",
+              "team": "SF",
+              "position": "RB",
+              "icon": "⭐",
+              "stats": "22 CAR, 112 YDS, 1 TD",
+              "highlight": "5th Straight 100+ Game",
+              "highlightColor": "blue"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "historical-context",
+      "order": 8,
+      "title": "Historical Context",
+      "required": true,
+      "priority": "P1",
+      "layout": "two-column-grid",
+      "sections": [
+        {
+          "title": "Head-to-Head History",
+          "type": "key-value-list",
+          "items": [
+            { "label": "All-Time Series", "value": "SF leads 8-7" },
+            { "label": "At Arrowhead Stadium", "value": "KC leads 4-3" },
+            { "label": "Last Meeting", "value": "Super Bowl LVIII" },
+            { "label": "Result", "value": "KC 25, SF 22 (OT)" }
+          ]
+        },
+        {
+          "title": "Notable Context",
+          "type": "bullet-list",
+          "items": [
+            "Super Bowl rematch from February 2024",
+            "Mahomes improved to 3-0 vs 49ers in his career",
+            "First regular season meeting since 2018",
+            "Both teams entered as Super Bowl favorites"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "navigation-tabs",
+      "order": 9,
+      "title": "Navigation Tabs",
+      "required": true,
+      "priority": "P2",
+      "type": "horizontal-tab-bar",
+      "tabs": [
+        { "id": "summary", "label": "Summary", "default": true },
+        { "id": "box-score", "label": "Box Score" },
+        { "id": "team-stats", "label": "Team Stats" },
+        { "id": "scoring", "label": "Scoring" },
+        { "id": "play-by-play", "label": "Play-by-Play" },
+        { "id": "game-info", "label": "Game Info" },
+        { "id": "advanced", "label": "Advanced" },
+        { "id": "videos", "label": "Videos" }
+      ]
+    },
+    {
+      "id": "player-statistics",
+      "order": 10,
+      "title": "Player Statistics (Box Score)",
+      "required": true,
+      "priority": "P0",
+      "type": "tabbed-interface",
+      "tabs": [
+        {
+          "id": "offense",
+          "label": "Offense",
+          "default": true,
+          "subSections": [
+            {
+              "id": "passing",
+              "title": "Passing",
+              "type": "data-table",
+              "columns": [
+                { "key": "player", "label": "Player", "type": "player-name-with-team", "align": "left" },
+                { "key": "completions_attempts", "label": "C/ATT", "type": "fraction", "align": "center" },
+                { "key": "yards", "label": "YDS", "type": "number", "align": "center", "emphasized": true },
+                { "key": "touchdowns", "label": "TD", "type": "number", "align": "center" },
+                { "key": "interceptions", "label": "INT", "type": "number", "align": "center" },
+                { "key": "rating", "label": "RTG", "type": "decimal", "align": "center", "highlighted": true }
+              ],
+              "rows": [
+                {
+                  "player": "P. Mahomes",
+                  "team": "KC",
+                  "completions_attempts": "28/35",
+                  "yards": 342,
+                  "touchdowns": 4,
+                  "interceptions": 0,
+                  "rating": 138.4
+                },
+                {
+                  "player": "B. Purdy",
+                  "team": "SF",
+                  "completions_attempts": "24/38",
+                  "yards": 298,
+                  "touchdowns": 2,
+                  "interceptions": 1,
+                  "rating": 94.2
+                }
+              ]
+            },
+            {
+              "id": "rushing",
+              "title": "Rushing",
+              "type": "data-table",
+              "columns": [
+                { "key": "player", "label": "Player", "type": "player-name-with-team", "align": "left" },
+                { "key": "carries", "label": "CAR", "type": "number", "align": "center" },
+                { "key": "yards", "label": "YDS", "type": "number", "align": "center", "emphasized": true },
+                { "key": "average", "label": "AVG", "type": "decimal", "align": "center" },
+                { "key": "touchdowns", "label": "TD", "type": "number", "align": "center" },
+                { "key": "long", "label": "LONG", "type": "number", "align": "center" }
+              ],
+              "rows": [
+                {
+                  "player": "C. McCaffrey",
+                  "team": "SF",
+                  "carries": 22,
+                  "yards": 112,
+                  "average": 5.1,
+                  "touchdowns": 1,
+                  "long": 31
+                },
+                {
+                  "player": "I. Pacheco",
+                  "team": "KC",
+                  "carries": 18,
+                  "yards": 89,
+                  "average": 4.9,
+                  "touchdowns": 1,
+                  "long": 24
+                },
+                {
+                  "player": "J. Mason",
+                  "team": "SF",
+                  "carries": 8,
+                  "yards": 34,
+                  "average": 4.3,
+                  "touchdowns": 0,
+                  "long": 12
+                }
+              ]
+            },
+            {
+              "id": "receiving",
+              "title": "Receiving",
+              "type": "data-table",
+              "columns": [
+                { "key": "player", "label": "Player", "type": "player-name-with-team-position", "align": "left" },
+                { "key": "receptions", "label": "REC", "type": "number", "align": "center" },
+                { "key": "targets", "label": "TGT", "type": "number", "align": "center" },
+                { "key": "yards", "label": "YDS", "type": "number", "align": "center", "emphasized": true },
+                { "key": "average", "label": "AVG", "type": "decimal", "align": "center" },
+                { "key": "touchdowns", "label": "TD", "type": "number", "align": "center" }
+              ],
+              "rows": [
+                {
+                  "player": "T. Kelce",
+                  "team": "KC",
+                  "position": "TE",
+                  "receptions": 9,
+                  "targets": 11,
+                  "yards": 124,
+                  "average": 13.8,
+                  "touchdowns": 2
+                },
+                {
+                  "player": "B. Aiyuk",
+                  "team": "SF",
+                  "position": "WR",
+                  "receptions": 8,
+                  "targets": 13,
+                  "yards": 118,
+                  "average": 14.8,
+                  "touchdowns": 1
+                },
+                {
+                  "player": "R. Rice",
+                  "team": "KC",
+                  "position": "WR",
+                  "receptions": 7,
+                  "targets": 9,
+                  "yards": 96,
+                  "average": 13.7,
+                  "touchdowns": 1
+                },
+                {
+                  "player": "D. Samuel",
+                  "team": "SF",
+                  "position": "WR",
+                  "receptions": 6,
+                  "targets": 10,
+                  "yards": 82,
+                  "average": 13.7,
+                  "touchdowns": 0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "defense",
+          "label": "Defense",
+          "subSections": [
+            {
+              "id": "tackles-sacks",
+              "title": "Tackles & Sacks",
+              "type": "data-table",
+              "columns": [
+                { "key": "player", "label": "Player", "type": "player-name-with-team-position", "align": "left" },
+                { "key": "total", "label": "TOT", "type": "number", "align": "center", "emphasized": true },
+                { "key": "solo", "label": "SOLO", "type": "number", "align": "center" },
+                { "key": "assisted", "label": "ASST", "type": "number", "align": "center" },
+                { "key": "sacks", "label": "SACKS", "type": "decimal", "align": "center", "highlighted": true },
+                { "key": "tfl", "label": "TFL", "type": "number", "align": "center" },
+                { "key": "pd", "label": "PD", "type": "number", "align": "center" }
+              ],
+              "rows": [
+                {
+                  "player": "N. Bosa",
+                  "team": "SF",
+                  "position": "DE",
+                  "total": 8,
+                  "solo": 6,
+                  "assisted": 2,
+                  "sacks": 2.0,
+                  "tfl": 3,
+                  "pd": 1
+                },
+                {
+                  "player": "C. Jones",
+                  "team": "KC",
+                  "position": "DT",
+                  "total": 7,
+                  "solo": 5,
+                  "assisted": 2,
+                  "sacks": 1.5,
+                  "tfl": 2,
+                  "pd": 0
+                },
+                {
+                  "player": "F. Warner",
+                  "team": "SF",
+                  "position": "LB",
+                  "total": 11,
+                  "solo": 7,
+                  "assisted": 4,
+                  "sacks": 0.0,
+                  "tfl": 1,
+                  "pd": 2
+                },
+                {
+                  "player": "N. Bolton",
+                  "team": "KC",
+                  "position": "LB",
+                  "total": 9,
+                  "solo": 6,
+                  "assisted": 3,
+                  "sacks": 0.0,
+                  "tfl": 0,
+                  "pd": 1
+                }
+              ]
+            },
+            {
+              "id": "interceptions",
+              "title": "Interceptions",
+              "type": "data-table",
+              "columns": [
+                { "key": "player", "label": "Player", "type": "player-name-with-team-position", "align": "left" },
+                { "key": "interceptions", "label": "INT", "type": "number", "align": "center", "highlighted": true },
+                { "key": "yards", "label": "YDS", "type": "number", "align": "center" },
+                { "key": "touchdowns", "label": "TD", "type": "number", "align": "center" },
+                { "key": "long", "label": "LONG", "type": "number", "align": "center" }
+              ],
+              "rows": [
+                {
+                  "player": "T. McDuffie",
+                  "team": "KC",
+                  "position": "CB",
+                  "interceptions": 1,
+                  "yards": 18,
+                  "touchdowns": 0,
+                  "long": 18
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "special-teams",
+          "label": "Special Teams",
+          "subSections": [
+            {
+              "id": "kicking",
+              "title": "Kicking",
+              "type": "data-table",
+              "columns": [
+                { "key": "player", "label": "Player", "type": "player-name-with-team", "align": "left" },
+                { "key": "fg", "label": "FGM/FGA", "type": "fraction", "align": "center" },
+                { "key": "long", "label": "LONG", "type": "number", "align": "center" },
+                { "key": "xp", "label": "XPM/XPA", "type": "fraction", "align": "center" },
+                { "key": "points", "label": "PTS", "type": "number", "align": "center", "emphasized": true }
+              ],
+              "rows": [
+                { "player": "H. Butker", "team": "KC", "fg": "2/2", "long": 48, "xp": "5/5", "points": 11 },
+                { "player": "J. Moody", "team": "SF", "fg": "1/1", "long": 42, "xp": "4/4", "points": 7 }
+              ]
+            },
+            {
+              "id": "punting",
+              "title": "Punting",
+              "type": "data-table",
+              "columns": [
+                { "key": "player", "label": "Player", "type": "player-name-with-team", "align": "left" },
+                { "key": "punts", "label": "PUNTS", "type": "number", "align": "center" },
+                { "key": "yards", "label": "YDS", "type": "number", "align": "center" },
+                { "key": "average", "label": "AVG", "type": "decimal", "align": "center", "emphasized": true },
+                { "key": "long", "label": "LONG", "type": "number", "align": "center" },
+                { "key": "in20", "label": "IN20", "type": "number", "align": "center" }
+              ],
+              "rows": [
+                {
+                  "player": "M. Wishnowsky",
+                  "team": "SF",
+                  "punts": 4,
+                  "yards": 186,
+                  "average": 46.5,
+                  "long": 58,
+                  "in20": 2
+                },
+                {
+                  "player": "T. Townsend",
+                  "team": "KC",
+                  "punts": 3,
+                  "yards": 142,
+                  "average": 47.3,
+                  "long": 52,
+                  "in20": 1
+                }
+              ]
+            },
+            {
+              "id": "returns",
+              "title": "Kick Returns",
+              "type": "data-table",
+              "columns": [
+                { "key": "player", "label": "Player", "type": "player-name-with-team", "align": "left" },
+                { "key": "returns", "label": "RET", "type": "number", "align": "center" },
+                { "key": "yards", "label": "YDS", "type": "number", "align": "center" },
+                { "key": "average", "label": "AVG", "type": "decimal", "align": "center", "emphasized": true },
+                { "key": "long", "label": "LONG", "type": "number", "align": "center" },
+                { "key": "touchdowns", "label": "TD", "type": "number", "align": "center" }
+              ],
+              "rows": [
+                {
+                  "player": "R. James",
+                  "team": "SF",
+                  "returns": 3,
+                  "yards": 68,
+                  "average": 22.7,
+                  "long": 28,
+                  "touchdowns": 0
+                },
+                {
+                  "player": "R. Rice",
+                  "team": "KC",
+                  "returns": 2,
+                  "yards": 51,
+                  "average": 25.5,
+                  "long": 29,
+                  "touchdowns": 0
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scoring-summary",
+      "order": 11,
+      "title": "Scoring Summary",
+      "required": true,
+      "priority": "P0",
+      "type": "chronological-list-by-quarter",
+      "quarters": [
+        {
+          "quarter": "1st Quarter",
+          "plays": [
+            {
+              "time": "8:42",
+              "description": "SF - B. Aiyuk 12 yd pass from B. Purdy (J. Moody kick)",
+              "driveInfo": "9 plays, 75 yards, 4:18",
+              "score": "SF 7-0"
+            },
+            {
+              "time": "3:15",
+              "description": "KC - T. Kelce 8 yd pass from P. Mahomes (H. Butker kick)",
+              "driveInfo": "11 plays, 80 yards, 5:27",
+              "score": "7-7"
+            }
+          ]
+        },
+        {
+          "quarter": "2nd Quarter",
+          "plays": [
+            {
+              "time": "11:23",
+              "description": "KC - R. Rice 24 yd pass from P. Mahomes (H. Butker kick)",
+              "driveInfo": "6 plays, 68 yards, 2:41",
+              "score": "SF 7-14"
+            },
+            {
+              "time": "2:08",
+              "description": "SF - C. McCaffrey 3 yd run (J. Moody kick)",
+              "driveInfo": "12 plays, 85 yards, 6:15",
+              "score": "14-14"
+            }
+          ]
+        },
+        {
+          "quarter": "3rd Quarter",
+          "plays": [
+            {
+              "time": "9:18",
+              "description": "KC - T. Kelce 15 yd pass from P. Mahomes (H. Butker kick)",
+              "driveInfo": "8 plays, 72 yards, 3:52",
+              "score": "SF 14-21"
+            },
+            {
+              "time": "4:33",
+              "description": "SF - D. Samuel 18 yd pass from B. Purdy (J. Moody kick)",
+              "driveInfo": "10 plays, 78 yards, 4:45",
+              "score": "21-21"
+            }
+          ]
+        },
+        {
+          "quarter": "4th Quarter",
+          "plays": [
+            {
+              "time": "8:14",
+              "description": "KC - I. Pacheco 8 yd run (H. Butker kick)",
+              "driveInfo": "7 plays, 58 yards, 3:21",
+              "score": "SF 21-28"
+            },
+            {
+              "time": "5:02",
+              "description": "SF - J. Moody 42 yd field goal",
+              "driveInfo": "8 plays, 51 yards, 3:12",
+              "score": "24-28"
+            },
+            {
+              "time": "2:18",
+              "description": "KC - T. Kelce 6 yd pass from P. Mahomes (H. Butker kick)",
+              "driveInfo": "5 plays, 48 yards, 2:44",
+              "score": "SF 24-35"
+            },
+            {
+              "time": "0:42",
+              "description": "SF - J. Moody 48 yd field goal",
+              "driveInfo": "6 plays, 45 yards, 1:36",
+              "score": "28-35"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "team-statistics",
+      "order": 12,
+      "title": "Team Statistics Comparison",
+      "required": true,
+      "priority": "P0",
+      "type": "tabbed-by-team",
+      "tabs": [
+        {
+          "team": "Kansas City Chiefs",
+          "stats": [
+            { "label": "Total Yards", "value": "398", "type": "large-number" },
+            { "label": "First Downs", "value": "28", "type": "large-number" },
+            { "label": "Passing Yards", "value": "342", "type": "large-number" },
+            { "label": "Rushing Yards", "value": "89", "type": "large-number" },
+            { "label": "Yards Per Play", "value": "6.8", "type": "large-number" },
+            { "label": "Penalties", "value": "4-32", "type": "large-number" },
+            { "label": "Time of Possession", "value": "27:42", "type": "large-number" },
+            { "label": "Turnovers", "value": "0", "type": "large-number", "color": "green" },
+            {
+              "label": "3rd Down Efficiency",
+              "value": "8/14",
+              "subValue": "57%",
+              "type": "large-number-with-percentage"
+            },
+            {
+              "label": "4th Down Efficiency",
+              "value": "1/1",
+              "subValue": "100%",
+              "type": "large-number-with-percentage"
+            },
+            {
+              "label": "Red Zone Efficiency",
+              "value": "4/5",
+              "subValue": "80%",
+              "type": "large-number-with-percentage"
+            },
+            { "label": "Sacks Allowed", "value": "2", "type": "large-number" }
+          ]
+        },
+        {
+          "team": "San Francisco 49ers",
+          "stats": [
+            { "label": "Total Yards", "value": "342", "type": "large-number" },
+            { "label": "First Downs", "value": "24", "type": "large-number" },
+            { "label": "Passing Yards", "value": "298", "type": "large-number" },
+            { "label": "Rushing Yards", "value": "146", "type": "large-number" },
+            { "label": "Yards Per Play", "value": "5.9", "type": "large-number" },
+            { "label": "Penalties", "value": "6-48", "type": "large-number" },
+            { "label": "Time of Possession", "value": "32:18", "type": "large-number" },
+            { "label": "Turnovers", "value": "1", "type": "large-number", "color": "red" },
+            {
+              "label": "3rd Down Efficiency",
+              "value": "6/13",
+              "subValue": "46%",
+              "type": "large-number-with-percentage"
+            },
+            {
+              "label": "4th Down Efficiency",
+              "value": "0/2",
+              "subValue": "0%",
+              "type": "large-number-with-percentage"
+            },
+            {
+              "label": "Red Zone Efficiency",
+              "value": "3/4",
+              "subValue": "75%",
+              "type": "large-number-with-percentage"
+            },
+            { "label": "Sacks Allowed", "value": "3", "type": "large-number" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "game-information-detailed",
+      "order": 13,
+      "title": "Game Information",
+      "required": true,
+      "priority": "P1",
+      "layout": "two-column-grid",
+      "sections": [
+        {
+          "title": "Officials",
+          "type": "key-value-list",
+          "items": [
+            { "label": "Referee", "value": "Carl Cheffers" },
+            { "label": "Umpire", "value": "Roy Ellison" },
+            { "label": "Head Linesman", "value": "Derick Bowers" },
+            { "label": "Line Judge", "value": "Mark Perlman" },
+            { "label": "Field Judge", "value": "Tom Hill" },
+            { "label": "Side Judge", "value": "Eugene Hall" },
+            { "label": "Back Judge", "value": "Greg Steed" }
+          ]
+        },
+        {
+          "title": "Broadcast",
+          "type": "key-value-list",
+          "items": [
+            { "label": "Network", "value": "CBS" },
+            { "label": "Play-by-Play", "value": "Jim Nantz" },
+            { "label": "Color Analyst", "value": "Tony Romo" },
+            { "label": "Sideline", "value": "Tracy Wolfson" }
+          ]
+        },
+        {
+          "title": "Stadium Details",
+          "type": "key-value-list",
+          "items": [
+            { "label": "Capacity", "value": "76,416" },
+            { "label": "Surface", "value": "Grass" },
+            { "label": "Roof", "value": "Open" },
+            { "label": "Game Duration", "value": "3:18" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "advanced-analytics",
+      "order": 14,
+      "title": "Advanced Analytics",
+      "required": true,
+      "priority": "P2",
+      "sections": [
+        {
+          "id": "win-probability-chart",
+          "title": "Win Probability",
+          "type": "chart-placeholder",
+          "description": "Interactive chart showing probability over time",
+          "height": "256px"
+        },
+        {
+          "id": "epa-metrics",
+          "title": "Expected Points Added (EPA)",
+          "type": "comparison-bars",
+          "layout": "two-column-grid",
+          "metrics": [
+            {
+              "label": "Total EPA",
+              "homeValue": "+12.4",
+              "homeColor": "green",
+              "awayValue": "-8.2",
+              "awayColor": "red",
+              "homePercentage": 60,
+              "awayPercentage": 40
+            },
+            {
+              "label": "Passing EPA",
+              "homeValue": "+18.6",
+              "homeColor": "green",
+              "awayValue": "+6.4",
+              "awayColor": "zinc",
+              "homePercentage": 74,
+              "awayPercentage": 26
+            },
+            {
+              "label": "Rushing EPA",
+              "homeValue": "-6.2",
+              "homeColor": "red",
+              "awayValue": "+8.8",
+              "awayColor": "green",
+              "homePercentage": 41,
+              "awayPercentage": 59
+            }
+          ]
+        },
+        {
+          "id": "success-rate",
+          "title": "Success Rate & Explosive Plays",
+          "type": "metrics-list",
+          "metrics": [
+            {
+              "label": "Success Rate",
+              "homeValue": "58%",
+              "homeColor": "green",
+              "awayValue": "48%",
+              "awayColor": "zinc",
+              "showBar": true,
+              "homePercentage": 58,
+              "awayPercentage": 42
+            },
+            {
+              "label": "Explosive Plays (20+ yards)",
+              "homeValue": "8",
+              "homeColor": "green",
+              "awayValue": "6",
+              "awayColor": "zinc",
+              "showBar": false
+            },
+            {
+              "label": "Average Yards Per Play",
+              "homeValue": "6.8",
+              "homeColor": "green",
+              "awayValue": "5.9",
+              "awayColor": "zinc",
+              "showBar": false
+            },
+            {
+              "label": "Drive Efficiency",
+              "homeValue": "2.8 pts/drive",
+              "homeColor": "green",
+              "awayValue": "2.3 pts/drive",
+              "awayColor": "zinc",
+              "showBar": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "video-highlights",
+      "order": 15,
+      "title": "Video Highlights",
+      "required": true,
+      "priority": "P2",
+      "layout": "three-column-grid",
+      "videos": [
+        {
+          "title": "Mahomes 300th TD Pass",
+          "description": "Historic 24-yard TD to Rice",
+          "duration": "2:34",
+          "category": "Milestone",
+          "categoryColor": "amber",
+          "thumbnail": "gradient-red"
+        },
+        {
+          "title": "McDuffie Game-Sealing INT",
+          "description": "Crucial 4th quarter interception",
+          "duration": "1:18",
+          "category": "Turning Point",
+          "categoryColor": "red",
+          "thumbnail": "gradient-blue"
+        },
+        {
+          "title": "Kelce 100th Career TD",
+          "description": "6-yard TD reception milestone",
+          "duration": "1:52",
+          "category": "Milestone",
+          "categoryColor": "amber",
+          "thumbnail": "gradient-green"
+        },
+        {
+          "title": "McCaffrey 31-Yard Run",
+          "description": "Explosive rushing play",
+          "duration": "2:08",
+          "category": "Big Play",
+          "categoryColor": "green",
+          "thumbnail": "gradient-purple"
+        },
+        {
+          "title": "Game Highlights",
+          "description": "Full game recap and analysis",
+          "duration": "3:42",
+          "category": "Full Recap",
+          "categoryColor": "blue",
+          "thumbnail": "gradient-orange"
+        },
+        {
+          "title": "Post-Game Interviews",
+          "description": "Mahomes & Kelce reactions",
+          "duration": "4:15",
+          "category": "Interviews",
+          "categoryColor": "purple",
+          "thumbnail": "gradient-cyan"
+        }
+      ]
+    }
+  ],
+  "designNotes": {
+    "styleVariations": "Only visual design/styling changes between implementations. All content structure, data fields, and sections remain 100% identical.",
+    "requiredComponents": [
+      "Card/Container components with consistent styling",
+      "Data tables with hover states",
+      "Tab navigation (horizontal and vertical)",
+      "Badge/Pill components for status indicators",
+      "Progress bars for visual comparisons",
+      "Grid layouts (2-column, 3-column, responsive)",
+      "Typography hierarchy (headings, body, labels, mono for stats)"
+    ],
+    "interactionPatterns": [
+      "Hover states on table rows",
+      "Tab switching for player stats and team stats",
+      "Expandable/collapsible sections (optional)",
+      "Smooth transitions between states"
+    ],
+    "responsiveConsiderations": [
+      "Mobile: Stack columns vertically, horizontal scroll for tables",
+      "Tablet: 2-column layouts, maintain table structure",
+      "Desktop: Full 3-column layouts, side-by-side comparisons"
+    ]
+  },
+  "implementationGuidelines": {
+    "dataStructure": "All data should be mockable/replaceable with real API data",
+    "componentReuse": "Maximize component reuse across sections (cards, tables, badges)",
+    "accessibility": "Ensure proper ARIA labels, semantic HTML, keyboard navigation",
+    "performance": "Lazy load video thumbnails, progressive enhancement for charts",
+    "consistency": "Maintain visual consistency within each style variation"
+  }
+}

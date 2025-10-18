@@ -1,0 +1,41 @@
+{
+  "name": "nfl-stats-platform",
+  "version": "1.0.0",
+  "description": "NFL Stats Platform - 2025-26 Season Data Loading Scripts",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "seed:all": "node scripts/seed/01-teams.js && node scripts/seed/02-stadiums.js && node scripts/seed/03-players.js && node scripts/seed/04-schedule.js",
+    "seed:teams": "node scripts/seed/01-teams.js",
+    "seed:stadiums": "node scripts/seed/02-stadiums.js",
+    "seed:players": "node scripts/seed/03-players.js",
+    "seed:schedule": "node scripts/seed/04-schedule.js",
+    "scrape:game-stats": "node scripts/scrapers/game-stats-scraper.js",
+    "scrape:live": "node scripts/scrapers/live-games-scraper.js",
+    "scrape:injuries": "node scripts/scrapers/injuries-scraper.js",
+    "scrape:roster": "node scripts/scrapers/roster-updates-scraper.js",
+    "scheduler": "node scripts/scheduler.js",
+    "test:db": "node scripts/utils/test-connection.js"
+  },
+  "keywords": [
+    "nfl",
+    "stats",
+    "sports",
+    "data",
+    "scraper",
+    "supabase"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.7",
+    "axios": "^1.6.7",
+    "dotenv": "^16.4.1",
+    "node-cron": "^3.0.3",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

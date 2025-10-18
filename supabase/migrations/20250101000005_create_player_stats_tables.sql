@@ -135,7 +135,7 @@ CREATE TABLE player_game_stats (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP DEFAULT NULL,
     PRIMARY KEY (player_game_id, season),
-    CONSTRAINT uq_player_game UNIQUE (player_id, game_id),
+    CONSTRAINT uq_player_game UNIQUE (player_id, game_id, season),
     CONSTRAINT fk_player_game_stats_player FOREIGN KEY (player_id) REFERENCES players(player_id) ON DELETE CASCADE,
     CONSTRAINT fk_player_game_stats_team FOREIGN KEY (team_id) REFERENCES teams(team_id),
     CONSTRAINT fk_player_game_stats_opponent FOREIGN KEY (opponent_team_id) REFERENCES teams(team_id)
