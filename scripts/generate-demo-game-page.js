@@ -126,7 +126,7 @@ async function fetchGameData(gameId) {
     .select('*')
     .eq('game_id', gameId)
     .order('quarter', { ascending: true })
-    .order('time_remaining', { ascending: false })
+    .order('time_remaining_seconds', { ascending: false })
 
   // Betting lines
   const { data: bettingLines } = await supabase
@@ -155,6 +155,15 @@ async function fetchGameData(gameId) {
     bettingLines: bettingLines || [],
     epaData: epaData || []
   }
+}
+
+/**
+ * Format seconds to MM:SS format
+ */
+function formatTime(seconds) {
+  const minutes = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${minutes}:${secs.toString().padStart(2, '0')}`
 }
 
 /**
@@ -1167,8 +1176,8 @@ function generateHTML(data) {
                     <h4 style="color: var(--accent-blue); margin-bottom: 16px; font-family: var(--font-display);">${['1st', '2nd', '3rd', '4th'][parseInt(quarter) - 1]} Quarter</h4>
                     ${plays.map(play => `
                         <div class="scoring-play">
-                            <div class="play-time">${play.time_remaining || 'Unknown'}</div>
-                            <div class="play-description">${play.play_description || 'N/A'}</div>
+                            <div class="play-time">${play.time_remaining_seconds ? formatTime(play.time_remaining_seconds) : 'Unknown'}</div>
+                            <div class="play-description">${play.description || 'N/A'}</div>
                             <div class="play-meta">
                                 <span>${play.scoring_team_id || 'Unknown'} scores</span>
                                 <span>Score: ${play.away_score || 0}-${play.home_score || 0}</span>
