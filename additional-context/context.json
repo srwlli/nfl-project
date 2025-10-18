@@ -1,0 +1,568 @@
+{
+  "name": "NFL Frontend UI/UX Component Library",
+  "version": "1.0.0",
+  "description": "Comprehensive frontend design specifications and component library complementing production-ready backend",
+
+  "status": {
+    "backend": "COMPLETE & TESTED (26 files, 11 API endpoints)",
+    "frontend_specs": "8 COMPLETE SPECIFICATIONS CREATED",
+    "frontend_design_system": "PLANNED (NEXT)",
+    "overall_readiness": "67% (Backend ready, Frontend specs ready, Design system pending)"
+  },
+
+  "mission": "Build a comprehensive frontend UI/UX system that complements the production-ready NFL data backend, with consistent design patterns, components, and user experiences across all pages",
+
+  "completed_specifications": {
+    "1_scorebug": {
+      "file": "SCOREBUG_STUB.md",
+      "purpose": "Live game score display component",
+      "research": "ESPN, Fox Sports, NFL.com competitive analysis",
+      "key_elements": [
+        "Score display (primary)",
+        "Team identity (logos, abbreviations)",
+        "Game status (quarter, time)",
+        "Broadcast network",
+        "Team records",
+        "Betting information",
+        "Key player stats",
+        "Down & distance"
+      ],
+      "implementation_phases": 3,
+      "priority": "HIGH (core feature)"
+    },
+    "2_historical_stats": {
+      "file": "HISTORICAL_STATS_DISPLAY.md",
+      "purpose": "Historical NFL data presentation (1970-2024)",
+      "research": "Pro Football Reference, Baseball Reference, Sports Reference Network",
+      "key_elements": [
+        "Multi-door entry points (year, team, player, leader, era)",
+        "Breadcrumb navigation",
+        "Sortable tables",
+        "Filtering (year, position, team, stat leader, era)",
+        "Search (autocomplete, fuzzy matching)",
+        "Context statistics (rankings, comparisons)",
+        "Data freshness clarity",
+        "Responsive design (mobile, tablet, desktop)"
+      ],
+      "implementation_phases": 3,
+      "priority": "HIGH (feature differentiator)"
+    },
+    "3_player_cards": {
+      "file": "PLAYER_CARDS_SPECIFICATION.md",
+      "purpose": "Individual player display (summary and detail views)",
+      "research": "Baseball Reference, Basketball Reference, theScore, Hudl",
+      "card_levels": [
+        "Micro card (120-150px, in lists/search)",
+        "Standard card (200-250px, rosters/featured)",
+        "Full player page (detail view)"
+      ],
+      "key_elements": [
+        "Player photo (headshot)",
+        "Jersey number",
+        "Position + physical attributes",
+        "Team branding",
+        "Key stats by position",
+        "Career achievements",
+        "Pro Bowl/All-Pro indicators",
+        "Hall of Fame status",
+        "Interactive elements"
+      ],
+      "implementation_phases": 3,
+      "priority": "HIGH (core component)"
+    },
+    "4_team_pages": {
+      "file": "TEAM_PAGES_SPECIFICATION.md",
+      "purpose": "Team information pages (roster, schedule, stats, standings)",
+      "research": "Pro Football Reference, Fox Sports, Baseball Reference",
+      "key_sections": [
+        "Team header (logo, record, standings, next game)",
+        "Roster (filterable table)",
+        "Schedule (compact and full views)",
+        "Team statistics (offensive, defensive, special teams)",
+        "Standings (division, conference, league)",
+        "Key players highlight",
+        "News/transactions",
+        "Franchise history"
+      ],
+      "implementation_phases": 3,
+      "priority": "HIGH (core feature)"
+    },
+    "5_stadiums": {
+      "file": "STADIUM_PAGE_SPECIFICATION.md",
+      "purpose": "NFL stadium/venue pages with comprehensive facility information",
+      "research": "Pro Football Reference, Wikipedia, StadiumsOfProfootball.com, MLB/NBA venue patterns",
+      "key_sections": [
+        "Stadium header (photo, name, location, capacity, basic facts)",
+        "Quick facts (capacity, opened, surface, roof, parking)",
+        "Team timeline (all teams that played there)",
+        "Notable players (Hall of Famers who played there)",
+        "Stadium records (best performances at venue)",
+        "Amenities & features (parking, food, accessibility)",
+        "Directions & getting there (map, parking info, transit)",
+        "Game history (searchable by year/team)",
+        "Photos & media (gallery, videos, tours)",
+        "Comparisons (vs other stadiums)"
+      ],
+      "implementation_phases": 3,
+      "priority": "HIGH (core feature)"
+    },
+    "6_all_time_games": {
+      "file": "ALL_TIME_GAMES_SPECIFICATION.md",
+      "purpose": "Greatest, most memorable, and historically significant NFL games",
+      "research": "Pro Football Reference, Wikipedia greatest games, Baseball Reference championship series patterns",
+      "key_sections": [
+        "All-time games browser (sortable, filterable table)",
+        "Game detail pages (narrative + statistics)",
+        "Game categories (Super Bowls, Playoffs, Regular Season)",
+        "Era-based organization (1960s through 2020s)",
+        "Game cards (for list views)",
+        "Timeline/bracket views (season progression)",
+        "Stat comparison views (top performances)",
+        "Storytelling elements (context, drama, legacy)"
+      ],
+      "implementation_phases": 3,
+      "priority": "HIGH (differentiator feature)"
+    },
+    "7_super_bowl": {
+      "file": "SUPER_BOWL_SPECIFICATION.md",
+      "purpose": "Dedicated Super Bowl explorer and historical database (58 Super Bowls, 1967-2024)",
+      "research": "Pro Football Reference Super Bowl data, Wikipedia era-based organization, championship series patterns",
+      "key_sections": [
+        "Super Bowl hub (current + archive)",
+        "Super Bowl directory (all 58 games table)",
+        "Game detail pages (narrative, stats, records)",
+        "Era-based browser (organized by 1960s-2020s)",
+        "Records browser (all-time, franchises, players)",
+        "Team-specific Super Bowl history filter",
+        "Game comparison tool (head-to-head analysis)",
+        "Historical context and significance"
+      ],
+      "implementation_phases": 3,
+      "priority": "HIGH (flagship feature)"
+    },
+    "8_historic_matchups": {
+      "file": "HISTORIC_MATCHUPS_SPECIFICATION.md",
+      "purpose": "Legendary NFL rivalries and historic head-to-head matchups between teams",
+      "research": "Pro Football Reference team records, Baseball Reference rivalry tracking, Sports Reference patterns",
+      "key_sections": [
+        "Rivalry hub (all NFL rivalries organized)",
+        "Rivalry detail pages (all-time records, recent history)",
+        "Head-to-head browser (all matchups)",
+        "Season matchup cards (current season)",
+        "Rivalry comparison tool (analysis)",
+        "Rivalry era breakdown (evolution over time)",
+        "Rivalry statistics widget",
+        "Legendary moments highlighting"
+      ],
+      "implementation_phases": 3,
+      "priority": "HIGH (engagement driver)"
+    }
+  },
+
+  "identified_complementary_needs": {
+    "high_priority": [
+      {
+        "name": "Design System & Brand Guidelines",
+        "purpose": "Unified visual language across all components",
+        "includes": [
+          "Color palette (team colors, status, semantic)",
+          "Typography (fonts, sizes, weights, line heights)",
+          "Spacing system (margins, padding, gaps)",
+          "Component library (buttons, badges, chips, modals)",
+          "Icons (position, stat, action icons)",
+          "Responsive breakpoints",
+          "Accessibility standards"
+        ],
+        "priority": "CRITICAL",
+        "effort": "3-4 days",
+        "blocks_implementation": true
+      },
+      {
+        "name": "Navigation Architecture",
+        "purpose": "Site structure and information hierarchy",
+        "includes": [
+          "Site map / information hierarchy",
+          "Main navigation structure",
+          "Breadcrumb system",
+          "Footer structure",
+          "Mobile menu patterns",
+          "Tab navigation",
+          "Sidebar patterns"
+        ],
+        "priority": "CRITICAL",
+        "effort": "2-3 days",
+        "blocks_implementation": false
+      },
+      {
+        "name": "Search & Filter Interface",
+        "purpose": "Data discovery and exploration",
+        "includes": [
+          "Global search (autocomplete, fuzzy matching)",
+          "Advanced filters (position, team, era, stat ranges)",
+          "Saved searches",
+          "Search results page design",
+          "Filter UI patterns",
+          "Clear all filters",
+          "Search history"
+        ],
+        "priority": "CRITICAL",
+        "effort": "3-4 days",
+        "blocks_implementation": false
+      },
+      {
+        "name": "Data Tables Standard",
+        "purpose": "Comprehensive table design patterns",
+        "includes": [
+          "Column header design",
+          "Sorting indicators",
+          "Pagination vs infinite scroll",
+          "Responsive table behavior",
+          "Expandable rows",
+          "Highlighting/selection",
+          "Color coding patterns",
+          "Empty states"
+        ],
+        "priority": "CRITICAL",
+        "effort": "2-3 days",
+        "blocks_implementation": false
+      },
+      {
+        "name": "Real-time Updates & Notifications",
+        "purpose": "Live score updates and alerts",
+        "includes": [
+          "Live score update mechanism",
+          "Notification design (toast, banner, modal)",
+          "Breaking news alerts",
+          "Injury updates",
+          "Score change animations",
+          "WebSocket vs polling strategy",
+          "Sound notifications"
+        ],
+        "priority": "HIGH",
+        "effort": "3-4 days",
+        "blocks_implementation": false
+      },
+      {
+        "name": "Error & Empty States",
+        "purpose": "Graceful handling of edge cases",
+        "includes": [
+          "404 error pages",
+          "500 error pages",
+          "Loading states (skeleton screens)",
+          "No data / empty result states",
+          "Offline state",
+          "Connection lost",
+          "Retry mechanisms"
+        ],
+        "priority": "HIGH",
+        "effort": "2 days",
+        "blocks_implementation": false
+      }
+    ],
+    "medium_priority": [
+      {
+        "name": "Comparison Tools",
+        "purpose": "Compare players, teams, eras side-by-side",
+        "includes": [
+          "Player vs player comparison",
+          "Team vs team comparison",
+          "Era comparison (1990s vs 2010s)",
+          "Comparison view design",
+          "Shared stats highlighting",
+          "Export comparison"
+        ],
+        "priority": "MEDIUM",
+        "effort": "2-3 days"
+      },
+      {
+        "name": "Form Design",
+        "purpose": "User input interfaces",
+        "includes": [
+          "Betting slip entry",
+          "Player search form",
+          "Advanced query builder",
+          "Filter forms",
+          "Input validation",
+          "Error messages",
+          "Success states"
+        ],
+        "priority": "MEDIUM",
+        "effort": "2-3 days"
+      },
+      {
+        "name": "Mobile Navigation",
+        "purpose": "Mobile-specific navigation patterns",
+        "includes": [
+          "Hamburger menu design",
+          "Mobile menu structure",
+          "Touch-friendly sizing",
+          "Drawer navigation",
+          "Bottom navigation bar",
+          "Tab bar on mobile",
+          "Back button behavior"
+        ],
+        "priority": "MEDIUM",
+        "effort": "2 days"
+      },
+      {
+        "name": "Accessibility Guidelines",
+        "purpose": "WCAG compliance and inclusive design",
+        "includes": [
+          "WCAG 2.1 Level AA compliance",
+          "Keyboard navigation",
+          "Screen reader support",
+          "Color contrast standards",
+          "Focus indicators",
+          "ARIA labels",
+          "Testing procedures"
+        ],
+        "priority": "MEDIUM",
+        "effort": "2-3 days"
+      },
+      {
+        "name": "Animations & Transitions",
+        "purpose": "Visual feedback and polish",
+        "includes": [
+          "Hover states",
+          "Page transitions",
+          "Loading animations",
+          "Score update animations",
+          "Timing and easing functions",
+          "Micro-interactions",
+          "Performance considerations"
+        ],
+        "priority": "MEDIUM",
+        "effort": "2-3 days"
+      }
+    ],
+    "lower_priority": [
+      {
+        "name": "Betting Integration",
+        "purpose": "Display odds and betting-related info",
+        "includes": [
+          "Odds display",
+          "Spread visualization",
+          "Moneyline display",
+          "Betting slip design",
+          "Line movement history",
+          "Betting alerts"
+        ],
+        "priority": "LOW (if betting feature added)",
+        "effort": "2-3 days"
+      },
+      {
+        "name": "User Preferences",
+        "purpose": "Personalization options",
+        "includes": [
+          "Dark mode / light mode",
+          "Layout density (compact, standard, expanded)",
+          "Favorite teams",
+          "Favorite players",
+          "Data update frequency",
+          "Notification preferences"
+        ],
+        "priority": "LOW (Phase 2+)",
+        "effort": "2 days"
+      },
+      {
+        "name": "Performance Standards",
+        "purpose": "Speed and optimization targets",
+        "includes": [
+          "Page load targets (< 2 seconds)",
+          "Image optimization",
+          "Lazy loading strategy",
+          "Caching strategy",
+          "Bundle size limits",
+          "Performance monitoring"
+        ],
+        "priority": "LOW (ongoing)",
+        "effort": "Ongoing"
+      },
+      {
+        "name": "Video Player Interface",
+        "purpose": "Game highlights and video display",
+        "includes": [
+          "Video player controls",
+          "Highlight clips",
+          "Game footage",
+          "Replay timestamps",
+          "Quality options",
+          "Autoplay settings"
+        ],
+        "priority": "LOW (Phase 2+)",
+        "effort": "3-4 days"
+      }
+    ]
+  },
+
+  "implementation_roadmap": {
+    "phase_1_foundation": {
+      "name": "Design System & Navigation (Week 1-2)",
+      "deliverables": [
+        "Design System & Brand Guidelines (complete)",
+        "Navigation Architecture (complete)",
+        "Search & Filter Interface (complete)"
+      ],
+      "blocked_without": "These are critical; nothing else can start until complete",
+      "effort": "7-10 days"
+    },
+    "phase_2_components": {
+      "name": "Core Components (Week 3-4)",
+      "deliverables": [
+        "Data Tables Standard (complete)",
+        "Error & Empty States (complete)",
+        "Forms & Inputs (complete)"
+      ],
+      "depends_on": "Phase 1 complete",
+      "effort": "6-8 days"
+    },
+    "phase_3_features": {
+      "name": "Feature Implementations (Week 5-6)",
+      "deliverables": [
+        "Scorebug (Phase 1 MVP)",
+        "Historical Stats Display (Phase 1 MVP)",
+        "Player Cards (Phase 1 MVP)",
+        "Team Pages (Phase 1 MVP)"
+      ],
+      "depends_on": "Phase 1-2 complete",
+      "effort": "8-10 days"
+    },
+    "phase_4_enhancements": {
+      "name": "UX Enhancements (Week 7-8)",
+      "deliverables": [
+        "Real-time Updates & Notifications",
+        "Mobile Navigation refinement",
+        "Animations & Transitions"
+      ],
+      "depends_on": "Phase 3 MVP complete",
+      "effort": "6-8 days"
+    },
+    "phase_5_advanced": {
+      "name": "Advanced Features (Week 9+)",
+      "deliverables": [
+        "Comparison Tools",
+        "User Preferences",
+        "Video Player Interface",
+        "Betting Integration (if applicable)"
+      ],
+      "depends_on": "Core product working well",
+      "effort": "Ongoing"
+    }
+  },
+
+  "recommended_tech_stack": {
+    "framework": "Next.js (React)",
+    "component_library": "Shadcn/ui or Material-UI",
+    "styling": "Tailwind CSS or CSS Modules",
+    "state_management": "React Context or Redux",
+    "real_time": "Socket.io or Supabase Realtime",
+    "animations": "Framer Motion or React Spring",
+    "forms": "React Hook Form or Formik",
+    "data_tables": "TanStack Table (React Table)",
+    "charts": "Recharts or Chart.js",
+    "testing": "Jest + React Testing Library",
+    "accessibility": "Axe DevTools + WAVE"
+  },
+
+  "backend_api_requirements": {
+    "endpoints_used": 11,
+    "data_types_accessible": 10,
+    "real_time_capability": "WebSocket via Supabase or Socket.io",
+    "historical_data_access": "All endpoints support season parameter",
+    "filtering_support": "Season, position, team, stat ranges",
+    "search_support": "Player/team/stat name autocomplete"
+  },
+
+  "design_principles": [
+    "Mobile-first responsive design",
+    "Accessibility (WCAG 2.1 Level AA minimum)",
+    "Performance (sub-2 second page loads)",
+    "Data-driven (stats are primary, stories secondary)",
+    "Consistency (Design System enforced everywhere)",
+    "Clarity (information hierarchy always clear)",
+    "Feedback (user always knows what's happening)",
+    "Efficiency (power users can work quickly)"
+  ],
+
+  "constraints": {
+    "must_preserve": [
+      "All backend API contracts unchanged",
+      "2025 data validation (no 2024 data visible)",
+      "Backend performance (no excessive API calls)"
+    ],
+    "must_support": [
+      "Mobile (iOS, Android browsers)",
+      "Tablet (iPad, Android tablets)",
+      "Desktop (Chrome, Safari, Firefox, Edge)",
+      "Keyboard navigation",
+      "Screen readers"
+    ],
+    "must_not": [
+      "Break existing backend functionality",
+      "Compromise data accuracy",
+      "Ignore accessibility requirements",
+      "Deploy without testing"
+    ]
+  },
+
+  "success_criteria": [
+    "All 8 component specs implemented without regression",
+    "Design System applied consistently across all pages",
+    "All pages mobile responsive and touch-friendly",
+    "Search/filters working across all data types",
+    "Real-time score updates working within 2-3 seconds",
+    "Accessibility audit passes (WCAG 2.1 AA)",
+    "Performance targets met (< 2 second load)",
+    "All tests passing (E2E and unit)",
+    "No console errors or warnings",
+    "Users can find any data within 2-3 clicks"
+  ],
+
+  "next_immediate_steps": [
+    "1. Approve this context.json (frontend roadmap locked)",
+    "2. Create Design System & Brand Guidelines spec",
+    "3. Create Navigation Architecture spec",
+    "4. Create Search & Filter Interface spec",
+    "5. Review Design System with team",
+    "6. Begin Phase 1 implementation"
+  ],
+
+  "resources": {
+    "frontend_dir": "C:\\Users\\willh\\Desktop\\projects - current-location\\nfl-scraper\\next-scraper",
+    "components_dir": "C:\\Users\\willh\\Desktop\\projects - current-location\\nfl-scraper\\next-scraper\\coderef\\front-end\\components",
+    "backend_api": "C:\\Users\\willh\\Desktop\\projects - current-location\\nfl-scraper\\next-scraper\\backend",
+    "specifications_count": 8,
+    "specifications_list": [
+      "SCOREBUG_STUB.md",
+      "HISTORICAL_STATS_DISPLAY.md",
+      "PLAYER_CARDS_SPECIFICATION.md",
+      "TEAM_PAGES_SPECIFICATION.md",
+      "STADIUM_PAGE_SPECIFICATION.md",
+      "ALL_TIME_GAMES_SPECIFICATION.md",
+      "SUPER_BOWL_SPECIFICATION.md",
+      "HISTORIC_MATCHUPS_SPECIFICATION.md"
+    ],
+    "specifications_created": "2025-10-16"
+  },
+
+  "metadata": {
+    "created": "2025-10-16",
+    "updated": "2025-10-16",
+    "created_by": "Claude Code",
+    "status": "COMPREHENSIVE FRONTEND SPECIFICATIONS COMPLETE - 8 CORE COMPONENTS DESIGNED",
+    "backend_status": "PRODUCTION READY",
+    "specifications_completed": 8,
+    "frontend_readiness": "67% (8 specs complete, design system pending)",
+    "core_components": [
+      "Live Game Display (Scorebug)",
+      "Historical Data (1970-2024)",
+      "Player Cards & Profiles",
+      "Team Pages",
+      "Stadium Pages",
+      "All-Time Greatest Games",
+      "Super Bowl Explorer",
+      "Historic Rivalries & Matchups"
+    ],
+    "overall_project_progress": "Backend 100%, Frontend specs 100%, Frontend design 0%, Frontend implementation 0%"
+  }
+}

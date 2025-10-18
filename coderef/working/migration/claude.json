@@ -1,0 +1,197 @@
+{
+  "name": "NFL Backend Migration & Resource Extraction",
+  "version": "1.0.0",
+  "description": "Comprehensive migration of NFL betting backend system with complete resource extraction from original app",
+
+  "task": {
+    "title": "Migrate NFL Backend & Extract Resources",
+    "status": "ready_for_execution",
+    "priority": "high"
+  },
+
+  "context_file": {
+    "path": "./context.json",
+    "format": "MCP /gather-context format",
+    "updated": "2025-10-16"
+  },
+
+  "entry_point": {
+    "file": "./AGENT_ENTRY_POINT.md",
+    "description": "Complete step-by-step guide for agent execution",
+    "phases": 3,
+    "expected_duration_hours": 2
+  },
+
+  "source_locations": {
+    "original_app": "C:\\Users\\willh\\Desktop\\projects - current-location\\nfl-scraper",
+    "backend_code": "C:\\Users\\willh\\Desktop\\projects - current-location\\nfl-scraper\\next-scraper\\backend",
+    "working_directory": "C:\\Users\\willh\\Desktop\\projects - current-location\\nfl-scraper\\next-scraper\\coderef\\working\\migration"
+  },
+
+  "output_locations": {
+    "additional_context": "C:\\Users\\willh\\Desktop\\projects - current-location\\nfl-scraper\\next-scraper\\additional-context",
+    "folder_structure": {
+      "1_DATA_PROCESSING_SCRIPTS": "All scripts that process NFL data",
+      "2_REPORTS_ANALYSIS": "All reports and analysis documents",
+      "3_API_SOURCES": "All API integrations and source code",
+      "4_BETTING_DATA_SOURCES": "All betting data sources and types",
+      "5_COMPLETE_SOURCE_INVENTORY": "Complete machine-readable inventory (JSON)"
+    }
+  },
+
+  "phases": {
+    "phase_1": {
+      "name": "Identify All Resources from Original App",
+      "steps": [
+        "1.1: Locate original app directory",
+        "1.2: Find and document data processing scripts",
+        "1.3: Find and extract reports/analysis documents",
+        "1.4: Map all API source integrations",
+        "1.5: Catalog all betting data sources",
+        "1.6: Create comprehensive source inventory"
+      ],
+      "deliverables": [
+        "1_DATA_PROCESSING_SCRIPTS.md",
+        "2_REPORTS_ANALYSIS.md",
+        "3_API_SOURCES_CATALOG.md",
+        "4_BETTING_DATA_SOURCES.md",
+        "5_COMPLETE_SOURCE_INVENTORY.json"
+      ]
+    },
+
+    "phase_2": {
+      "name": "Organize into additional-context Folder",
+      "steps": [
+        "2.1: Create folder structure",
+        "2.2: Create README for each section",
+        "2.3: Create master INDEX.md",
+        "2.4: Copy all resources to folders"
+      ],
+      "deliverables": [
+        "additional-context/1_DATA_PROCESSING_SCRIPTS/",
+        "additional-context/2_REPORTS_ANALYSIS/",
+        "additional-context/3_API_SOURCES/",
+        "additional-context/4_BETTING_DATA_SOURCES/",
+        "additional-context/INDEX.md"
+      ]
+    },
+
+    "phase_3": {
+      "name": "Verification & Completion",
+      "steps": [
+        "3.1: Verify all resources extracted",
+        "3.2: Verify backend functionality unchanged",
+        "3.3: Create extraction report",
+        "3.4: Mark migration complete"
+      ],
+      "deliverables": [
+        "additional-context/EXTRACTION_REPORT.md",
+        "Verification checklist (all items ✅)"
+      ]
+    }
+  },
+
+  "resources_to_extract": {
+    "data_processing_scripts": {
+      "description": "All Python scripts that process NFL data",
+      "expected_count": "4-6",
+      "examples": [
+        "fetch_team_data.py",
+        "generate_data_index.py",
+        "scrape_team_stats_data.py",
+        "scrape_everything.py"
+      ]
+    },
+
+    "reports_and_analysis": {
+      "description": "All .md files containing reports and analysis",
+      "expected_count": "3-5",
+      "examples": [
+        "REPORT.md",
+        "REPORT_BACKEND.md",
+        "CHANGELOG.md"
+      ]
+    },
+
+    "api_sources": {
+      "description": "All external data source integrations",
+      "expected_count": "5+",
+      "types": [
+        "nflreadpy - Primary source",
+        "nflscraPy - Secondary source",
+        "sportsref-nfl - Tertiary source",
+        "ESPN API - Live data",
+        "Others - Any additional sources"
+      ]
+    },
+
+    "betting_data_sources": {
+      "description": "All betting odds and line sources",
+      "expected_count": "6+",
+      "types": [
+        "Spread lines (home/away)",
+        "Total lines (over/under)",
+        "Moneylines (home/away)",
+        "ATS records",
+        "Weather data",
+        "Rest days"
+      ]
+    }
+  },
+
+  "constraints": {
+    "must_preserve": [
+      "All 26 backend code files",
+      "All 9 documentation files",
+      "Backend API functionality",
+      "2024 data prevention (3-layer validation)",
+      "Database schema"
+    ],
+    "must_not": [
+      "Delete any original files",
+      "Modify backend code",
+      "Change API endpoints",
+      "Disable security validation",
+      "Break existing functionality"
+    ],
+    "must_create": [
+      "Organized folder structure",
+      "Comprehensive documentation",
+      "Complete source inventory",
+      "Navigation indexes",
+      "Extraction report"
+    ]
+  },
+
+  "success_criteria": [
+    "All original app resources identified and documented",
+    "Complete source inventory created (JSON format)",
+    "All resources organized logically",
+    "Easy navigation from root level",
+    "Backend 100% functional",
+    "2024 data prevention active",
+    "All documentation preserved and indexed",
+    "Ready for next phase (deployment)"
+  ],
+
+  "next_phase": {
+    "name": "Deployment to Supabase",
+    "after_this_completes": "Run /analyze-for-planning workflow",
+    "status": "awaiting_migration_completion"
+  },
+
+  "agent_instructions": {
+    "start": "Read AGENT_ENTRY_POINT.md for complete instructions",
+    "reference": "Check context.json for requirements and constraints",
+    "execute": "Follow Phase 1 → Phase 2 → Phase 3 in order",
+    "verify": "Use success_criteria checklist to confirm completion",
+    "report": "Document findings in EXTRACTION_REPORT.md"
+  },
+
+  "metadata": {
+    "created": "2025-10-16",
+    "created_by": "Claude Code",
+    "status": "READY FOR AGENT EXECUTION",
+    "execution_readiness": "100%"
+  }
+}

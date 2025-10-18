@@ -1,0 +1,476 @@
+{
+  "feature_name": "historical-data",
+  "version": "1.0.0",
+  "description": "Add comprehensive historical NFL data (1970-2024) alongside existing 2025-only backend with separate schema architecture",
+
+  "goal": "Extend backend to serve both 2025 current season data AND 1970-2024 historical data using clean schema separation, enabling deep historical analysis while maintaining 2025 data performance",
+
+  "requirements": [
+    "Collect all historical data: 1970-2024 (all types EXCEPT injuries)",
+    "Store in separate Supabase schema: historical_nfl (vs current public schema)",
+    "Create 10 historical data tables (matching 2025 types, minus injuries)",
+    "Load historical parquet files into historical_nfl schema",
+    "Create historical API endpoints (/v1/historical/*)",
+    "Maintain 2025 API endpoints unchanged (/v1/*)",
+    "Implement season routing logic (2025 vs <2025)",
+    "Add validation: reject seasons outside 1970-2024",
+    "Ensure no performance impact on 2025 queries",
+    "Document historical data sources and completeness"
+  ],
+
+  "data_scope": {
+    "time_period": "1970-2024 (55 years)",
+    "data_types": [
+      "schedules",
+      "play_by_play",
+      "player_stats",
+      "snap_counts",
+      "depth_charts",
+      "rosters",
+      "teams",
+      "power_ratings",
+      "advanced_stats",
+      "live_scores"
+    ],
+    "excluded_types": ["injuries"],
+    "total_types": 10,
+    "data_coverage": "Complete 55-year archive"
+  },
+
+  "storage_architecture": {
+    "approach": "Separate Supabase Schema",
+    "rationale": "2025 performance preserved, historical data isolated, clean separation",
+    "schemas": {
+      "public": {
+        "purpose": "Current 2025 season data",
+        "tables": 10,
+        "rows_estimated": 188000,
+        "update_frequency": "weekly"
+      },
+      "historical_nfl": {
+        "purpose": "Historical 1970-2024 data",
+        "tables": 10,
+        "rows_estimated": "5M-10M",
+        "update_frequency": "one-time load + annual updates"
+      }
+    },
+    "rationale_details": {
+      "not_same_database": "Would mix 55 years with 1 year, slow queries",
+      "not_archive_only": "Queries would be slow, need database access",
+      "not_hybrid": "Overcomplicated, separate schema sufficient",
+      "why_schema_separation": "Fast 2025, accessible historical, clean validation"
+    }
+  },
+
+  "implementation_phases": {
+    "phase_1": {
+      "name": "Data Preparation & Collection",
+      "description": "Collect and prepare 1970-2024 historical data",
+      "steps": [
+        "1.1: Identify historical data sources for each type",
+        "1.2: Document data availability by year and type",
+        "1.3: Download/collect historical parquet files",
+        "1.4: Validate historical data completeness",
+        "1.5: Create data quality report"
+      ],
+      "deliverables": [
+        "Historical data files (parquet format)",
+        "Completeness report (coverage by year/type)",
+        "Data quality assessment"
+      ]
+    },
+
+    "phase_2": {
+      "name": "Database Schema & Migration",
+      "description": "Create historical_nfl schema and load data",
+      "steps": [
+        "2.1: Create historical_nfl schema in Supabase",
+        "2.2: Design 10 historical tables (matching public schema structure)",
+        "2.3: Add indexes for performance (season, team, player)",
+        "2.4: Create migration script for schema setup",
+        "2.5: Load historical parquet data into historical_nfl tables"
+      ],
+      "deliverables": [
+        "001_create_historical_schema.sql (migration file)",
+        "Data loaded and verified in historical_nfl schema"
+      ]
+    },
+
+    "phase_3": {
+      "name": "API Layer & Routing",
+      "description": "Create historical API endpoints and season routing",
+      "steps": [
+        "3.1: Create api/historical/ directory for historical endpoints",
+        "3.2: Create historical endpoint files (schedules, pbp, players, etc.)",
+        "3.3: Implement season routing logic (2025 vs <2025)",
+        "3.4: Add validation middleware (season range 1970-2024)",
+        "3.5: Update existing endpoints to handle 2025-only correctly",
+        "3.6: Create documentation for API changes"
+      ],
+      "deliverables": [
+        "10 new historical API endpoints",
+        "Season routing logic implemented",
+        "Validation middleware added"
+      ]
+    },
+
+    "phase_4": {
+      "name": "Services & Performance",
+      "description": "Update services layer for historical data",
+      "steps": [
+        "4.1: Create services/historical_readers.py (historical queries)",
+        "4.2: Update services/cache.py to handle both schemas",
+        "4.3: Create services/historical_etl.py (historical data loading)",
+        "4.4: Implement caching strategy for historical data",
+        "4.5: Performance testing (query times for both datasets)"
+      ],
+      "deliverables": [
+        "Historical reader service",
+        "Updated cache service",
+        "Historical ETL service"
+      ]
+    },
+
+    "phase_5": {
+      "name": "Testing & Validation",
+      "description": "Comprehensive testing of historical data system",
+      "steps": [
+        "5.1: Unit tests for historical endpoints",
+        "5.2: Integration tests for season routing",
+        "5.3: Performance tests (2025 queries unaffected?)",
+        "5.4: Data validation (historical data matches source?)",
+        "5.5: Edge case testing (1970 boundaries, gap years, etc.)"
+      ],
+      "deliverables": [
+        "Test report with coverage metrics",
+        "Performance benchmarks",
+        "Data validation report"
+      ]
+    },
+
+    "phase_6": {
+      "name": "Documentation & Deployment",
+      "description": "Document and deploy historical data feature",
+      "steps": [
+        "6.1: Create historical data overview documentation",
+        "6.2: Document API changes and new endpoints",
+        "6.3: Create migration guide (original app → historical backend)",
+        "6.4: Update COMPLETE_SUMMARY.md with historical info",
+        "6.5: Deploy to production with blue-green deployment"
+      ],
+      "deliverables": [
+        "Historical_DATA.md documentation",
+        "API_UPDATES.md (new endpoints)",
+        "DEPLOYMENT_GUIDE.md",
+        "Updated COMPLETE_SUMMARY.md"
+      ]
+    }
+  },
+
+  "api_design": {
+    "current_2025_endpoints": {
+      "prefix": "/v1",
+      "pattern": "/v1/{data_type}",
+      "season_handling": "Always 2025 (default, validation rejects others)",
+      "examples": [
+        "/v1/schedules?season=2025",
+        "/v1/players?season=2025",
+        "/v1/power-ratings?season=2025"
+      ]
+    },
+    "new_historical_endpoints": {
+      "prefix": "/v1/historical",
+      "pattern": "/v1/historical/{data_type}",
+      "season_handling": "Any year 1970-2024",
+      "examples": [
+        "/v1/historical/schedules?season=1990",
+        "/v1/historical/players?season=2000",
+        "/v1/historical/power-ratings?season=2020"
+      ]
+    },
+    "routing_logic": {
+      "season_2025": "Route to public schema endpoints",
+      "season_1970_2024": "Route to historical_nfl schema endpoints",
+      "season_invalid": "Return 400 error (valid range: 1970-2024 or 2025)",
+      "validation_layer": "Middleware catches all season requests"
+    }
+  },
+
+  "data_sources": {
+    "historical_sources": [
+      "nflreadpy - Load historical seasons (1970-2024)",
+      "Pro Football Reference - Backup source for missing years",
+      "nflscraPy - Alternative for specific data types",
+      "ESPN Archive - Historical scores and stats",
+      "NFL Official Archives - Historical records"
+    ],
+    "completeness": {
+      "1970-1989": "Basic data (schedules, teams, partial stats)",
+      "1990-2009": "Improved (added player stats, depth)",
+      "2010-2019": "Complete (all types available)",
+      "2020-2024": "Full (all types, weekly updates)"
+    }
+  },
+
+  "constraints": {
+    "must_preserve": [
+      "All 26 backend code files (untouched)",
+      "2025 API performance",
+      "2025 data validation (rejects non-2025)",
+      "Supabase schema: public (unchanged)",
+      "Database connections and pooling"
+    ],
+    "must_not": [
+      "Modify existing 2025 endpoints",
+      "Mix 2025 with historical in public schema",
+      "Break existing API contracts",
+      "Impact 2025 query performance",
+      "Delete any 2025 data"
+    ],
+    "must_create": [
+      "New historical_nfl schema in Supabase",
+      "10 historical data tables",
+      "10 historical API endpoints",
+      "Season routing validation",
+      "Historical data documentation"
+    ]
+  },
+
+  "success_criteria": [
+    "Historical data loaded (1970-2024, all types except injuries)",
+    "Separate schema architecture working (public + historical_nfl)",
+    "2025 endpoints unchanged and performant",
+    "Historical endpoints serving correct schema",
+    "Season routing correctly separates 2025 vs historical",
+    "Validation rejects invalid season ranges",
+    "No 2025 data impacted",
+    "Performance benchmarks show no regression",
+    "All tests passing",
+    "Documentation complete and clear"
+  ],
+
+  "estimated_effort": {
+    "phase_1_data_prep": "4-6 hours",
+    "phase_2_schema": "2-3 hours",
+    "phase_3_api": "3-4 hours",
+    "phase_4_services": "2-3 hours",
+    "phase_5_testing": "3-4 hours",
+    "phase_6_docs": "2-3 hours",
+    "total_hours": "16-23 hours",
+    "timeline": "2-3 days of focused work"
+  },
+
+  "data_validation": {
+    "approach": "Multi-layer Validation",
+    "rationale": "Production-ready, catches data quality issues, handles historical gaps, detects corruption",
+    "layers": {
+      "layer_1_schema": {
+        "description": "Schema validation",
+        "checks": [
+          "All 10 tables exist in historical_nfl schema",
+          "All required columns present",
+          "Column types match expected schema",
+          "Indexes created properly"
+        ]
+      },
+      "layer_2_records": {
+        "description": "Record count verification",
+        "checks": [
+          "Expected row ranges per year (e.g., schedules: ~260-272 games/year)",
+          "Teams always 32 (except pre-1970 expansions)",
+          "Players vary by year (500-5000+)",
+          "Flag anomalies (0 rows, negative years, etc.)"
+        ]
+      },
+      "layer_3_checksums": {
+        "description": "Data integrity checks",
+        "checks": [
+          "MD5/SHA checksums of parquet files match source",
+          "No duplicate rows by key (season, team, date, etc.)",
+          "Date ranges valid (no future dates, no pre-1970)",
+          "Numeric fields in expected ranges (scores 0-100+, etc.)"
+        ]
+      },
+      "layer_4_completeness": {
+        "description": "Coverage mapping",
+        "checks": [
+          "Which years have which data types available",
+          "Identify legitimate gaps (snap counts pre-2000, etc.)",
+          "Flag unexpected gaps (missing full year)",
+          "Generate coverage report showing data quality by era"
+        ]
+      }
+    },
+    "validation_result": {
+      "output_format": "Validation Report (JSON + HTML)",
+      "includes": [
+        "Schema integrity status",
+        "Row count verification",
+        "Checksum validation results",
+        "Coverage matrix by year and type",
+        "Identified gaps (legitimate vs anomalies)",
+        "Recommendations (pass/fail/review)"
+      ]
+    }
+  },
+
+  "api_design_pattern": {
+    "approach": "Metadata Flagging",
+    "rationale": "Production-ready, catches data quality issues, handles historical gaps, detects corruption",
+    "description": "Response shape uniform across all years; data_availability object shows what's actually present",
+    "locked": "Yes (Q5 - 10/16/2025)",
+    "response_example": {
+      "season": 1975,
+      "era": "1970-1989",
+      "data_availability": {
+        "snap_counts": false,
+        "advanced_stats": false,
+        "depth_chart": true,
+        "rosters": true,
+        "player_stats": true
+      },
+      "players": [
+        {
+          "id": "1234",
+          "name": "Example Player",
+          "snap_counts": null,
+          "advanced_stats": null
+        }
+      ]
+    }
+  },
+
+  "update_strategy": {
+    "approach": "Static Snapshot",
+    "rationale": "Historical data is immutable record; no ongoing updates required",
+    "locked": "Yes (Q6 - 10/16/2025)",
+    "philosophy": "1970-2024 frozen archive; 2025 live updates; each year becomes archive after season",
+    "change_policy": "Manual rebuilds only if better sources found; new years added automatically"
+  },
+
+  "opportunity_analysis": {
+    "status": "Documented",
+    "documents_created": [
+      "HISTORICAL_DATA_OPPORTUNITY.md - Master capability document",
+      "POTENTIAL_ANALYSES_LIBRARY.md - 20+ sample analyses by domain",
+      "HISTORICAL_DATA_CAPABILITIES_MATRIX.md - Data availability by era",
+      "BUSINESS_VALUE.md - Strategic and financial justification",
+      "DECISION_LOG.md - Complete decision tracking"
+    ],
+    "key_findings": {
+      "market_opportunity": "$90M TAM (Total Addressable Market)",
+      "realistic_capture_y1": "$50-100K revenue",
+      "realistic_capture_y3": "$3.3M revenue",
+      "implementation_cost": "$1,600-2,300",
+      "payback_period": "<1 month",
+      "roi_year_1": "2,000%"
+    },
+    "competitive_differentiation": "Only integrated current + 55-year historical data",
+    "sample_use_cases": [
+      "Vegas line accuracy analysis",
+      "Situational betting patterns",
+      "NFL dynasty identification",
+      "Scoring evolution trends",
+      "Era-adjusted player rankings"
+    ]
+  },
+
+  "decisions_locked": {
+    "q1_time_period": {
+      "question": "How far back should historical data go?",
+      "answer": "Complete history (1970-2024)",
+      "status": "✅ LOCKED",
+      "date_locked": "2025-10-16"
+    },
+    "q2_data_types": {
+      "question": "Which data types should we include?",
+      "answer": "All types EXCEPT injuries (10 types total)",
+      "status": "✅ LOCKED",
+      "date_locked": "2025-10-16"
+    },
+    "q3_storage_location": {
+      "question": "Where should historical data be stored?",
+      "answer": "Separate Supabase schema (historical_nfl)",
+      "status": "✅ LOCKED",
+      "date_locked": "2025-10-16"
+    },
+    "q4_data_validation": {
+      "question": "How should historical data be validated?",
+      "answer": "Multi-layer validation (schema, records, checksums, coverage)",
+      "status": "✅ LOCKED",
+      "date_locked": "2025-10-16"
+    },
+    "q5_api_design": {
+      "question": "How should API handle era-specific data?",
+      "answer": "Metadata flagging (uniform schema + availability flags)",
+      "status": "✅ LOCKED",
+      "date_locked": "2025-10-16"
+    },
+    "q6_update_strategy": {
+      "question": "How should historical data stay current?",
+      "answer": "Static snapshot (load once, freeze archive)",
+      "status": "✅ LOCKED",
+      "date_locked": "2025-10-16"
+    }
+  },
+
+  "decisions_pending": {
+    "q7_associated_resources": {
+      "question": "What supporting resources accompany historical data?",
+      "options": [
+        "1. Data only",
+        "2. Documentation (schema + coverage)",
+        "3. Analysis tools (docs + queries + samples)",
+        "4. Full package (everything)"
+      ],
+      "status": "⏳ PENDING",
+      "recommendation": "Option 3 (Analysis Tools) - best ROI"
+    },
+    "q8_implementation_constraints": {
+      "question": "What constraints should guide implementation?",
+      "sub_questions": ["Budget?", "Timeline?", "Resources?", "Infrastructure?"],
+      "status": "⏳ PENDING",
+      "recommendation": "$2K-3K budget, 2-3 weeks (full-time), 1-2 people"
+    },
+    "q9_primary_use_cases": {
+      "question": "Which analyses/use cases matter most?",
+      "status": "⏳ PENDING",
+      "recommendation": "Prioritize: Vegas accuracy, situational patterns, dynasties, trends"
+    },
+    "q10_integration_method": {
+      "question": "How does historical data fit into roadmap?",
+      "status": "⏳ PENDING",
+      "recommendation": "Phased rollout (docs + 5 analyses, then expand)"
+    }
+  },
+
+  "next_phase": {
+    "name": "Continue Context Gathering & Execute",
+    "questions_remaining": 4,
+    "next_questions": [
+      "Q7: Associated Resources (TBD)",
+      "Q8: Implementation Constraints (TBD)",
+      "Q9: Primary Use Cases (TBD)",
+      "Q10: Integration Method (TBD)"
+    ],
+    "readiness": "60% locked - Can begin implementation immediately after Q7-Q10 decisions"
+  },
+
+  "metadata": {
+    "created": "2025-10-16",
+    "last_updated": "2025-10-16",
+    "feature_type": "backend_enhancement",
+    "status": "opportunity_documented_decisions_60pct_locked",
+    "decisions_locked": 6,
+    "decisions_pending": 4,
+    "related_documents": [
+      "HISTORICAL_DATA_OPPORTUNITY.md",
+      "POTENTIAL_ANALYSES_LIBRARY.md",
+      "HISTORICAL_DATA_CAPABILITIES_MATRIX.md",
+      "BUSINESS_VALUE.md",
+      "DECISION_LOG.md"
+    ],
+    "recommendation": "Proceed with Q7-Q10 decisions; implementation ready after",
+    "next_action": "Continue /gather-context for Q7-Q10, then execute Phase 1"
+  }
+}

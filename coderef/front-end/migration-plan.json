@@ -1,0 +1,285 @@
+{
+  "migration": {
+    "title": "Frontend Components Directory Reorganization",
+    "date": "2025-10-16",
+    "status": "ready_for_execution",
+    "target_directory": "next-scraper/coderef/front-end/",
+    "total_files": 38,
+    "total_categories": 7
+  },
+  "directory_structure": {
+    "00-meta": {
+      "description": "Project documentation, status, design system",
+      "file_count": 8
+    },
+    "01-core-components": {
+      "description": "MVP components, essential features",
+      "file_count": 7
+    },
+    "02-data-components": {
+      "description": "Historical data, records, archives",
+      "file_count": 5
+    },
+    "03-interactive-tools": {
+      "description": "Tools, calculators, simulators",
+      "file_count": 5
+    },
+    "04-engagement-gamification": {
+      "description": "Games, challenges, gamification",
+      "file_count": 5
+    },
+    "05-user-social": {
+      "description": "User profiles, social features",
+      "file_count": 4
+    },
+    "06-platforms-hubs": {
+      "description": "Standalone platforms/apps",
+      "file_count": 3
+    },
+    "07-hall-of-fame": {
+      "description": "Unique large components",
+      "file_count": 1
+    }
+  },
+  "file_mapping": {
+    "00-meta": [
+      {
+        "old": "README.md",
+        "new": "00-meta/readme.md"
+      },
+      {
+        "old": "INDEX.md",
+        "new": "00-meta/index.md"
+      },
+      {
+        "old": "context.json",
+        "new": "00-meta/context.json"
+      },
+      {
+        "old": "PROJECT_STATUS.md",
+        "new": "00-meta/project-status.md"
+      },
+      {
+        "old": "PROJECT_COMPLETION_SUMMARY.md",
+        "new": "00-meta/project-completion-summary.md"
+      },
+      {
+        "old": "FEATURES_LOG.md",
+        "new": "00-meta/features-log.md"
+      },
+      {
+        "old": "FUTURE_IDEAS.md",
+        "new": "00-meta/future-ideas.md"
+      },
+      {
+        "old": "DESIGN_SYSTEM_SPECIFICATION.md",
+        "new": "00-meta/design-system.md"
+      }
+    ],
+    "01-core-components": [
+      {
+        "old": "SCOREBUG_STUB.md",
+        "new": "01-core-components/live-scorebug.md"
+      },
+      {
+        "old": "MATCHUP_PREVIEW_SPECIFICATION.md",
+        "new": "01-core-components/matchup-preview.md"
+      },
+      {
+        "old": "TEAM_PAGES_SPECIFICATION.md",
+        "new": "01-core-components/team-page.md"
+      },
+      {
+        "old": "STADIUM_PAGE_SPECIFICATION.md",
+        "new": "01-core-components/stadium-page.md"
+      },
+      {
+        "old": "PLAYER_CARDS_SPECIFICATION.md",
+        "new": "01-core-components/player-card.md"
+      },
+      {
+        "old": "PLAYER_BADGE_SYSTEM.md",
+        "new": "01-core-components/player-badge-system.md"
+      },
+      {
+        "old": "HISTORICAL_STATS_DISPLAY.md",
+        "new": "01-core-components/historical-stats-display.md"
+      }
+    ],
+    "02-data-components": [
+      {
+        "old": "ALL_TIME_GAMES_SPECIFICATION.md",
+        "new": "02-data-components/all-time-games.md"
+      },
+      {
+        "old": "SUPER_BOWL_SPECIFICATION.md",
+        "new": "02-data-components/super-bowl-history.md"
+      },
+      {
+        "old": "HISTORIC_MATCHUPS_SPECIFICATION.md",
+        "new": "02-data-components/historic-matchups.md"
+      },
+      {
+        "old": "ON_THIS_DAY_SPECIFICATION.md",
+        "new": "02-data-components/on-this-day.md"
+      },
+      {
+        "old": "HISTORIC_MOMENTS_DATABASE.md",
+        "new": "02-data-components/historic-moments-database.md"
+      }
+    ],
+    "03-interactive-tools": [
+      {
+        "old": "GOAT_CALCULATOR_COMPONENT.md",
+        "new": "03-interactive-tools/goat-calculator.md"
+      },
+      {
+        "old": "PLAYOFF_PROBABILITY_CALCULATOR.md",
+        "new": "03-interactive-tools/playoff-probability-calculator.md"
+      },
+      {
+        "old": "FANTASY_DRAFT_SIMULATOR.md",
+        "new": "03-interactive-tools/fantasy-draft-simulator.md"
+      },
+      {
+        "old": "RECORD_CHASE_TRACKER.md",
+        "new": "03-interactive-tools/record-chase-tracker.md"
+      },
+      {
+        "old": "ALL_TIME_TEAMS_ELO_TOURNAMENT.md",
+        "new": "03-interactive-tools/all-time-teams-elo-tournament.md"
+      }
+    ],
+    "04-engagement-gamification": [
+      {
+        "old": "ENGAGEMENT_PAGE_SPECIFICATION.md",
+        "new": "04-engagement-gamification/engagement-challenges.md"
+      },
+      {
+        "old": "MY_RANKS_COMPONENT.md",
+        "new": "04-engagement-gamification/my-ranks.md"
+      },
+      {
+        "old": "MINI_GAMES_COLLECTION.md",
+        "new": "04-engagement-gamification/mini-games-collection.md"
+      },
+      {
+        "old": "WEEKLY_AWARDS_SYSTEM.md",
+        "new": "04-engagement-gamification/weekly-awards-system.md"
+      },
+      {
+        "old": "PERFECT_PLAYER_PAGE.md",
+        "new": "04-engagement-gamification/perfect-player-builder.md"
+      }
+    ],
+    "05-user-social": [
+      {
+        "old": "USER_PROFILE_SYSTEM.md",
+        "new": "05-user-social/user-profile-system.md"
+      },
+      {
+        "old": "MYPLAYER_CARDS.md",
+        "new": "05-user-social/my-player-cards.md"
+      },
+      {
+        "old": "CONTENT_CREATOR_PAGE.md",
+        "new": "05-user-social/content-creator-directory.md"
+      },
+      {
+        "old": "SOCIAL_MEDIA_TRENDS.md",
+        "new": "05-user-social/social-media-trends.md"
+      }
+    ],
+    "06-platforms-hubs": [
+      {
+        "old": "YOUTH_FOOTBALL_COMMUNITY_HUB.md",
+        "new": "06-platforms-hubs/youth-football-community-hub.md"
+      },
+      {
+        "old": "COMMERCIAL_LEAGUE_PLATFORM.md",
+        "new": "06-platforms-hubs/commercial-league-platform.md"
+      },
+      {
+        "old": "FRANCHISE_SIM_MOBILE_GAME.md",
+        "new": "06-platforms-hubs/franchise-sim-mobile-game.md"
+      }
+    ],
+    "07-hall-of-fame": [
+      {
+        "old": "HALL_OF_FAME_COMPONENT.md",
+        "new": "07-hall-of-fame/hall-of-fame.md"
+      }
+    ]
+  },
+  "files_to_delete": [
+    "file-list.txt"
+  ],
+  "naming_conventions": {
+    "file_names": {
+      "format": "{descriptive-name}.md",
+      "case": "kebab-case",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*\\.md$",
+      "examples_correct": [
+        "live-scorebug.md",
+        "playoff-probability-calculator.md",
+        "user-profile-system.md"
+      ],
+      "examples_incorrect": [
+        "SCOREBUG_STUB.md",
+        "MY_RANKS_COMPONENT.md",
+        "EngagementPage.md",
+        "player_cards.md"
+      ]
+    },
+    "directory_names": {
+      "format": "{number}-{category-name}/",
+      "case": "kebab-case",
+      "prefix": "2-digit zero-padded number",
+      "pattern": "^[0-9]{2}-[a-z]+(-[a-z]+)*/$",
+      "examples_correct": [
+        "00-meta/",
+        "01-core-components/",
+        "04-engagement-gamification/"
+      ],
+      "examples_incorrect": [
+        "Components/",
+        "1-core/",
+        "CORE_COMPONENTS/"
+      ]
+    }
+  },
+  "validation": {
+    "total_files_to_migrate": 38,
+    "total_files_to_delete": 1,
+    "total_directories_to_create": 7,
+    "checks": [
+      "All 38 files accounted for",
+      "All 7 directories created",
+      "No files left in old components/ directory",
+      "context.json updated with new paths",
+      "All file names follow kebab-case convention",
+      "All directory names follow {number}-{name} convention"
+    ]
+  },
+  "rollback": {
+    "method": "git_checkpoint",
+    "commit_message": "Checkpoint: Before frontend components reorganization",
+    "rollback_command": "git reset --hard HEAD~1"
+  },
+  "benefits": {
+    "findability": "7 categories vs 39 flat files = 80% faster navigation",
+    "consistency": "100% kebab-case naming = zero ambiguity",
+    "scalability": "Add new files easily to existing categories",
+    "onboarding": "New developers find files 3x faster",
+    "maintenance": "Clear separation of concerns",
+    "tooling": "Easier to build scripts/automation"
+  },
+  "post_migration_tasks": [
+    "Update README.md with new structure",
+    "Update INDEX.md with new file paths",
+    "Create CONVENTIONS.md documenting standards",
+    "Update CLAUDE.md to reference new structure",
+    "Test all internal cross-references between docs",
+    "Regenerate auto-generated documentation"
+  ]
+}

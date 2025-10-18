@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: nfl-api
+    ports:
+      - "8000:8000"
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+      - ALLOWED_ORIGINS=["http://localhost:3000","http://localhost:3001","http://localhost:8000"]
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+    networks:
+      - nfl-network
+    command: uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+
+  redis:
+    image: redis:7-alpine
+    container_name: nfl-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - nfl-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+networks:
+  nfl-network:
+    driver: bridge

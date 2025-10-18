@@ -1,0 +1,661 @@
+{
+  "metadata": {
+    "game_type": "live",
+    "game_description": "In-Progress / Live Games",
+    "update_frequency": "Real-time (every play, 5-15 second intervals)",
+    "user_context": "Following live action, tracking bets, watching momentum shifts",
+    "last_updated": "2025-10-17",
+    "overall_completion": "40%"
+  },
+  "data_sections": [
+    {
+      "section_id": "P0-1",
+      "section_name": "Game Header - Live Edition",
+      "priority": "P0",
+      "completion": "60%",
+      "update_frequency": "10-15 seconds",
+      "data_fields": [
+        {
+          "field": "game_id",
+          "status": "✅ Available",
+          "source": "schedules table OR ESPN API",
+          "source_id": "1.1 / 1.3",
+          "source_name": "nflreadpy / ESPN API",
+          "column": "schedules.game_id"
+        },
+        {
+          "field": "teams (logos, names, abbreviations, colors)",
+          "status": "⚠️ Partial",
+          "source": "teams table OR ESPN API",
+          "source_id": "1.1 / 1.3",
+          "source_name": "nflreadpy / ESPN API",
+          "gap": "Team logos URLs missing"
+        },
+        {
+          "field": "current_score (home/away)",
+          "status": "⚠️ Partial",
+          "source": "ESPN API (live)",
+          "source_id": "1.3",
+          "source_name": "ESPN API",
+          "gap": "Need to integrate ESPN live scoreboard API (10-15 second polling)"
+        },
+        {
+          "field": "game_status (LIVE badge)",
+          "status": "⚠️ Partial",
+          "source": "ESPN API (live)",
+          "source_id": "1.3",
+          "source_name": "ESPN API",
+          "gap": "Need ESPN API integration"
+        },
+        {
+          "field": "quarter (1st, 2nd, 3rd, 4th, OT)",
+          "status": "⚠️ Partial",
+          "source": "ESPN API OR nflreadpy (live pbp)",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "gap": "Need real-time source"
+        },
+        {
+          "field": "time_remaining (MM:SS)",
+          "status": "⚠️ Partial",
+          "source": "ESPN API",
+          "source_id": "1.3",
+          "source_name": "ESPN API",
+          "gap": "Need ESPN live API"
+        },
+        {
+          "field": "possession (which team has ball)",
+          "status": "⚠️ Partial",
+          "source": "ESPN API OR nflreadpy (live pbp)",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "column": "play_by_play.posteam (latest play)",
+          "gap": "Need real-time updates"
+        },
+        {
+          "field": "down_distance (e.g. 2nd & 7)",
+          "status": "⚠️ Partial",
+          "source": "ESPN API OR nflreadpy (live pbp)",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "column": "play_by_play.down, play_by_play.ydstogo",
+          "gap": "Need to add down/ydstogo columns to pbp table and real-time updates"
+        },
+        {
+          "field": "field_position (e.g. SF 35)",
+          "status": "⚠️ Partial",
+          "source": "ESPN API OR nflreadpy (live pbp)",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "column": "play_by_play.yardline_100",
+          "gap": "Need to add yardline_100 column and real-time updates"
+        },
+        {
+          "field": "red_zone_indicator",
+          "status": "✅ Available",
+          "source": "Calculated from field_position",
+          "source_id": null,
+          "source_name": "Frontend calculation (if yardline < 20)"
+        }
+      ]
+    },
+    {
+      "section_id": "P0-2",
+      "section_name": "Score Breakdown - Live Updating",
+      "priority": "P0",
+      "completion": "0%",
+      "update_frequency": "Instant after each score",
+      "data_fields": [
+        {
+          "field": "quarter_by_quarter_scores (Q1, Q2, Q3, Q4, OT, Total)",
+          "status": "❌ Missing",
+          "source": "ESPN API",
+          "source_id": "1.3",
+          "source_name": "ESPN API",
+          "gap": "Quarter scores not in database. CRITICAL: Need ESPN API integration for live quarter scores"
+        }
+      ]
+    },
+    {
+      "section_id": "P0-3",
+      "section_name": "Live Drive Tracker",
+      "priority": "P0",
+      "completion": "30%",
+      "update_frequency": "Real-time (every play)",
+      "data_fields": [
+        {
+          "field": "current_drive_number",
+          "status": "⚠️ Partial",
+          "source": "ESPN API OR nflreadpy (live pbp)",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "column": "play_by_play.drive",
+          "gap": "Need to add drive column to pbp table"
+        },
+        {
+          "field": "possessing_team",
+          "status": "⚠️ Partial",
+          "source": "ESPN API OR nflreadpy (live pbp)",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "column": "play_by_play.posteam"
+        },
+        {
+          "field": "drive_start_position",
+          "status": "❌ Missing",
+          "source": "ESPN API OR calculate from pbp",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "gap": "Need drive-level aggregation logic"
+        },
+        {
+          "field": "current_position",
+          "status": "⚠️ Partial",
+          "source": "ESPN API OR nflreadpy (live pbp)",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "column": "play_by_play.yardline_100 (latest play)",
+          "gap": "Need real-time updates"
+        },
+        {
+          "field": "plays_in_drive",
+          "status": "❌ Missing",
+          "source": "ESPN API OR calculate from pbp",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "gap": "Need drive aggregation"
+        },
+        {
+          "field": "yards_gained",
+          "status": "❌ Missing",
+          "source": "ESPN API OR calculate from pbp",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "gap": "Need drive aggregation (sum yards_gained for drive)"
+        },
+        {
+          "field": "time_of_possession (this drive)",
+          "status": "❌ Missing",
+          "source": "ESPN API",
+          "source_id": "1.3",
+          "source_name": "ESPN API",
+          "gap": "Need ESPN API or complex pbp clock calculation"
+        },
+        {
+          "field": "drive_result (Ongoing/TD/FG/Punt/Turnover/Downs)",
+          "status": "❌ Missing",
+          "source": "ESPN API OR detect from pbp",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "gap": "Need drive end detection logic"
+        }
+      ]
+    },
+    {
+      "section_id": "P0-4",
+      "section_name": "Last Play Summary",
+      "priority": "P0",
+      "completion": "70%",
+      "update_frequency": "Real-time (5-15 seconds)",
+      "data_fields": [
+        {
+          "field": "play_description",
+          "status": "✅ Available",
+          "source": "nflreadpy (live pbp)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "play_by_play.play_text or play_by_play.desc"
+        },
+        {
+          "field": "yards_gained_lost",
+          "status": "✅ Available",
+          "source": "nflreadpy (live pbp)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "play_by_play.yards_gained"
+        },
+        {
+          "field": "down_distance_before",
+          "status": "⚠️ Partial",
+          "source": "nflreadpy (live pbp)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "play_by_play.down, play_by_play.ydstogo",
+          "gap": "Need to add down/ydstogo columns to pbp table"
+        },
+        {
+          "field": "result (First Down, TD, Incomplete, Turnover, etc.)",
+          "status": "⚠️ Partial",
+          "source": "nflreadpy (live pbp)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "play_by_play.play_type or event flags",
+          "gap": "Need to add touchdown, fumble, interception event flags"
+        },
+        {
+          "field": "key_players_involved (passer, receiver, rusher, tackler)",
+          "status": "⚠️ Partial",
+          "source": "nflreadpy (live pbp)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "gap": "Need to add player ID columns (passer_id, rusher_id, receiver_id, tackle_1, tackle_2)"
+        },
+        {
+          "field": "clock_time",
+          "status": "✅ Available",
+          "source": "nflreadpy (live pbp)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "play_by_play.clock or play_by_play.quarter_seconds_remaining"
+        }
+      ]
+    },
+    {
+      "section_id": "P1-5",
+      "section_name": "Play-by-Play Feed (Last 10-20 Plays)",
+      "priority": "P1",
+      "completion": "60%",
+      "update_frequency": "Real-time (prepend new plays)",
+      "data_fields": [
+        {
+          "field": "recent_plays_list (10-20 plays)",
+          "status": "⚠️ Partial",
+          "source": "nflreadpy (live pbp)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "play_by_play table (filter by game_id, order DESC, limit 20)",
+          "gap": "Need real-time ingestion and down/distance/yardline columns"
+        },
+        {
+          "field": "play_number, quarter, time, down_distance, field_position",
+          "status": "⚠️ Partial",
+          "source": "nflreadpy (live pbp)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "gap": "Missing down, ydstogo, yardline_100 columns in current pbp table"
+        },
+        {
+          "field": "result_icon (✓ First Down, 🏈 TD, ❌ Incomplete, 🔄 Turnover)",
+          "status": "⚠️ Partial",
+          "source": "Frontend display from play_type",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "play_by_play.play_type",
+          "gap": "Need event flags (touchdown, fumble, interception) in pbp"
+        }
+      ]
+    },
+    {
+      "section_id": "P1-6",
+      "section_name": "Live Box Score - Key Stats Only",
+      "priority": "P1",
+      "completion": "30%",
+      "update_frequency": "Every 30-60 seconds",
+      "data_fields": [
+        {
+          "field": "passing_stats (Comp/Att, Yards, TDs, INTs, Rating)",
+          "status": "⚠️ Partial",
+          "source": "ESPN API OR aggregate from live pbp",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "gap": "Need real-time aggregation from pbp or ESPN API box score endpoint"
+        },
+        {
+          "field": "rushing_stats (Attempts, Yards, TDs, Long)",
+          "status": "⚠️ Partial",
+          "source": "ESPN API OR aggregate from live pbp",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "gap": "Need real-time aggregation"
+        },
+        {
+          "field": "receiving_stats (Receptions, Yards, TDs, Long)",
+          "status": "⚠️ Partial",
+          "source": "ESPN API OR aggregate from live pbp",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "gap": "Need real-time aggregation"
+        }
+      ]
+    },
+    {
+      "section_id": "P1-7",
+      "section_name": "Live Team Stats Comparison",
+      "priority": "P1",
+      "completion": "20%",
+      "update_frequency": "Every 30-60 seconds",
+      "data_fields": [
+        {
+          "field": "total_yards, passing_yards, rushing_yards",
+          "status": "⚠️ Partial",
+          "source": "ESPN API OR aggregate from live pbp",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "gap": "Need team-level aggregation from pbp or ESPN team stats endpoint"
+        },
+        {
+          "field": "first_downs",
+          "status": "❌ Missing",
+          "source": "ESPN API",
+          "source_id": "1.3",
+          "source_name": "ESPN API",
+          "gap": "Not available in pbp - need ESPN API"
+        },
+        {
+          "field": "third_down_conversions (X/Y, %)",
+          "status": "❌ Missing",
+          "source": "ESPN API OR calculate from pbp",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "gap": "Need down column in pbp to calculate or ESPN API"
+        },
+        {
+          "field": "fourth_down_conversions",
+          "status": "❌ Missing",
+          "source": "ESPN API OR calculate from pbp",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "gap": "Need down column in pbp or ESPN API"
+        },
+        {
+          "field": "turnovers",
+          "status": "⚠️ Partial",
+          "source": "ESPN API OR count from pbp",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "gap": "Need fumble/interception event flags in pbp"
+        },
+        {
+          "field": "time_of_possession (MM:SS)",
+          "status": "❌ Missing",
+          "source": "ESPN API",
+          "source_id": "1.3",
+          "source_name": "ESPN API",
+          "gap": "Complex to calculate from pbp clock - better from ESPN API"
+        },
+        {
+          "field": "penalties (number / yards)",
+          "status": "❌ Missing",
+          "source": "ESPN API OR count from pbp",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "gap": "Need penalty flag in pbp or ESPN API"
+        }
+      ]
+    },
+    {
+      "section_id": "P1-8",
+      "section_name": "Live Betting Lines (Real-Time Updates)",
+      "priority": "P1",
+      "completion": "0%",
+      "update_frequency": "Every 15-30 seconds",
+      "data_fields": [
+        {
+          "field": "live_spread (adjusted line, home/away odds, movement)",
+          "status": "❌ Missing",
+          "source": "The Odds API (live endpoint)",
+          "source_id": "1.5",
+          "source_name": "The Odds API",
+          "gap": "CRITICAL: Need The Odds API integration for live betting lines (15-30 sec polling)"
+        },
+        {
+          "field": "live_total (adjusted O/U, over/under odds, movement)",
+          "status": "❌ Missing",
+          "source": "The Odds API (live endpoint)",
+          "source_id": "1.5",
+          "source_name": "The Odds API",
+          "gap": "Need The Odds API integration"
+        },
+        {
+          "field": "live_moneyline (current odds)",
+          "status": "❌ Missing",
+          "source": "The Odds API (live endpoint)",
+          "source_id": "1.5",
+          "source_name": "The Odds API",
+          "gap": "Need The Odds API integration"
+        },
+        {
+          "field": "last_updated_timestamp",
+          "status": "✅ Available",
+          "source": "Backend timestamp",
+          "source_id": null,
+          "source_name": "System timestamp"
+        }
+      ]
+    },
+    {
+      "section_id": "P2-9",
+      "section_name": "Live Highlights / Recent Key Plays",
+      "priority": "P2",
+      "completion": "0%",
+      "update_frequency": "After significant plays (TDs, turnovers, big gains)",
+      "data_fields": [
+        {
+          "field": "highlight_thumbnails_videos",
+          "status": "❌ Missing",
+          "source": "ESPN API (highlights endpoint) OR YouTube API",
+          "source_id": "1.3",
+          "source_name": "ESPN API",
+          "gap": "Need ESPN highlights API or YouTube scraping"
+        },
+        {
+          "field": "play_description_impact_level",
+          "status": "⚠️ Partial",
+          "source": "nflreadpy (pbp) + custom impact logic",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "gap": "Need algorithm to detect key plays (EPA swing, WP swing, TD, turnover)"
+        }
+      ]
+    },
+    {
+      "section_id": "P2-10",
+      "section_name": "Live Win Probability Chart",
+      "priority": "P2",
+      "completion": "50%",
+      "update_frequency": "After each play",
+      "data_fields": [
+        {
+          "field": "current_win_probability (home/away %)",
+          "status": "⚠️ Partial",
+          "source": "nflreadpy (live pbp) OR ESPN API",
+          "source_id": "1.1 / 1.3",
+          "source_name": "nflreadpy / ESPN API",
+          "column": "play_by_play.wp (win probability)",
+          "gap": "Need to add wp column to pbp table + real-time updates"
+        },
+        {
+          "field": "chart_data (play-by-play WP values)",
+          "status": "⚠️ Partial",
+          "source": "nflreadpy (live pbp)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "play_by_play.wp for all plays in game",
+          "gap": "Need to add wp column to pbp table"
+        }
+      ]
+    },
+    {
+      "section_id": "P2-11",
+      "section_name": "Live EPA (Expected Points Added)",
+      "priority": "P2",
+      "completion": "50%",
+      "update_frequency": "After each play",
+      "data_fields": [
+        {
+          "field": "cumulative_epa (home vs away)",
+          "status": "✅ Available",
+          "source": "nflreadpy (live pbp)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "play_by_play.epa (aggregate by team)",
+          "gap": "Need real-time aggregation logic"
+        },
+        {
+          "field": "epa_for_last_play",
+          "status": "✅ Available",
+          "source": "nflreadpy (live pbp)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "play_by_play.epa (latest play)"
+        },
+        {
+          "field": "epa_chart_data",
+          "status": "✅ Available",
+          "source": "nflreadpy (live pbp)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "play_by_play.epa for all plays in game"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_sections": 11,
+    "p0_sections": 4,
+    "p1_sections": 4,
+    "p2_sections": 3,
+    "overall_completion": "40%",
+    "data_gaps": [
+      {
+        "priority": "CRITICAL",
+        "gap": "Real-time ESPN API integration (10-15 sec polling)",
+        "details": "Live game header (score, quarter, time, possession, down/distance, field position)",
+        "solution": "Integrate ESPN live scoreboard and play-by-play endpoints",
+        "source_id": "1.3",
+        "endpoints_needed": [
+          "/sports/football/nfl/scoreboard",
+          "/sports/football/nfl/summary?event={game_id}",
+          "/sports/football/nfl/playbyplay?event={game_id}",
+          "/sports/football/nfl/boxscore?event={game_id}"
+        ],
+        "estimated_effort": "5-7 days"
+      },
+      {
+        "priority": "CRITICAL",
+        "gap": "Quarter-by-quarter live scores",
+        "details": "Score breakdown updating after each score",
+        "solution": "ESPN API scoreboard endpoint or aggregate from pbp",
+        "source_id": "1.3",
+        "estimated_effort": "2-3 days"
+      },
+      {
+        "priority": "CRITICAL",
+        "gap": "Expand nflreadpy pbp columns",
+        "details": "Missing down, ydstogo, yardline_100, drive, wp, touchdown/fumble/interception flags, player IDs",
+        "solution": "Add 20-30 columns to play_by_play table from nflreadpy's 372 available columns",
+        "source_id": "1.1",
+        "columns_to_add": [
+          "down",
+          "ydstogo",
+          "yardline_100",
+          "drive",
+          "wp (win probability)",
+          "touchdown (flag)",
+          "fumble (flag)",
+          "interception (flag)",
+          "penalty (flag)",
+          "passer_id",
+          "rusher_id",
+          "receiver_id",
+          "tackle_1",
+          "tackle_2"
+        ],
+        "estimated_effort": "3-5 days"
+      },
+      {
+        "priority": "HIGH",
+        "gap": "Real-time pbp ingestion mechanism",
+        "details": "Need to ingest play-by-play data every 5-15 seconds during live games",
+        "solution": "Build polling service or WebSocket integration for nflreadpy + ESPN API",
+        "source_id": "1.1 / 1.3",
+        "estimated_effort": "5-7 days"
+      },
+      {
+        "priority": "HIGH",
+        "gap": "Live betting lines (spread, total, moneyline)",
+        "details": "Real-time betting line updates every 15-30 seconds",
+        "solution": "Integrate The Odds API with polling mechanism",
+        "source_id": "1.5",
+        "estimated_effort": "3-5 days"
+      },
+      {
+        "priority": "HIGH",
+        "gap": "Drive-level statistics",
+        "details": "Current drive tracker (start position, plays, yards, TOP, result)",
+        "solution": "ESPN API drive data OR aggregate from pbp using drive column",
+        "source_id": "1.3 / 1.1",
+        "estimated_effort": "3-5 days"
+      },
+      {
+        "priority": "MEDIUM",
+        "gap": "Live box score aggregation",
+        "details": "Real-time player stats (passing, rushing, receiving) updated every 30-60 sec",
+        "solution": "ESPN box score endpoint OR aggregate from pbp",
+        "source_id": "1.3 / 1.1",
+        "estimated_effort": "3-5 days"
+      },
+      {
+        "priority": "MEDIUM",
+        "gap": "Live team stats aggregation",
+        "details": "Total yards, first downs, 3rd/4th down %, turnovers, TOP, penalties",
+        "solution": "ESPN API team stats endpoint OR aggregate from pbp",
+        "source_id": "1.3 / 1.1",
+        "estimated_effort": "3-5 days"
+      },
+      {
+        "priority": "LOW",
+        "gap": "Live highlights and videos",
+        "details": "Video clips for key plays, TDs, turnovers",
+        "solution": "ESPN highlights API or YouTube integration",
+        "source_id": "1.3",
+        "estimated_effort": "3-5 days"
+      }
+    ],
+    "currently_available": [
+      "Play descriptions (text)",
+      "Yards gained per play",
+      "Play type",
+      "Quarter and clock (partial)",
+      "Offensive team (posteam)",
+      "EPA per play",
+      "Success rate per play"
+    ],
+    "needs_integration": [
+      "ESPN API - Live scores, game status, play-by-play, box scores, team stats",
+      "The Odds API - Live betting lines (15-30 sec updates)",
+      "Real-time polling/WebSocket mechanism",
+      "Expanded nflreadpy columns (down, distance, yardline, drive, wp, event flags)",
+      "Live data aggregation engine (player stats, team stats, drive stats)"
+    ],
+    "implementation_strategy": {
+      "phase_1": {
+        "priority": "CRITICAL",
+        "tasks": [
+          "Integrate ESPN live scoreboard API (10-15 sec polling)",
+          "Expand nflreadpy pbp columns (add 20-30 columns)",
+          "Build real-time pbp ingestion service"
+        ],
+        "estimated_effort": "10-15 days"
+      },
+      "phase_2": {
+        "priority": "HIGH",
+        "tasks": [
+          "Integrate The Odds API for live betting lines",
+          "Build drive-level statistics aggregation",
+          "Implement live box score aggregation"
+        ],
+        "estimated_effort": "7-10 days"
+      },
+      "phase_3": {
+        "priority": "MEDIUM",
+        "tasks": [
+          "Live team stats aggregation",
+          "Win probability chart (add wp column)",
+          "Live highlights integration"
+        ],
+        "estimated_effort": "5-7 days"
+      }
+    }
+  }
+}

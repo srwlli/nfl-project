@@ -1,0 +1,259 @@
+{
+  "name": "Historical NFL Data Feature (1970-2024)",
+  "version": "1.0.0",
+  "description": "Comprehensive historical NFL data infrastructure with complete access and exploration capabilities",
+
+  "mission": "Build robust datasets from all available historical NFL data (1970-2024), organize comprehensively, provide complete access for flexible use cases",
+
+  "status": {
+    "phase": "Ready for Execution",
+    "decisions": "100% Locked (Q1-Q10)",
+    "documentation": "Complete",
+    "next_step": "Phase 1 - Data Collection & Validation"
+  },
+
+  "what_this_is": {
+    "feature_type": "Backend Enhancement",
+    "scope": "55 years of historical NFL data (1970-2024)",
+    "architecture": "Separate Supabase schema (historical_nfl) isolated from 2025 current season (public schema)",
+    "goal": "Enable complete historical data access without constraining current operations",
+    "philosophy": "Data infrastructure first; use cases second"
+  },
+
+  "decisions_locked": {
+    "Q1_time_period": "1970-2024 (complete history)",
+    "Q2_data_types": "All types EXCEPT injuries (10 data types)",
+    "Q3_storage": "Separate Supabase schema (historical_nfl)",
+    "Q4_validation": "Multi-layer validation (schema, records, checksums, coverage)",
+    "Q5_api_design": "Metadata flagging (uniform schema + availability flags)",
+    "Q6_updates": "Static snapshot (load once, freeze archive)",
+    "Q7_resources": "Full package (docs + queries + ETL + validation scripts)",
+    "Q8_constraints": "Agentic execution (unlimited budget, 2-3 weeks, optimal quality)",
+    "Q9_use_cases": "ALL (20+ analyses as exploratory tools)",
+    "Q10_integration": "Full launch (complete data infrastructure)"
+  },
+
+  "data_scope": {
+    "time_period": "1970-2024 (55 years)",
+    "data_types": [
+      "schedules",
+      "play_by_play",
+      "player_stats",
+      "snap_counts",
+      "depth_charts",
+      "rosters",
+      "teams",
+      "power_ratings",
+      "advanced_stats",
+      "live_scores"
+    ],
+    "excluded": ["injuries"],
+    "total_types": 10,
+    "estimated_rows": "5M-10M total"
+  },
+
+  "architecture": {
+    "database": "Supabase (single instance)",
+    "schemas": {
+      "public": "2025 current season (188K rows, weekly updates)",
+      "historical_nfl": "1970-2024 historical (5M-10M rows, static snapshot)"
+    },
+    "api_prefix_current": "/v1/{data_type}?season=2025",
+    "api_prefix_historical": "/v1/historical/{data_type}?season=1970-2024",
+    "validation": "Multi-layer (schema, records, checksums, coverage)",
+    "response_format": "Metadata flagging (uniform schema + data_availability object)"
+  },
+
+  "implementation_phases": {
+    "phase_1": {
+      "name": "Data Collection & Validation",
+      "effort": "5-6 days",
+      "deliverables": [
+        "Historical data files (parquet format, 1970-2024)",
+        "Completeness report (coverage by year/type)",
+        "Data quality assessment"
+      ]
+    },
+    "phase_2": {
+      "name": "Database Schema & Migration",
+      "effort": "3-4 days",
+      "deliverables": [
+        "historical_nfl schema in Supabase",
+        "10 historical data tables",
+        "001_create_historical_schema.sql"
+      ]
+    },
+    "phase_3": {
+      "name": "API Endpoints & Routing",
+      "effort": "4-5 days",
+      "deliverables": [
+        "10 historical API endpoints (/v1/historical/*)",
+        "Season routing logic",
+        "Validation middleware"
+      ]
+    },
+    "phase_4": {
+      "name": "Services Layer",
+      "effort": "3-4 days",
+      "deliverables": [
+        "services/historical_readers.py",
+        "services/historical_etl.py",
+        "Updated cache service"
+      ]
+    },
+    "phase_5": {
+      "name": "Testing & Performance",
+      "effort": "4-5 days",
+      "deliverables": [
+        "Unit tests (100% coverage)",
+        "Integration tests",
+        "Performance benchmarks"
+      ]
+    },
+    "phase_6": {
+      "name": "Complete Documentation & ETL",
+      "effort": "5-6 days",
+      "deliverables": [
+        "Complete documentation",
+        "All ETL scripts",
+        "Validation reports",
+        "20+ SQL queries",
+        "Sample analyses"
+      ]
+    },
+    "total_effort": "24-30 days (2-3 weeks)"
+  },
+
+  "key_documents": {
+    "context.json": "This file - full technical context",
+    "HISTORICAL_DATA_OPPORTUNITY.md": "Capability overview, data by era, architecture rationale",
+    "POTENTIAL_ANALYSES_LIBRARY.md": "20+ use cases across 6 domains (reference for queries)",
+    "HISTORICAL_DATA_CAPABILITIES_MATRIX.md": "Data availability by era, confidence levels, quality assessment",
+    "BUSINESS_VALUE.md": "Strategic justification, market opportunity, financial projections",
+    "DECISION_LOG.md": "Complete decision tracking, rationale, pending vs locked"
+  },
+
+  "resources": {
+    "original_app": "C:\\Users\\willh\\Desktop\\projects - current-location\\nfl-scraper",
+    "backend_code": "C:\\Users\\willh\\Desktop\\projects - current-location\\nfl-scraper\\next-scraper\\backend",
+    "working_directory": "C:\\Users\\willh\\Desktop\\projects - current-location\\nfl-scraper\\next-scraper\\coderef\\working\\historical-data",
+    "output_location": "C:\\Users\\willh\\Desktop\\projects - current-location\\nfl-scraper\\next-scraper\\backend"
+  },
+
+  "constraints": {
+    "must_preserve": [
+      "All 26 backend code files (unchanged)",
+      "2025 API performance (no regression)",
+      "2025 data validation (rejects non-2025)",
+      "Public schema (unchanged)",
+      "Database connections"
+    ],
+    "must_not": [
+      "Modify existing 2025 endpoints",
+      "Mix 2025 with historical in public schema",
+      "Break existing API contracts",
+      "Impact 2025 query performance",
+      "Delete any 2025 data"
+    ],
+    "must_create": [
+      "New historical_nfl schema",
+      "10 historical data tables",
+      "10 historical API endpoints",
+      "Season routing validation",
+      "Complete documentation",
+      "All ETL scripts",
+      "Validation reports"
+    ]
+  },
+
+  "success_criteria": [
+    "Historical data loaded (1970-2024, all 10 types)",
+    "Separate schema architecture operational",
+    "2025 endpoints unchanged and performant",
+    "Historical endpoints routing correctly",
+    "Multi-layer validation passing",
+    "Zero 2025 data impact",
+    "100% test coverage",
+    "All documentation complete",
+    "All ETL scripts working",
+    "Validation reports generated"
+  ],
+
+  "data_quality_notes": {
+    "1970_1989": "Basic (60% complete) - schedules, rosters, partial stats",
+    "1990_2009": "Good (80% complete) - added player stats, depth charts",
+    "2010_2024": "Complete (95% complete) - all types available",
+    "known_gaps": {
+      "snap_counts_pre_1997": "Not tracked (legitimate gap)",
+      "advanced_stats_pre_2000": "Metrics didn't exist (legitimate gap)",
+      "real_time_pre_1995": "Technology unavailable (legitimate gap)"
+    }
+  },
+
+  "api_design": {
+    "response_format": "Metadata Flagging",
+    "description": "Uniform response schema with data_availability object",
+    "example": {
+      "season": 1975,
+      "era": "1970-1989",
+      "data_availability": {
+        "snap_counts": false,
+        "advanced_stats": false,
+        "depth_chart": true
+      },
+      "data": [
+        {
+          "id": "example",
+          "snap_counts": null,
+          "advanced_stats": null
+        }
+      ]
+    }
+  },
+
+  "exploration_tools": {
+    "purpose": "Enable flexible data exploration (not predefined analyses)",
+    "includes": [
+      "20+ SQL queries (copy-paste ready)",
+      "Sample analyses (use case examples)",
+      "ETL scripts (reproducible)",
+      "Validation scripts (quality assurance)"
+    ],
+    "philosophy": "Provide complete toolkit; users decide how to use"
+  },
+
+  "agent_instructions": {
+    "start": "Read HISTORICAL_DATA_OPPORTUNITY.md and DECISION_LOG.md",
+    "reference": "Check HISTORICAL_DATA_CAPABILITIES_MATRIX.md for data quality info",
+    "execute": "Follow Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6",
+    "verify": "Use success_criteria checklist at each phase",
+    "document": "Update progress in this folder's README"
+  },
+
+  "previous_work": {
+    "context_gathering": "Completed /gather-context Q1-Q10 (all decisions locked)",
+    "opportunity_analysis": "Complete documentation created (5 files)",
+    "decisions": "All 10 questions answered and locked",
+    "status": "Ready for Phase 1 execution"
+  },
+
+  "quick_reference": {
+    "data_types": 10,
+    "time_period": "55 years (1970-2024)",
+    "estimated_rows": "5-10M",
+    "estimated_effort": "24-30 days",
+    "budget": "Internal (no external costs)",
+    "quality_level": "Enterprise-grade (100% non-negotiable)",
+    "next_step": "Phase 1 - Data Collection & Validation"
+  },
+
+  "metadata": {
+    "created": "2025-10-16",
+    "created_by": "Claude Code",
+    "status": "READY FOR AGENT EXECUTION",
+    "execution_readiness": "100%",
+    "decisions_locked": "10/10",
+    "documentation": "Complete",
+    "blockers": "None - ready to start Phase 1"
+  }
+}

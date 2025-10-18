@@ -1,0 +1,200 @@
+{
+  "project_name": "nfl-scraper",
+  "feature_name": "fastapi-nfl-backend",
+  "analysis_date": "2025-10-15",
+
+  "framework_and_libraries": {
+    "primary_web_framework": "Streamlit (not FastAPI/Flask)",
+    "data_libraries": {
+      "polars": {
+        "primary": true,
+        "usage": "All data aggregation and transformation",
+        "files": ["scrape_everything.py", "fetch_team_data.py", "process_team_stats.py"],
+        "operations": ["read_parquet", "write_parquet", "filter", "join", "with_columns", "to_dicts"]
+      },
+      "pandas": {
+        "primary": false,
+        "usage": "Specific operations, conversions",
+        "pattern": "pl.from_pandas(df)"
+      }
+    },
+    "http_libraries": ["requests"],
+    "external_scrapers": {
+      "nflreadpy": "primary scraper - schedules, injuries, depth charts, PBP, stats, snap counts, NGS, rosters, teams",
+      "nflscraPy": "supplementary - _five_thirty_eight(), _season_splits(), _expected_points()",
+      "nfl_data_py": "optional"
+    },
+    "database": "None (file-based) - uses Parquet files in data/raw/ and data/processed/",
+    "testing": "None found"
+  },
+
+  "code_patterns": {
+    "import_organization": {
+      "standard_library": ["sys", "json", "pathlib.Path", "datetime"],
+      "third_party_data": ["polars as pl", "pandas as pd", "requests"],
+      "domain_libraries": ["nflreadpy as nfl", "nflscraPy as nfls"],
+      "local_imports": "from components.scorecard import render_scorecard"
+    },
+
+    "api_pattern": "CLI scripts + Streamlit pages (NOT REST API)",
+    "scripts": {
+      "scrape_everything.py": "Master data collection - 16 data sources",
+      "fetch_team_data.py": "Team-specific data aggregation - CLI with argparse pattern",
+      "process_team_stats.py": "Data processing & ranking - complex joins, aggregations",
+      "generate_data_index.py": "Metadata indexing - JSON output"
+    },
+
+    "error_handling_pattern": {
+      "approach": "try/except with status tracking",
+      "logging": "print-based with status indicators: [OK], [ERROR], [WARN], [INFO]",
+      "no_stdlib_logging": true,
+      "response_pattern": "{\"status\": \"SUCCESS|FAILED\", \"error\": \"...\", \"records\": N}"
+    },
+
+    "configuration_management": {
+      "method": "Path objects + environment variables + constants",
+      "pattern": "BASE_DIR = Path(__file__).parent.parent; DATA_RAW = BASE_DIR / 'data' / 'raw'",
+      "constants": "HISTORICAL_SEASONS = [2022, 2023, 2024]; SCHEDULE_SEASONS = list(range(2019, 2025))",
+      "env_file": ".env with key=value format"
+    }
+  },
+
+  "data_access_patterns": {
+    "parquet_operations": {
+      "read": "pl.read_parquet(path)",
+      "write": "df.write_parquet(str(output_file))"
+    },
+
+    "polars_transformations": {
+      "filter_aggregation": "pbp.filter(pl.col('posteam') == team).select([pl.col('epa').mean().alias('epa_per_play_off')])",
+      "joins": "standings_df.join(offense, on='team', how='left').join(defense, on='team', how='left')",
+      "ranking": "pl.col(stat).rank(method='min', descending=True).over(pl.lit(1)).alias(f'{stat}_rank')",
+      "output_formats": ["to_dicts()", "write_json()", "to_pandas()"]
+    }
+  },
+
+  "python_style": {
+    "version": "3.10+",
+    "type_hints": "Selective - function signatures only, not comprehensive",
+    "union_syntax": "str | int (Python 3.10+ style)",
+    "naming_conventions": {
+      "functions": "snake_case",
+      "variables": "snake_case",
+      "constants": "UPPERCASE",
+      "classes": "PascalCase (minimal use - functional style preferred)"
+    },
+    "code_organization": "Functional programming - scripts procedural, components are functions",
+    "documentation": "Docstrings with parameter descriptions",
+    "comments": "Strategic inline comments for complex logic",
+    "line_length": "<100 characters"
+  },
+
+  "architectural_insights": [
+    "No backend framework - pure Streamlit UI + file-based data",
+    "Polars-first data stack - all transformations use Polars",
+    "Script-driven - CLI tools for data collection, Streamlit for visualization",
+    "Practical error handling - try/except with informative console output",
+    "Functional decomposition - components are render functions, scripts are procedural",
+    "Data-centric architecture - entire codebase around Parquet file I/O",
+    "Configuration simple - Path-based, environment variables, hardcoded constants"
+  ],
+
+  "implications_for_fastapi_migration": {
+    "keep": [
+      "Polars for all data operations",
+      "Try/except error handling pattern",
+      "Path-based configuration approach",
+      "Functional/procedural style"
+    ],
+    "add": [
+      "Pydantic for request/response validation",
+      "Structured JSON logging (move from print)",
+      "Full type hint coverage",
+      "PostgreSQL/Supabase client",
+      "Redis caching layer",
+      "CORS configuration"
+    ],
+    "convert": [
+      "Streamlit pages → FastAPI endpoints",
+      "Script logic → Service functions",
+      "Parquet files → PostgreSQL queries",
+      "Print logging → Structured JSON logs",
+      "Path config → Pydantic Settings"
+    ]
+  },
+
+  "missing_elements": [
+    "Database schema + SQL migrations",
+    "Pydantic models for validation",
+    "Redis caching",
+    "Supabase client",
+    "ETL scripts (Parquet → PostgreSQL)",
+    "Structured logging",
+    "API error handling",
+    "CORS configuration",
+    "Environment validation",
+    "Tests"
+  ],
+
+  "dependencies_to_add": {
+    "core": ["fastapi", "uvicorn[standard]", "pydantic-settings"],
+    "data": ["polars", "pandas"],
+    "database": ["supabase", "psycopg[binary]"],
+    "caching": ["redis", "hiredis"],
+    "utilities": ["python-dotenv", "requests"]
+  },
+
+  "recommended_project_structure": {
+    "backend": {
+      "app.py": "FastAPI main (follows your script style)",
+      "core": {
+        "config.py": "Pydantic Settings (replaces pathlib pattern)"
+      },
+      "api": {
+        "description": "Endpoint modules (follows functional style)",
+        "files": ["schedules.py", "teams.py", "games.py", "scoreboard.py", "pbp.py", "players.py", "power.py", "injuries.py", "depth.py", "inventory.py", "admin.py"]
+      },
+      "services": {
+        "description": "Business logic layer",
+        "files": ["readers.py (Polars operations)", "cache.py (Redis)", "jobs.py (Background tasks)", "etl.py (Parquet → PostgreSQL)"]
+      },
+      "requirements.txt": "Dependencies"
+    }
+  },
+
+  "code_style_to_maintain": [
+    "Use Polars for data ops, convert with .to_dicts() for JSON",
+    "Keep try/except blocks with structured error responses",
+    "Use Path objects for configuration",
+    "Docstrings on all functions",
+    "Type hints on all function signatures",
+    "Status-based response patterns",
+    "Informative error messages"
+  ],
+
+  "recommendations": [
+    "Keep Polars - it's your strength",
+    "Adopt Pydantic - for validation",
+    "Add structured logging - move from print to JSON",
+    "Use type hints everywhere",
+    "Organize by feature - keep logic modular",
+    "Cache expensive queries - PBP, joins → Redis",
+    "ETL data offline - load Parquets into PostgreSQL",
+    "Mirror status patterns - {status, message, data}"
+  ],
+
+  "_metadata": {
+    "tool": "analyze_project_for_planning",
+    "feature": "fastapi-nfl-backend",
+    "project_path": "C:\\Users\\willh\\Desktop\\projects - current-location\\nfl-scraper",
+    "files_analyzed": [
+      "app.py",
+      "scripts/scrape_everything.py",
+      "scripts/fetch_team_data.py",
+      "scripts/process_team_stats.py",
+      "scripts/generate_data_index.py",
+      "components/*.py",
+      "context files"
+    ]
+  }
+}

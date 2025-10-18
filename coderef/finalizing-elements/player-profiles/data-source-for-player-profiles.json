@@ -1,0 +1,930 @@
+{
+  "document_version": "1.0",
+  "last_updated": "2025-10-17",
+  "total_fields": 590,
+  "coverage_summary": {
+    "available": 185,
+    "partial": 245,
+    "planned": 125,
+    "missing": 35
+  },
+  "data_sources": {
+    "nflreadpy": {
+      "status": "active",
+      "tables": ["players", "rosters", "player_stats", "schedules", "play_by_play", "injuries", "depth_charts"],
+      "fields_provided": 250
+    },
+    "sportsref_nfl": {
+      "status": "active",
+      "coverage": "Historical and advanced stats",
+      "fields_provided": 120
+    },
+    "espn_api": {
+      "status": "planned",
+      "endpoints_needed": ["player photos", "video highlights", "Next Gen Stats"],
+      "fields_provided": 80
+    },
+    "manual_static": {
+      "status": "needed",
+      "data_types": ["Hall of Fame", "awards", "social media", "high school rankings"],
+      "fields_provided": 40
+    }
+  },
+  "sections": {
+    "hero_header": {
+      "total_fields": 15,
+      "available": 12,
+      "partial": 2,
+      "planned": 1,
+      "missing": 0,
+      "fields": {
+        "player_id": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "players.player_id"
+        },
+        "player_name": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "players.name"
+        },
+        "first_name": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "players.first_name"
+        },
+        "last_name": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "players.last_name"
+        },
+        "nickname": {
+          "status": "missing",
+          "source": "manual",
+          "notes": "Requires manual curation"
+        },
+        "jersey_number": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "rosters.jersey_number"
+        },
+        "position": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "players.position"
+        },
+        "current_team_id": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "rosters.team"
+        },
+        "current_team_name": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "teams.name (join)"
+        },
+        "current_team_abbreviation": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "teams.abbreviation"
+        },
+        "current_team_logo_url": {
+          "status": "planned",
+          "source": "espn_api",
+          "notes": "Add to teams table or fetch from ESPN"
+        },
+        "player_status": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "rosters.status"
+        },
+        "headshot_url": {
+          "status": "partial",
+          "source": "espn_api",
+          "notes": "Available via ESPN, need to integrate"
+        },
+        "action_photo_url": {
+          "status": "partial",
+          "source": "espn_api",
+          "notes": "Optional, from ESPN or manual"
+        },
+        "hall_of_fame_inducted": {
+          "status": "missing",
+          "source": "sportsref_nfl",
+          "notes": "Requires HOF data source or manual"
+        }
+      }
+    },
+    "quick_stats_bar": {
+      "total_fields": 20,
+      "available": 16,
+      "partial": 2,
+      "planned": 2,
+      "missing": 0,
+      "fields": {
+        "height_inches": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "players.height"
+        },
+        "height_display": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "Convert inches to feet-inches format"
+        },
+        "weight_lbs": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "players.weight"
+        },
+        "age": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "Current date - birth_date"
+        },
+        "birth_date": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "players.birth_date"
+        },
+        "birthplace_city": {
+          "status": "partial",
+          "source": "sportsref_nfl",
+          "notes": "Available in PFR, need to integrate"
+        },
+        "birthplace_state": {
+          "status": "partial",
+          "source": "sportsref_nfl",
+          "notes": "Available in PFR, need to integrate"
+        },
+        "birthplace_country": {
+          "status": "available",
+          "source": "default",
+          "calculation": "Default 'USA', override if international"
+        },
+        "college_name": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "players.college"
+        },
+        "college_years": {
+          "status": "planned",
+          "source": "sportsref_nfl",
+          "notes": "Need to add or calculate"
+        },
+        "college_position": {
+          "status": "planned",
+          "source": "sportsref_nfl",
+          "notes": "May differ from NFL position"
+        },
+        "draft_year": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "players.draft_year or draft_picks table"
+        },
+        "draft_round": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "players.draft_round or draft_picks.round"
+        },
+        "draft_pick": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "draft_picks.pick"
+        },
+        "draft_overall_pick": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "draft_picks.overall_pick or calculate"
+        },
+        "drafted_by_team_id": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "draft_picks.team or players.draft_team"
+        },
+        "drafted_by_team_name": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "teams.name (join)"
+        },
+        "drafted_by_team_abbr": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "teams.abbreviation (join)"
+        },
+        "years_pro": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "COUNT DISTINCT seasons from player_stats"
+        },
+        "experience_display": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "Format years_pro as 'X seasons'"
+        }
+      }
+    },
+    "biographical_information": {
+      "total_fields": 55,
+      "available": 20,
+      "partial": 25,
+      "planned": 8,
+      "missing": 2,
+      "notes": "High school and college details largely unavailable in nflreadpy, requires sportsref-nfl or ESPN",
+      "fields": {
+        "full_legal_name": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "players.name"
+        },
+        "hometown_city": {
+          "status": "partial",
+          "source": "sportsref_nfl",
+          "notes": "Available in PFR bio"
+        },
+        "hometown_state": {
+          "status": "partial",
+          "source": "sportsref_nfl",
+          "notes": "Available in PFR bio"
+        },
+        "hs_name": {
+          "status": "partial",
+          "source": "sportsref_nfl",
+          "notes": "Available in PFR"
+        },
+        "hs_city": {
+          "status": "partial",
+          "source": "sportsref_nfl"
+        },
+        "hs_state": {
+          "status": "partial",
+          "source": "sportsref_nfl"
+        },
+        "hs_national_rank": {
+          "status": "missing",
+          "source": "247sports_api",
+          "notes": "Requires 247Sports/Rivals API or manual"
+        },
+        "hs_star_rating": {
+          "status": "missing",
+          "source": "247sports_api",
+          "notes": "Requires recruiting service API"
+        },
+        "college_career_pass_yards": {
+          "status": "partial",
+          "source": "sportsref_nfl",
+          "notes": "Available for major college programs"
+        },
+        "college_career_pass_tds": {
+          "status": "partial",
+          "source": "sportsref_nfl"
+        },
+        "combine_forty_yard": {
+          "status": "partial",
+          "source": "sportsref_nfl",
+          "notes": "Combine data available from ~1999+"
+        },
+        "combine_bench_press": {
+          "status": "partial",
+          "source": "sportsref_nfl"
+        },
+        "combine_vertical_jump": {
+          "status": "partial",
+          "source": "sportsref_nfl"
+        },
+        "draft_grade": {
+          "status": "planned",
+          "source": "manual",
+          "notes": "Requires manual grading or external scout data"
+        },
+        "draft_scout_report": {
+          "status": "planned",
+          "source": "manual",
+          "notes": "Manual curation or external scout API"
+        }
+      }
+    },
+    "career_statistics_passing": {
+      "total_fields": 20,
+      "available": 14,
+      "partial": 4,
+      "planned": 2,
+      "missing": 0,
+      "position": "QB",
+      "fields": {
+        "career_games_played": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "COUNT games from player_stats"
+        },
+        "career_games_started": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "COUNT games where started=true"
+        },
+        "career_pass_attempts": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Available if attempts column exists in player_stats, otherwise aggregate from pbp"
+        },
+        "career_pass_completions": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Same as attempts - need to verify column"
+        },
+        "career_pass_comp_pct": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "completions / attempts * 100"
+        },
+        "career_pass_yards": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "SUM(player_stats.passing_yards)"
+        },
+        "career_pass_ypa": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "yards / attempts"
+        },
+        "career_pass_tds": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "SUM(player_stats.passing_tds)"
+        },
+        "career_pass_ints": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Need to verify interceptions column in player_stats"
+        },
+        "career_pass_td_int_ratio": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "tds / ints"
+        },
+        "career_passer_rating": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Calculate from formula or add to player_stats"
+        },
+        "career_qbr": {
+          "status": "planned",
+          "source": "espn_api",
+          "notes": "ESPN proprietary metric, requires API"
+        },
+        "career_sacks_taken": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Need sacks column in player_stats or aggregate from pbp"
+        },
+        "career_sack_yards": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Same as sacks_taken"
+        },
+        "career_longest_pass": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "calculation": "MAX(yards) from play_by_play where play_type=pass"
+        },
+        "career_pass_ypg": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "total_yards / games_played"
+        },
+        "career_300_yard_games": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "COUNT games where passing_yards >= 300"
+        },
+        "career_400_yard_games": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "COUNT games where passing_yards >= 400"
+        },
+        "career_fourth_qtr_comebacks": {
+          "status": "planned",
+          "source": "manual",
+          "notes": "Requires game situation analysis or external source"
+        },
+        "career_game_winning_drives": {
+          "status": "planned",
+          "source": "manual",
+          "notes": "Requires drive analysis or external source"
+        }
+      }
+    },
+    "career_statistics_rushing": {
+      "total_fields": 15,
+      "available": 10,
+      "partial": 3,
+      "planned": 2,
+      "missing": 0,
+      "position": "RB, QB, WR",
+      "fields": {
+        "career_rush_attempts": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Need carries column in player_stats"
+        },
+        "career_rush_yards": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "SUM(player_stats.rushing_yards)"
+        },
+        "career_rush_avg": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "yards / attempts"
+        },
+        "career_rush_tds": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "SUM(player_stats.rushing_tds)"
+        },
+        "career_rush_longest": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "MAX from pbp or add column to player_stats"
+        },
+        "career_rush_fumbles": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Need fumbles column or count from pbp"
+        },
+        "career_rush_fumbles_lost": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Need fumbles_lost column or count from pbp"
+        },
+        "career_rush_first_downs": {
+          "status": "planned",
+          "source": "nflreadpy",
+          "notes": "Add column to player_stats"
+        },
+        "career_rush_ypg": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "total_yards / games_played"
+        },
+        "career_100_yard_rush_games": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "COUNT games where rushing_yards >= 100"
+        },
+        "career_200_yard_rush_games": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "COUNT games where rushing_yards >= 200"
+        },
+        "career_rush_20plus": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "COUNT plays from pbp where yards >= 20"
+        },
+        "career_rush_broken_tackles": {
+          "status": "planned",
+          "source": "next_gen_stats",
+          "notes": "NGS metric, requires API"
+        },
+        "career_rush_yac": {
+          "status": "planned",
+          "source": "next_gen_stats",
+          "notes": "Yards after contact, NGS metric"
+        },
+        "career_rush_stuffed_pct": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "COUNT rushes <= 0 / total_rushes"
+        }
+      }
+    },
+    "career_statistics_receiving": {
+      "total_fields": 18,
+      "available": 13,
+      "partial": 3,
+      "planned": 2,
+      "missing": 0,
+      "position": "WR, TE, RB",
+      "fields": {
+        "career_receptions": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "SUM(player_stats.receptions)"
+        },
+        "career_targets": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "SUM(player_stats.targets)"
+        },
+        "career_catch_rate": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "receptions / targets * 100"
+        },
+        "career_rec_yards": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "SUM(player_stats.receiving_yards)"
+        },
+        "career_rec_ypr": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "yards / receptions"
+        },
+        "career_rec_tds": {
+          "status": "available",
+          "source": "nflreadpy",
+          "table": "SUM(player_stats.receiving_tds)"
+        },
+        "career_rec_longest": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "MAX from pbp or add column to player_stats"
+        },
+        "career_rec_first_downs": {
+          "status": "planned",
+          "source": "nflreadpy",
+          "notes": "Add column to player_stats"
+        },
+        "career_rec_ypg": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "total_yards / games_played"
+        },
+        "career_100_yard_rec_games": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "COUNT games where receiving_yards >= 100"
+        },
+        "career_200_yard_rec_games": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "COUNT games where receiving_yards >= 200"
+        },
+        "career_rec_yac": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Available in pbp, need to aggregate"
+        },
+        "career_rec_yac_per_rec": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "total_yac / receptions"
+        },
+        "career_rec_drops": {
+          "status": "planned",
+          "source": "next_gen_stats",
+          "notes": "NGS or PFF metric"
+        },
+        "career_rec_drop_pct": {
+          "status": "planned",
+          "source": "next_gen_stats",
+          "calculation": "drops / targets"
+        },
+        "career_contested_catches": {
+          "status": "planned",
+          "source": "next_gen_stats",
+          "notes": "NGS metric"
+        },
+        "career_contested_catch_pct": {
+          "status": "planned",
+          "source": "next_gen_stats",
+          "calculation": "contested / total_catches"
+        },
+        "career_rec_avg_separation": {
+          "status": "planned",
+          "source": "next_gen_stats",
+          "notes": "NGS metric (yards)"
+        }
+      }
+    },
+    "career_statistics_defense": {
+      "total_fields": 18,
+      "available": 0,
+      "partial": 18,
+      "planned": 0,
+      "missing": 0,
+      "position": "DEF",
+      "notes": "CRITICAL: Defensive stats not currently in player_stats table. All fields require new defensive category.",
+      "fields": {
+        "career_tackles_solo": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Available in pbp, need to add to player_stats"
+        },
+        "career_tackles_assist": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Available in pbp, need to add to player_stats"
+        },
+        "career_tackles_total": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "calculation": "solo + assist"
+        },
+        "career_sacks": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Available in pbp, need to add to player_stats"
+        },
+        "career_tackles_for_loss": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Available in pbp, need to add to player_stats"
+        },
+        "career_qb_hits": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Available in pbp, need to add to player_stats"
+        },
+        "career_def_ints": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Available in pbp, need to add to player_stats"
+        },
+        "career_def_int_yards": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Available in pbp"
+        },
+        "career_def_int_tds": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Available in pbp"
+        },
+        "career_passes_defended": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Available in pbp"
+        },
+        "career_forced_fumbles": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Available in pbp"
+        },
+        "career_fumble_recoveries": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Available in pbp"
+        },
+        "career_fumble_rec_tds": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Available in pbp"
+        },
+        "career_safeties": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Available in pbp"
+        },
+        "career_def_tds": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "calculation": "int_tds + fumble_rec_tds"
+        },
+        "career_stuffs": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "calculation": "Tackles at/behind LOS from pbp"
+        },
+        "career_hurries": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "QB pressures from pbp"
+        },
+        "career_def_snaps": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "From snap_counts table"
+        }
+      }
+    },
+    "advanced_analytics": {
+      "total_fields": 30,
+      "available": 12,
+      "partial": 10,
+      "planned": 8,
+      "missing": 0,
+      "fields": {
+        "career_total_epa": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "SUM(play_by_play.epa) for player"
+        },
+        "career_epa_per_play": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "total_epa / total_plays"
+        },
+        "career_passing_epa": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "SUM(epa) where play_type=pass"
+        },
+        "career_rushing_epa": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "SUM(epa) where play_type=run"
+        },
+        "career_receiving_epa": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "SUM(epa) for receiving plays"
+        },
+        "career_success_rate_overall": {
+          "status": "available",
+          "source": "nflreadpy",
+          "calculation": "COUNT(successful plays) / total_plays"
+        },
+        "career_cpoe": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "CPOE available in pbp, need to aggregate"
+        },
+        "career_pressure_rate": {
+          "status": "partial",
+          "source": "nflreadpy",
+          "notes": "Pressure tracking in pbp, need to aggregate"
+        },
+        "career_turnover_worthy_pct": {
+          "status": "planned",
+          "source": "pff_api",
+          "notes": "PFF metric, requires external API"
+        },
+        "career_big_time_throw_pct": {
+          "status": "planned",
+          "source": "pff_api",
+          "notes": "PFF metric, requires external API"
+        },
+        "career_avg_separation": {
+          "status": "planned",
+          "source": "next_gen_stats",
+          "notes": "NGS metric for WR/TE"
+        },
+        "career_catch_pct_expected": {
+          "status": "planned",
+          "source": "next_gen_stats",
+          "notes": "NGS metric"
+        },
+        "career_comp_pct_expected": {
+          "status": "planned",
+          "source": "next_gen_stats",
+          "notes": "NGS metric for QB"
+        }
+      }
+    },
+    "awards_achievements": {
+      "total_fields": 40,
+      "available": 5,
+      "partial": 15,
+      "planned": 15,
+      "missing": 5,
+      "notes": "Awards data requires manual curation, sportsref-nfl, or dedicated awards database",
+      "fields": {
+        "super_bowl_wins": {
+          "status": "partial",
+          "source": "manual",
+          "notes": "Can derive from schedules + rosters but manual is more reliable"
+        },
+        "super_bowl_mvps": {
+          "status": "missing",
+          "source": "manual",
+          "notes": "Requires manual award data or external API"
+        },
+        "pro_bowl_selections": {
+          "status": "partial",
+          "source": "sportsref_nfl",
+          "notes": "Available in PFR, need integration"
+        },
+        "all_pro_first_team": {
+          "status": "partial",
+          "source": "sportsref_nfl",
+          "notes": "Available in PFR"
+        },
+        "mvp_awards": {
+          "status": "missing",
+          "source": "manual",
+          "notes": "Requires awards database"
+        },
+        "hof_inducted": {
+          "status": "missing",
+          "source": "manual",
+          "notes": "Requires HOF database or manual curation"
+        },
+        "hof_year": {
+          "status": "missing",
+          "source": "manual"
+        },
+        "retired_numbers": {
+          "status": "missing",
+          "source": "manual",
+          "notes": "Team-specific, requires manual tracking"
+        }
+      }
+    },
+    "media_gallery": {
+      "total_fields": 14,
+      "available": 0,
+      "partial": 7,
+      "planned": 7,
+      "missing": 0,
+      "notes": "All media requires external APIs (ESPN, YouTube) or manual curation",
+      "fields": {
+        "photo_url": {
+          "status": "partial",
+          "source": "espn_api",
+          "notes": "ESPN has player photos"
+        },
+        "video_url": {
+          "status": "partial",
+          "source": "espn_api",
+          "notes": "ESPN has highlights"
+        },
+        "video_highlights": {
+          "status": "planned",
+          "source": "espn_api",
+          "notes": "Requires ESPN video API integration"
+        }
+      }
+    },
+    "social_contact": {
+      "total_fields": 12,
+      "available": 0,
+      "partial": 0,
+      "planned": 12,
+      "missing": 0,
+      "notes": "All social media requires manual curation",
+      "fields": {
+        "twitter_handle": {
+          "status": "planned",
+          "source": "manual",
+          "notes": "Manual curation or Twitter API lookup"
+        },
+        "instagram_handle": {
+          "status": "planned",
+          "source": "manual"
+        },
+        "official_website": {
+          "status": "planned",
+          "source": "manual"
+        },
+        "agent_name": {
+          "status": "planned",
+          "source": "manual"
+        }
+      }
+    }
+  },
+  "implementation_priority": {
+    "phase_1_critical": {
+      "description": "Expand player_stats table with missing columns",
+      "effort_estimate": "2-3 weeks",
+      "fields_impacted": 120,
+      "tasks": [
+        "Add completions, attempts, interceptions to player_stats",
+        "Add sacks, sacked_yards to player_stats",
+        "Add carries, fumbles, fumbles_lost to player_stats",
+        "Add longest_pass, longest_rush, longest_rec",
+        "Create defensive_stats category in player_stats",
+        "Add all defensive stat columns (tackles, sacks, INTs, etc.)",
+        "Add kicking/punting/return stats category"
+      ]
+    },
+    "phase_2_high": {
+      "description": "Integrate sportsref-nfl for biographical and awards data",
+      "effort_estimate": "1-2 weeks",
+      "fields_impacted": 80,
+      "tasks": [
+        "Pull college stats from PFR",
+        "Pull high school info from PFR",
+        "Pull combine data from PFR",
+        "Pull Pro Bowl and All-Pro selections",
+        "Pull career awards and honors"
+      ]
+    },
+    "phase_3_medium": {
+      "description": "ESPN API integration for photos, videos, NGS",
+      "effort_estimate": "1-2 weeks",
+      "fields_impacted": 50,
+      "tasks": [
+        "Integrate player photos from ESPN",
+        "Integrate video highlights from ESPN",
+        "Integrate Next Gen Stats from ESPN",
+        "Add team logos to teams table"
+      ]
+    },
+    "phase_4_low": {
+      "description": "Manual data curation",
+      "effort_estimate": "Ongoing",
+      "fields_impacted": 40,
+      "tasks": [
+        "Curate Hall of Fame data",
+        "Add social media handles",
+        "Add high school rankings",
+        "Add nicknames",
+        "Add agent info"
+      ]
+    }
+  }
+}

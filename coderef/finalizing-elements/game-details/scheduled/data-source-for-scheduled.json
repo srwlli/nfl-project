@@ -1,0 +1,582 @@
+{
+  "metadata": {
+    "game_type": "scheduled",
+    "game_description": "Pre-Game / Upcoming Games",
+    "update_frequency": "Betting lines: 5-15 min, Team stats: daily, Weather: 3-6 hours",
+    "user_context": "Planning bets, previewing matchup, researching team performance",
+    "last_updated": "2025-10-17",
+    "overall_completion": "65%"
+  },
+  "data_sections": [
+    {
+      "section_id": "P0-1",
+      "section_name": "Game Header - Pre-Game Edition",
+      "priority": "P0",
+      "completion": "90%",
+      "data_fields": [
+        {
+          "field": "game_id",
+          "status": "✅ Available",
+          "source": "schedules table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "schedules.game_id"
+        },
+        {
+          "field": "teams (home/away, logos, names, abbreviations, colors)",
+          "status": "⚠️ Partial",
+          "source": "schedules table + teams table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "schedules.home_team, schedules.away_team, teams.name, teams.abbreviation",
+          "gap": "Team logos (URLs) missing - need to add or use ESPN API"
+        },
+        {
+          "field": "current_records (W-L-T)",
+          "status": "✅ Available",
+          "source": "season_stats table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "season_stats.wins, season_stats.losses, season_stats.ties"
+        },
+        {
+          "field": "scheduled_date_time",
+          "status": "✅ Available",
+          "source": "schedules table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "schedules.gameday, schedules.gametime"
+        },
+        {
+          "field": "venue (name, city, roof_type)",
+          "status": "⚠️ Partial",
+          "source": "schedules table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "schedules.stadium, schedules.roof",
+          "gap": "City and roof_type may need enrichment"
+        },
+        {
+          "field": "broadcast_network",
+          "status": "❌ Missing",
+          "source": "ESPN API or manual",
+          "source_id": "1.3",
+          "source_name": "ESPN API",
+          "gap": "Broadcast network not in database - need ESPN API integration"
+        },
+        {
+          "field": "countdown_timer",
+          "status": "✅ Available",
+          "source": "Frontend calculation",
+          "source_id": null,
+          "source_name": "Calculated from scheduled_date_time"
+        }
+      ]
+    },
+    {
+      "section_id": "P0-2",
+      "section_name": "Betting Context",
+      "priority": "P0",
+      "completion": "50%",
+      "data_fields": [
+        {
+          "field": "spread (line, home_odds, away_odds, implied_probability)",
+          "status": "⚠️ Partial",
+          "source": "schedules table OR The Odds API",
+          "source_id": "1.1 / 1.5",
+          "source_name": "nflreadpy / The Odds API",
+          "column": "schedules.spread_line",
+          "gap": "Only opening line available. Live updates need The Odds API integration (5-15 min polling)"
+        },
+        {
+          "field": "total (over/under line, over_odds, under_odds)",
+          "status": "⚠️ Partial",
+          "source": "schedules table OR The Odds API",
+          "source_id": "1.1 / 1.5",
+          "source_name": "nflreadpy / The Odds API",
+          "column": "schedules.total",
+          "gap": "Only opening total available. Live updates need The Odds API"
+        },
+        {
+          "field": "moneyline (home_odds, away_odds, implied_win_probability)",
+          "status": "⚠️ Partial",
+          "source": "The Odds API",
+          "source_id": "1.5",
+          "source_name": "The Odds API",
+          "gap": "Moneyline not in schedules table. Need The Odds API integration"
+        },
+        {
+          "field": "line_movement (opening vs current)",
+          "status": "❌ Missing",
+          "source": "The Odds API",
+          "source_id": "1.5",
+          "source_name": "The Odds API",
+          "gap": "Need to track line history. The Odds API provides historical line data"
+        },
+        {
+          "field": "last_updated",
+          "status": "✅ Available",
+          "source": "Backend timestamp",
+          "source_id": null,
+          "source_name": "System timestamp"
+        }
+      ]
+    },
+    {
+      "section_id": "P1-3",
+      "section_name": "Team Preview Stats (Season-to-Date)",
+      "priority": "P1",
+      "completion": "80%",
+      "data_fields": [
+        {
+          "field": "record (W-L-T), point_differential",
+          "status": "✅ Available",
+          "source": "season_stats table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "season_stats.wins, season_stats.losses, season_stats.ties"
+        },
+        {
+          "field": "ppg (points per game)",
+          "status": "✅ Available",
+          "source": "season_stats table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "season_stats.points_per_game or calculate"
+        },
+        {
+          "field": "papg (points allowed per game)",
+          "status": "✅ Available",
+          "source": "season_stats table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "season_stats.points_allowed_per_game or calculate"
+        },
+        {
+          "field": "offensive_rank (yards/game)",
+          "status": "✅ Available",
+          "source": "season_stats table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "season_stats.total_yards_per_game, rank calculated"
+        },
+        {
+          "field": "defensive_rank (yards allowed/game)",
+          "status": "✅ Available",
+          "source": "season_stats table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "season_stats defense metrics, rank calculated"
+        },
+        {
+          "field": "turnover_differential",
+          "status": "⚠️ Partial",
+          "source": "season_stats table or calculate",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "gap": "May need to calculate from player_stats or add to season_stats"
+        },
+        {
+          "field": "home_away_record",
+          "status": "✅ Available",
+          "source": "schedules table (filtered)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "Calculate from schedules.home_team and schedules.result"
+        }
+      ]
+    },
+    {
+      "section_id": "P1-4",
+      "section_name": "Head-to-Head History",
+      "priority": "P1",
+      "completion": "90%",
+      "data_fields": [
+        {
+          "field": "all_time_record (Team A vs Team B)",
+          "status": "✅ Available",
+          "source": "schedules table (historical)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "Filter schedules by both teams, count wins"
+        },
+        {
+          "field": "last_5_meetings (date, winner, score)",
+          "status": "✅ Available",
+          "source": "schedules table (historical)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "Filter schedules, sort by date DESC, limit 5"
+        },
+        {
+          "field": "average_margin_recent_meetings",
+          "status": "✅ Available",
+          "source": "schedules table (calculated)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "Calculate from home_score - away_score"
+        },
+        {
+          "field": "venue_specific_record",
+          "status": "✅ Available",
+          "source": "schedules table (filtered)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "Filter by stadium and both teams"
+        }
+      ]
+    },
+    {
+      "section_id": "P1-5",
+      "section_name": "Weather Forecast",
+      "priority": "P1",
+      "completion": "0%",
+      "data_fields": [
+        {
+          "field": "temperature (Fahrenheit)",
+          "status": "❌ Missing",
+          "source": "OpenWeatherMap API",
+          "source_id": "1.6",
+          "source_name": "OpenWeatherMap API",
+          "gap": "Need to integrate OpenWeatherMap API (3-6 hour updates)"
+        },
+        {
+          "field": "conditions (clear, rain, snow, etc.)",
+          "status": "❌ Missing",
+          "source": "OpenWeatherMap API",
+          "source_id": "1.6",
+          "source_name": "OpenWeatherMap API",
+          "gap": "Need API integration"
+        },
+        {
+          "field": "wind_speed_direction",
+          "status": "❌ Missing",
+          "source": "OpenWeatherMap API",
+          "source_id": "1.6",
+          "source_name": "OpenWeatherMap API",
+          "gap": "Need API integration"
+        },
+        {
+          "field": "precipitation_probability",
+          "status": "❌ Missing",
+          "source": "OpenWeatherMap API",
+          "source_id": "1.6",
+          "source_name": "OpenWeatherMap API",
+          "gap": "Need API integration"
+        },
+        {
+          "field": "forecast_updated_timestamp",
+          "status": "❌ Missing",
+          "source": "OpenWeatherMap API",
+          "source_id": "1.6",
+          "source_name": "OpenWeatherMap API",
+          "gap": "Need API integration"
+        }
+      ]
+    },
+    {
+      "section_id": "P1-6",
+      "section_name": "Key Injuries & Roster Status",
+      "priority": "P1",
+      "completion": "90%",
+      "data_fields": [
+        {
+          "field": "out_players (name, position, team)",
+          "status": "✅ Available",
+          "source": "injuries table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "injuries.player_id, injuries.report_status"
+        },
+        {
+          "field": "questionable_players (name, position, injury_type)",
+          "status": "✅ Available",
+          "source": "injuries table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "injuries.player_id, injuries.report_status, injuries.injury"
+        },
+        {
+          "field": "probable_players (name, position)",
+          "status": "✅ Available",
+          "source": "injuries table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "injuries.report_status"
+        },
+        {
+          "field": "impact_rating (starter/key_player indicator)",
+          "status": "⚠️ Partial",
+          "source": "depth_charts table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "depth_charts.depth_position",
+          "gap": "Need logic to determine starter vs backup"
+        }
+      ]
+    },
+    {
+      "section_id": "P1-7",
+      "section_name": "Betting Trends",
+      "priority": "P1",
+      "completion": "0%",
+      "data_fields": [
+        {
+          "field": "ats_record (Team A W-L, Team B W-L)",
+          "status": "❌ Missing",
+          "source": "schedules table (calculated)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "Calculate from schedules.spread_line and final scores",
+          "gap": "Need to implement ATS calculation logic"
+        },
+        {
+          "field": "over_under_record (Team A O-U, Team B O-U)",
+          "status": "❌ Missing",
+          "source": "schedules table (calculated)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "Calculate from schedules.total and final scores",
+          "gap": "Need to implement O/U calculation logic"
+        },
+        {
+          "field": "home_away_ats_splits",
+          "status": "❌ Missing",
+          "source": "schedules table (calculated)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "gap": "Need to implement ATS split logic by home/away"
+        },
+        {
+          "field": "division_game_ats_records",
+          "status": "❌ Missing",
+          "source": "schedules table (calculated)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "gap": "Need to filter division games and calculate ATS"
+        }
+      ]
+    },
+    {
+      "section_id": "P2-8",
+      "section_name": "Advanced Predictions",
+      "priority": "P2",
+      "completion": "70%",
+      "data_fields": [
+        {
+          "field": "win_probability (percentage for each team)",
+          "status": "⚠️ Partial",
+          "source": "power_ratings table OR ESPN FPI",
+          "source_id": "1.1 / 1.3",
+          "source_name": "nflreadpy / ESPN API",
+          "column": "power_ratings.elo_rating or ESPN FPI",
+          "gap": "Need to calculate win probability from ELO or fetch from ESPN FPI"
+        },
+        {
+          "field": "projected_score",
+          "status": "❌ Missing",
+          "source": "Custom model OR ESPN API",
+          "source_id": "1.3",
+          "source_name": "ESPN API or custom logic",
+          "gap": "Need prediction model or ESPN integration"
+        },
+        {
+          "field": "key_matchup_advantages (offense vs defense)",
+          "status": "⚠️ Partial",
+          "source": "power_ratings table + season_stats table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "power_ratings.offensive_rating, power_ratings.defensive_rating",
+          "gap": "Need logic to identify mismatches"
+        },
+        {
+          "field": "power_rating_differential",
+          "status": "✅ Available",
+          "source": "power_ratings table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "power_ratings.elo_rating, power_ratings.offensive_rating, power_ratings.defensive_rating"
+        }
+      ]
+    },
+    {
+      "section_id": "P2-9",
+      "section_name": "Key Players to Watch",
+      "priority": "P2",
+      "completion": "80%",
+      "data_fields": [
+        {
+          "field": "top_offensive_players (QB, RB, WR) with season stats",
+          "status": "✅ Available",
+          "source": "player_stats table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "player_stats.passing_yards, player_stats.rushing_yards, player_stats.receiving_yards"
+        },
+        {
+          "field": "top_defensive_players (sacks, INTs, tackles)",
+          "status": "⚠️ Partial",
+          "source": "player_stats table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "gap": "Defensive stats may be incomplete - need to verify columns available"
+        },
+        {
+          "field": "recent_performance (last 3 games)",
+          "status": "✅ Available",
+          "source": "player_stats table (filtered)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "Filter player_stats by week, limit 3"
+        },
+        {
+          "field": "injury_status",
+          "status": "✅ Available",
+          "source": "injuries table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "injuries.report_status"
+        }
+      ]
+    },
+    {
+      "section_id": "P2-10",
+      "section_name": "Expert Picks & Public Consensus",
+      "priority": "P2",
+      "completion": "0%",
+      "data_fields": [
+        {
+          "field": "expert_picks",
+          "status": "❌ Missing",
+          "source": "ESPN API or manual scraping",
+          "source_id": "1.3",
+          "source_name": "ESPN API",
+          "gap": "Need to scrape from ESPN, NFL.com, or integrate expert picks API"
+        },
+        {
+          "field": "public_betting_percentages (% on each side)",
+          "status": "❌ Missing",
+          "source": "Action Network API OR Sports Insights",
+          "source_id": "3.6",
+          "source_name": "Sports Insights (unclear API access)",
+          "gap": "Need to integrate public betting data API"
+        },
+        {
+          "field": "sharp_money_indicator",
+          "status": "❌ Missing",
+          "source": "Action Network API OR premium source",
+          "source_id": null,
+          "source_name": "Premium betting data service",
+          "gap": "Requires premium betting intelligence service"
+        }
+      ]
+    },
+    {
+      "section_id": "P2-11",
+      "section_name": "Season Context",
+      "priority": "P2",
+      "completion": "70%",
+      "data_fields": [
+        {
+          "field": "playoff_implications (must-win?, division_race?)",
+          "status": "⚠️ Partial",
+          "source": "schedules table + season_stats table (calculated)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "gap": "Need logic to determine playoff scenarios"
+        },
+        {
+          "field": "current_division_standings",
+          "status": "✅ Available",
+          "source": "season_stats table OR ESPN API",
+          "source_id": "1.1 / 1.3",
+          "source_name": "nflreadpy / ESPN API",
+          "column": "Calculate from season_stats or fetch from ESPN standings"
+        },
+        {
+          "field": "strength_of_schedule_remaining",
+          "status": "⚠️ Partial",
+          "source": "schedules table + power_ratings table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "gap": "Need to calculate from remaining opponents' power ratings"
+        },
+        {
+          "field": "recent_form (last 5 games W-L)",
+          "status": "✅ Available",
+          "source": "schedules table (filtered)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "Filter schedules by team, sort DESC, limit 5"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_sections": 11,
+    "p0_sections": 2,
+    "p1_sections": 5,
+    "p2_sections": 4,
+    "overall_completion": "65%",
+    "data_gaps": [
+      {
+        "priority": "HIGH",
+        "gap": "Real-time betting lines (spread, total, moneyline) with 5-15 min updates",
+        "solution": "Integrate The Odds API with polling mechanism",
+        "source_id": "1.5",
+        "estimated_effort": "3-5 days"
+      },
+      {
+        "priority": "HIGH",
+        "gap": "Weather forecasts (temperature, conditions, wind, precipitation)",
+        "solution": "Integrate OpenWeatherMap API with 3-6 hour updates",
+        "source_id": "1.6",
+        "estimated_effort": "2-3 days"
+      },
+      {
+        "priority": "MEDIUM",
+        "gap": "Betting trends (ATS records, O/U records, splits)",
+        "solution": "Implement calculation logic from historical schedules data",
+        "source_id": "1.1",
+        "estimated_effort": "2-3 days"
+      },
+      {
+        "priority": "MEDIUM",
+        "gap": "Team logos (URLs)",
+        "solution": "Add to teams table or fetch from ESPN API",
+        "source_id": "1.3",
+        "estimated_effort": "1 day"
+      },
+      {
+        "priority": "LOW",
+        "gap": "Expert picks and public betting percentages",
+        "solution": "Scrape from ESPN/NFL.com or integrate Action Network API",
+        "source_id": null,
+        "estimated_effort": "3-5 days"
+      },
+      {
+        "priority": "LOW",
+        "gap": "Projected scores and advanced predictions",
+        "solution": "Build custom prediction model or use ESPN FPI",
+        "source_id": "1.3",
+        "estimated_effort": "5-7 days"
+      }
+    ],
+    "currently_available": [
+      "Game header (teams, records, date/time, venue)",
+      "Opening betting lines (spread, total)",
+      "Team season stats (PPG, yards, rankings)",
+      "Head-to-head history (all-time, recent meetings)",
+      "Injury reports (out, questionable, probable)",
+      "Power ratings (ELO, offensive/defensive ratings)",
+      "Key players with season stats"
+    ],
+    "needs_integration": [
+      "The Odds API - Live betting lines (15 min updates)",
+      "OpenWeatherMap API - Weather forecasts",
+      "ESPN API - Broadcast info, expert picks, FPI",
+      "Betting trends calculation logic",
+      "Team logo URLs"
+    ]
+  }
+}

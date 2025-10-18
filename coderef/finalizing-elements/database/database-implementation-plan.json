@@ -1,0 +1,812 @@
+{
+  "metadata": {
+    "document_type": "Database Implementation Plan",
+    "project": "NFL Stats Platform - Next Scraper",
+    "database": "PostgreSQL 14+",
+    "total_tables": 41,
+    "total_columns": 850,
+    "estimated_size": "18 GB with indexes",
+    "created": "2025-10-18",
+    "version": "1.0"
+  },
+
+  "implementation_phases": {
+    "phase_1_foundation": {
+      "priority": "P0 - Critical",
+      "description": "Core reference tables and foundational entities",
+      "estimated_duration": "Week 1",
+      "tables": [
+        "teams",
+        "stadiums",
+        "positions",
+        "award_types",
+        "stat_categories",
+        "divisions",
+        "conferences"
+      ],
+      "dependencies": [],
+      "rationale": "These tables have no foreign key dependencies and are required by all other tables",
+      "validation": {
+        "teams": "Verify 32 teams loaded",
+        "stadiums": "Verify 30+ stadiums loaded",
+        "positions": "Verify 25+ positions loaded",
+        "award_types": "Verify 50+ award types loaded"
+      }
+    },
+
+    "phase_2_core_entities": {
+      "priority": "P0 - Critical",
+      "description": "Players, coaches, seasons, and games",
+      "estimated_duration": "Week 1-2",
+      "tables": [
+        "seasons",
+        "players",
+        "coaches",
+        "games",
+        "team_seasons"
+      ],
+      "dependencies": ["phase_1_foundation"],
+      "rationale": "Core entities required before any stats tables",
+      "validation": {
+        "seasons": "Verify 55 seasons (1970-2024)",
+        "players": "Verify 27,000+ players loaded",
+        "coaches": "Verify 800+ coaches loaded",
+        "games": "Verify 14,000+ games loaded (1970-2024)"
+      },
+      "partitioning_setup": {
+        "games": {
+          "type": "RANGE",
+          "column": "season",
+          "strategy": "One partition per season",
+          "command": "CREATE TABLE games_2024 PARTITION OF games FOR VALUES FROM (2024) TO (2025);"
+        }
+      }
+    },
+
+    "phase_3_player_stats": {
+      "priority": "P0 - Critical",
+      "description": "All player statistics tables",
+      "estimated_duration": "Week 2-3",
+      "tables": [
+        "player_season_stats",
+        "player_game_stats",
+        "player_career_stats",
+        "player_passing_stats",
+        "player_rushing_stats",
+        "player_receiving_stats",
+        "player_defensive_stats",
+        "player_kicking_stats",
+        "player_returning_stats",
+        "player_advanced_stats"
+      ],
+      "dependencies": ["phase_2_core_entities"],
+      "rationale": "Player stats are the core content of the platform",
+      "validation": {
+        "player_season_stats": "Verify 145,000+ season records",
+        "player_game_stats": "Verify 1,000,000+ game records",
+        "player_career_stats": "Verify 27,000+ career records"
+      },
+      "partitioning_setup": {
+        "player_season_stats": {
+          "type": "RANGE",
+          "column": "season",
+          "strategy": "One partition per decade",
+          "partitions": [
+            "player_season_stats_1970s FOR VALUES FROM (1970) TO (1980)",
+            "player_season_stats_1980s FOR VALUES FROM (1980) TO (1990)",
+            "player_season_stats_1990s FOR VALUES FROM (1990) TO (2000)",
+            "player_season_stats_2000s FOR VALUES FROM (2000) TO (2010)",
+            "player_season_stats_2010s FOR VALUES FROM (2010) TO (2020)",
+            "player_season_stats_2020s FOR VALUES FROM (2020) TO (2030)"
+          ]
+        },
+        "player_game_stats": {
+          "type": "RANGE",
+          "column": "season",
+          "strategy": "One partition per season (last 5 years), rest by decade",
+          "partitions": [
+            "player_game_stats_pre2020 FOR VALUES FROM (1970) TO (2020)",
+            "player_game_stats_2020 FOR VALUES FROM (2020) TO (2021)",
+            "player_game_stats_2021 FOR VALUES FROM (2021) TO (2022)",
+            "player_game_stats_2022 FOR VALUES FROM (2022) TO (2023)",
+            "player_game_stats_2023 FOR VALUES FROM (2023) TO (2024)",
+            "player_game_stats_2024 FOR VALUES FROM (2024) TO (2025)"
+          ]
+        }
+      },
+      "indexing_priority": {
+        "critical": [
+          "CREATE INDEX idx_player_season_stats_player_season ON player_season_stats(player_id, season);",
+          "CREATE INDEX idx_player_game_stats_player_game ON player_game_stats(player_id, game_id);",
+          "CREATE INDEX idx_player_season_stats_position ON player_season_stats(primary_position);"
+        ],
+        "important": [
+          "CREATE INDEX idx_player_season_stats_team ON player_season_stats(team_id);",
+          "CREATE INDEX idx_player_game_stats_season ON player_game_stats(season);",
+          "CREATE INDEX idx_player_passing_yards ON player_passing_stats(passing_yards DESC);"
+        ]
+      }
+    },
+
+    "phase_4_team_stats": {
+      "priority": "P0 - Critical",
+      "description": "Team statistics and standings",
+      "estimated_duration": "Week 3",
+      "tables": [
+        "team_season_stats",
+        "team_game_stats",
+        "team_offense_stats",
+        "team_defense_stats",
+        "team_special_teams_stats"
+      ],
+      "dependencies": ["phase_2_core_entities"],
+      "rationale": "Team stats required for team pages and standings",
+      "validation": {
+        "team_season_stats": "Verify 1,760 records (32 teams × 55 seasons)",
+        "team_game_stats": "Verify 28,000+ game records"
+      }
+    },
+
+    "phase_5_game_details": {
+      "priority": "P0 - Critical",
+      "description": "Detailed game data and play-by-play",
+      "estimated_duration": "Week 4-5",
+      "tables": [
+        "game_stats",
+        "game_drives",
+        "play_by_play",
+        "scoring_plays",
+        "key_plays",
+        "game_weather",
+        "game_officials"
+      ],
+      "dependencies": ["phase_2_core_entities"],
+      "rationale": "Game details required for game pages and analysis",
+      "validation": {
+        "play_by_play": "Verify 7,000,000+ plays",
+        "game_drives": "Verify 280,000+ drives"
+      },
+      "partitioning_setup": {
+        "play_by_play": {
+          "type": "RANGE",
+          "column": "season",
+          "strategy": "One partition per season (last 5 years), rest combined",
+          "partitions": [
+            "play_by_play_historical FOR VALUES FROM (1970) TO (2020)",
+            "play_by_play_2020 FOR VALUES FROM (2020) TO (2021)",
+            "play_by_play_2021 FOR VALUES FROM (2021) TO (2022)",
+            "play_by_play_2022 FOR VALUES FROM (2022) TO (2023)",
+            "play_by_play_2023 FOR VALUES FROM (2023) TO (2024)",
+            "play_by_play_2024 FOR VALUES FROM (2024) TO (2025)"
+          ]
+        }
+      }
+    },
+
+    "phase_6_leaderboards": {
+      "priority": "P1 - Important",
+      "description": "Leaderboard and rankings tables",
+      "estimated_duration": "Week 5",
+      "tables": [
+        "season_leaderboards",
+        "career_leaderboards",
+        "active_leaderboards",
+        "rookie_leaderboards"
+      ],
+      "dependencies": ["phase_3_player_stats"],
+      "rationale": "Leaderboards can be materialized views computed from stats",
+      "validation": {
+        "season_leaderboards": "Verify 55,000+ records",
+        "career_leaderboards": "Verify 10,000+ records"
+      }
+    },
+
+    "phase_7_relationships": {
+      "priority": "P1 - Important",
+      "description": "Player relationships and career tracking",
+      "estimated_duration": "Week 6",
+      "tables": [
+        "player_teams",
+        "player_awards",
+        "player_milestones",
+        "player_injuries",
+        "player_contracts",
+        "roster_transactions"
+      ],
+      "dependencies": ["phase_2_core_entities"],
+      "rationale": "Enrichment data for player profiles",
+      "validation": {
+        "player_teams": "Verify 35,000+ team assignments",
+        "player_awards": "Verify 5,000+ awards",
+        "player_milestones": "Verify 2,000+ milestones"
+      }
+    },
+
+    "phase_8_materialized_views": {
+      "priority": "P1 - Important",
+      "description": "Create materialized views for performance",
+      "estimated_duration": "Week 6-7",
+      "views": [
+        "mv_player_career_totals",
+        "mv_team_season_rankings",
+        "mv_season_stat_leaders",
+        "mv_active_player_rankings",
+        "mv_hof_eligible_players",
+        "mv_rookie_season_performance"
+      ],
+      "dependencies": ["phase_3_player_stats", "phase_4_team_stats"],
+      "refresh_strategy": {
+        "mv_player_career_totals": "Daily during season, weekly in offseason",
+        "mv_team_season_rankings": "Daily during season",
+        "mv_season_stat_leaders": "Hourly during games, daily otherwise",
+        "mv_active_player_rankings": "Daily",
+        "mv_hof_eligible_players": "Weekly",
+        "mv_rookie_season_performance": "Daily during season"
+      }
+    }
+  },
+
+  "migration_execution_order": {
+    "step_1_extensions": {
+      "description": "Enable required PostgreSQL extensions",
+      "commands": [
+        "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";",
+        "CREATE EXTENSION IF NOT EXISTS \"pg_trgm\";",
+        "CREATE EXTENSION IF NOT EXISTS \"btree_gin\";"
+      ],
+      "rationale": {
+        "uuid-ossp": "For generating UUIDs if needed",
+        "pg_trgm": "For fuzzy text search on player/team names",
+        "btree_gin": "For composite indexes on JSONB columns"
+      }
+    },
+
+    "step_2_enums": {
+      "description": "Create ENUM types",
+      "commands": [
+        "CREATE TYPE game_status AS ENUM ('scheduled', 'in_progress', 'final', 'postponed', 'cancelled');",
+        "CREATE TYPE season_type AS ENUM ('preseason', 'regular', 'wildcard', 'division', 'conference', 'superbowl');",
+        "CREATE TYPE player_status AS ENUM ('active', 'injured_reserve', 'practice_squad', 'suspended', 'retired', 'free_agent');",
+        "CREATE TYPE transaction_type AS ENUM ('signed', 'released', 'traded', 'waived', 'drafted', 'retired', 'ir_placed', 'ir_returned');"
+      ]
+    },
+
+    "step_3_foundation_tables": {
+      "description": "Create tables with no foreign key dependencies",
+      "order": [
+        "teams",
+        "stadiums",
+        "positions",
+        "award_types",
+        "stat_categories",
+        "divisions",
+        "conferences"
+      ],
+      "estimated_time": "5 minutes"
+    },
+
+    "step_4_core_entity_tables": {
+      "description": "Create core entity tables",
+      "order": [
+        "seasons",
+        "players",
+        "coaches",
+        "games (partitioned)",
+        "team_seasons"
+      ],
+      "estimated_time": "10 minutes"
+    },
+
+    "step_5_stats_tables": {
+      "description": "Create all statistics tables",
+      "order": [
+        "player_season_stats (partitioned)",
+        "player_game_stats (partitioned)",
+        "player_career_stats",
+        "player_passing_stats",
+        "player_rushing_stats",
+        "player_receiving_stats",
+        "player_defensive_stats",
+        "player_kicking_stats",
+        "player_returning_stats",
+        "player_advanced_stats",
+        "team_season_stats",
+        "team_game_stats",
+        "team_offense_stats",
+        "team_defense_stats",
+        "team_special_teams_stats"
+      ],
+      "estimated_time": "20 minutes"
+    },
+
+    "step_6_game_detail_tables": {
+      "description": "Create game detail tables",
+      "order": [
+        "game_stats",
+        "game_drives",
+        "play_by_play (partitioned)",
+        "scoring_plays",
+        "key_plays",
+        "game_weather",
+        "game_officials"
+      ],
+      "estimated_time": "15 minutes"
+    },
+
+    "step_7_relationship_tables": {
+      "description": "Create relationship and enrichment tables",
+      "order": [
+        "player_teams",
+        "player_awards",
+        "player_milestones",
+        "player_injuries",
+        "player_contracts",
+        "roster_transactions"
+      ],
+      "estimated_time": "10 minutes"
+    },
+
+    "step_8_leaderboard_tables": {
+      "description": "Create leaderboard tables",
+      "order": [
+        "season_leaderboards",
+        "career_leaderboards",
+        "active_leaderboards",
+        "rookie_leaderboards"
+      ],
+      "estimated_time": "5 minutes"
+    },
+
+    "step_9_indexes": {
+      "description": "Create all indexes (critical first, then important)",
+      "strategy": "Create indexes after data load for better performance",
+      "estimated_time": "30-45 minutes",
+      "parallelization": "Can create indexes concurrently on different tables"
+    },
+
+    "step_10_materialized_views": {
+      "description": "Create materialized views",
+      "order": [
+        "mv_player_career_totals",
+        "mv_team_season_rankings",
+        "mv_season_stat_leaders",
+        "mv_active_player_rankings",
+        "mv_hof_eligible_players",
+        "mv_rookie_season_performance"
+      ],
+      "estimated_time": "10-15 minutes initial build",
+      "note": "First refresh may take longer depending on data volume"
+    },
+
+    "step_11_constraints": {
+      "description": "Add foreign key constraints",
+      "strategy": "Add after all data is loaded to avoid constraint violations",
+      "estimated_time": "10 minutes"
+    },
+
+    "total_estimated_time": "2-3 hours for full schema creation and initial data load"
+  },
+
+  "data_ingestion_workflow": {
+    "source_1_nflreadpy": {
+      "description": "Python package for historical NFL data",
+      "priority": "P0",
+      "covers": {
+        "years": "1970-2024",
+        "fields": 487,
+        "tables": [
+          "player_season_stats",
+          "player_passing_stats",
+          "player_rushing_stats",
+          "player_receiving_stats",
+          "team_season_stats",
+          "games"
+        ]
+      },
+      "ingestion_steps": [
+        "1. Install nflreadpy package",
+        "2. Fetch season data for each year (1970-2024)",
+        "3. Transform to match schema",
+        "4. Bulk insert into appropriate tables",
+        "5. Validate record counts"
+      ],
+      "estimated_time": "4-6 hours (54 years of data)",
+      "validation_queries": [
+        "SELECT season, COUNT(*) FROM player_season_stats GROUP BY season ORDER BY season;",
+        "SELECT COUNT(DISTINCT player_id) FROM player_season_stats;",
+        "SELECT season, COUNT(*) FROM games GROUP BY season ORDER BY season;"
+      ]
+    },
+
+    "source_2_sportsref": {
+      "description": "Web scraping Pro Football Reference",
+      "priority": "P0",
+      "covers": {
+        "years": "1970-2024",
+        "fields": 325,
+        "tables": [
+          "player_defensive_stats",
+          "player_advanced_stats",
+          "team_defense_stats",
+          "player_awards",
+          "player_milestones"
+        ]
+      },
+      "ingestion_steps": [
+        "1. Set up scraping with rate limiting (1 req/sec)",
+        "2. Scrape player pages by year",
+        "3. Scrape team pages by year",
+        "4. Transform to match schema",
+        "5. Merge with existing data",
+        "6. Validate completeness"
+      ],
+      "estimated_time": "8-12 hours (with rate limiting)",
+      "rate_limiting": "1 request per second to avoid blocking"
+    },
+
+    "source_3_nflscrapy": {
+      "description": "Advanced analytics (EPA, DVOA, etc.)",
+      "priority": "P1",
+      "covers": {
+        "years": "2000-2024",
+        "fields": 185,
+        "tables": [
+          "player_advanced_stats",
+          "play_by_play"
+        ]
+      },
+      "ingestion_steps": [
+        "1. Install nflscrapy package",
+        "2. Fetch play-by-play data",
+        "3. Calculate EPA, WPA, CPOE",
+        "4. Aggregate to player/game level",
+        "5. Insert into advanced_stats tables"
+      ],
+      "estimated_time": "6-8 hours"
+    },
+
+    "source_4_ngs": {
+      "description": "NFL Next Gen Stats (tracking data)",
+      "priority": "P1",
+      "covers": {
+        "years": "2016-2024",
+        "fields": 142,
+        "tables": [
+          "player_advanced_stats"
+        ]
+      },
+      "ingestion_steps": [
+        "1. Access NFL Next Gen Stats API",
+        "2. Fetch tracking metrics (speed, separation, etc.)",
+        "3. Transform to match schema",
+        "4. Insert into player_advanced_stats",
+        "5. Validate completeness"
+      ],
+      "estimated_time": "2-3 hours"
+    },
+
+    "source_5_manual": {
+      "description": "Manual curation for awards, context, historical notes",
+      "priority": "P2",
+      "covers": {
+        "fields": 95,
+        "tables": [
+          "player_awards",
+          "player_milestones",
+          "award_types"
+        ]
+      },
+      "ingestion_steps": [
+        "1. Create CSV templates",
+        "2. Research and populate awards data",
+        "3. Research and populate milestone data",
+        "4. Import via COPY command",
+        "5. Validate accuracy"
+      ],
+      "estimated_time": "20-30 hours (manual research)"
+    },
+
+    "total_ingestion_time": "40-60 hours initial load, 2-4 hours weekly updates during season"
+  },
+
+  "performance_optimization": {
+    "partitioning": {
+      "tables": [
+        "player_season_stats",
+        "player_game_stats",
+        "play_by_play",
+        "games"
+      ],
+      "strategy": "RANGE partitioning by season",
+      "benefits": [
+        "Faster queries when filtering by season",
+        "Easier data archival",
+        "Improved maintenance operations",
+        "Better query planner statistics"
+      ]
+    },
+
+    "indexing": {
+      "primary_keys": "All tables have primary key indexes automatically",
+      "foreign_keys": "Index all foreign key columns for join performance",
+      "common_filters": [
+        "player_id (most queries filter by player)",
+        "team_id (team page queries)",
+        "season (historical queries)",
+        "game_id (game detail queries)",
+        "primary_position (position-specific leaderboards)"
+      ],
+      "composite_indexes": [
+        "(player_id, season) for player season queries",
+        "(team_id, season) for team season queries",
+        "(season, primary_position) for position leaderboards"
+      ]
+    },
+
+    "materialized_views": {
+      "purpose": "Pre-compute expensive aggregations",
+      "refresh_strategy": "Concurrent refresh to avoid locking",
+      "views": [
+        "mv_player_career_totals - Sum all season stats",
+        "mv_season_stat_leaders - Top 10 in each category",
+        "mv_active_player_rankings - Current player rankings",
+        "mv_team_season_rankings - Team rankings by season"
+      ],
+      "estimated_speedup": "10-100x for career stat queries"
+    },
+
+    "query_optimization": {
+      "use_prepared_statements": "For frequently executed queries",
+      "enable_parallel_query": "For large aggregations",
+      "tune_work_mem": "Increase for sort operations",
+      "tune_shared_buffers": "25% of RAM recommended",
+      "enable_jit": "For complex queries with many calculations"
+    },
+
+    "caching_strategy": {
+      "application_cache": "Redis for frequently accessed data",
+      "cache_player_profiles": "1 hour TTL",
+      "cache_season_stats": "24 hour TTL (1 hour during games)",
+      "cache_career_stats": "7 day TTL",
+      "cache_leaderboards": "1 hour TTL"
+    }
+  },
+
+  "rollback_procedures": {
+    "schema_rollback": {
+      "method": "Database backup before migration",
+      "command": "pg_dump -Fc next_scraper > backup_pre_migration.dump",
+      "restore_command": "pg_restore -d next_scraper backup_pre_migration.dump",
+      "estimated_time": "30-60 minutes for full restore"
+    },
+
+    "data_rollback": {
+      "method": "Transaction-based ingestion with savepoints",
+      "pattern": "BEGIN; ... SAVEPOINT sp1; ... IF ERROR THEN ROLLBACK TO sp1; ... COMMIT;",
+      "validation": "Verify record counts before commit"
+    },
+
+    "partition_rollback": {
+      "method": "Detach partition if data load fails",
+      "command": "ALTER TABLE player_season_stats DETACH PARTITION player_season_stats_2024;",
+      "cleanup": "DROP TABLE player_season_stats_2024;"
+    }
+  },
+
+  "monitoring_and_validation": {
+    "table_size_monitoring": {
+      "query": "SELECT schemaname, tablename, pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size FROM pg_tables WHERE schemaname = 'public' ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;",
+      "alert_threshold": "Table exceeds 5 GB without partitioning"
+    },
+
+    "row_count_validation": {
+      "players": "Expected: 27,000+",
+      "player_season_stats": "Expected: 145,000+",
+      "player_game_stats": "Expected: 1,000,000+",
+      "games": "Expected: 14,000+",
+      "play_by_play": "Expected: 7,000,000+"
+    },
+
+    "data_quality_checks": {
+      "null_checks": "SELECT COUNT(*) FROM players WHERE first_name IS NULL;",
+      "orphan_checks": "SELECT COUNT(*) FROM player_season_stats WHERE player_id NOT IN (SELECT player_id FROM players);",
+      "duplicate_checks": "SELECT player_id, season, COUNT(*) FROM player_season_stats GROUP BY player_id, season HAVING COUNT(*) > 1;",
+      "date_range_checks": "SELECT MIN(season), MAX(season) FROM player_season_stats;"
+    },
+
+    "index_usage_monitoring": {
+      "query": "SELECT schemaname, tablename, indexname, idx_scan FROM pg_stat_user_indexes WHERE idx_scan = 0 ORDER BY schemaname, tablename;",
+      "action": "Remove unused indexes to improve write performance"
+    },
+
+    "query_performance_monitoring": {
+      "enable_pg_stat_statements": "CREATE EXTENSION pg_stat_statements;",
+      "slow_query_threshold": "500ms",
+      "query": "SELECT query, calls, mean_exec_time, max_exec_time FROM pg_stat_statements ORDER BY mean_exec_time DESC LIMIT 20;"
+    }
+  },
+
+  "estimated_costs": {
+    "infrastructure": {
+      "database_server": "AWS RDS PostgreSQL db.t3.large (2 vCPU, 8 GB RAM)",
+      "estimated_cost": "$100-150/month",
+      "storage": "50 GB SSD (room for growth)",
+      "storage_cost": "$5-10/month",
+      "backups": "Automated daily backups (7 day retention)",
+      "backup_cost": "$5/month"
+    },
+
+    "total_monthly_cost": "$110-165/month for database infrastructure",
+    "scaling_path": "Can scale to db.r5.xlarge (4 vCPU, 32 GB RAM) for ~$350/month if needed"
+  },
+
+  "maintenance_schedule": {
+    "daily": [
+      "Refresh materialized views (during low-traffic hours)",
+      "Monitor slow queries",
+      "Check error logs"
+    ],
+    "weekly": [
+      "VACUUM ANALYZE on large tables",
+      "Review index usage",
+      "Check partition health",
+      "Update statistics"
+    ],
+    "monthly": [
+      "REINDEX on heavily updated tables",
+      "Review and archive old logs",
+      "Capacity planning review",
+      "Performance tuning review"
+    ],
+    "seasonal": [
+      "Create new partitions for upcoming season",
+      "Archive old season data if needed",
+      "Full database backup before season start"
+    ]
+  },
+
+  "disaster_recovery": {
+    "backup_strategy": {
+      "full_backup": "Daily at 3 AM UTC",
+      "incremental_backup": "Every 6 hours",
+      "retention": "30 days",
+      "offsite_backup": "AWS S3 cross-region replication"
+    },
+
+    "recovery_time_objective": "4 hours (RTO)",
+    "recovery_point_objective": "6 hours (RPO)",
+
+    "failure_scenarios": {
+      "table_corruption": {
+        "detection": "Data validation checks fail",
+        "resolution": "Restore specific table from backup",
+        "estimated_time": "30 minutes"
+      },
+      "database_server_failure": {
+        "detection": "Health check fails",
+        "resolution": "Failover to replica or restore from backup",
+        "estimated_time": "2-4 hours"
+      },
+      "data_center_failure": {
+        "detection": "Region health check fails",
+        "resolution": "Restore from S3 backup in different region",
+        "estimated_time": "4-6 hours"
+      }
+    }
+  },
+
+  "testing_strategy": {
+    "unit_tests": {
+      "migration_scripts": "Test each migration up and down",
+      "data_transformations": "Test data mapping logic",
+      "validation_rules": "Test all data quality checks"
+    },
+
+    "integration_tests": {
+      "full_migration": "Test complete migration on sample dataset",
+      "data_ingestion": "Test each data source integration",
+      "query_performance": "Test common queries meet SLA"
+    },
+
+    "load_tests": {
+      "concurrent_queries": "Simulate 100 concurrent users",
+      "large_result_sets": "Test queries returning 10,000+ rows",
+      "bulk_inserts": "Test inserting 100,000 rows at once"
+    },
+
+    "acceptance_criteria": {
+      "schema_creation": "All 41 tables created successfully",
+      "data_load": "Row counts match expected values ±5%",
+      "query_performance": "95th percentile < 500ms for common queries",
+      "data_quality": "0 orphaned records, 0 duplicates, <1% null values"
+    }
+  },
+
+  "implementation_checklist": [
+    {
+      "phase": "Pre-implementation",
+      "tasks": [
+        "Provision database server",
+        "Configure security groups and network access",
+        "Create database user accounts with appropriate permissions",
+        "Set up monitoring and alerting",
+        "Configure automated backups",
+        "Install required PostgreSQL extensions"
+      ]
+    },
+    {
+      "phase": "Schema Creation",
+      "tasks": [
+        "Run migration scripts in order (steps 1-11)",
+        "Verify all tables created",
+        "Verify all indexes created",
+        "Verify all constraints created",
+        "Document any deviations from plan"
+      ]
+    },
+    {
+      "phase": "Data Ingestion",
+      "tasks": [
+        "Load foundation data (teams, stadiums, positions, etc.)",
+        "Validate foundation data completeness",
+        "Load historical data (1970-2024) from nflreadpy",
+        "Validate historical data row counts",
+        "Load supplemental data from sportsref",
+        "Load advanced analytics from nflscrapy",
+        "Load Next Gen Stats data",
+        "Validate data quality (no orphans, no duplicates)",
+        "Build materialized views",
+        "Validate materialized view accuracy"
+      ]
+    },
+    {
+      "phase": "Testing",
+      "tasks": [
+        "Run unit tests on migrations",
+        "Run integration tests on data ingestion",
+        "Run load tests on common queries",
+        "Verify acceptance criteria met",
+        "Document any performance issues"
+      ]
+    },
+    {
+      "phase": "Post-implementation",
+      "tasks": [
+        "Set up monitoring dashboards",
+        "Configure scheduled maintenance tasks",
+        "Document operational procedures",
+        "Train team on database management",
+        "Create runbook for common issues"
+      ]
+    }
+  ],
+
+  "success_metrics": {
+    "implementation_success": {
+      "all_tables_created": "41/41 tables",
+      "all_partitions_created": "24+ partitions",
+      "all_indexes_created": "150+ indexes",
+      "all_views_created": "6 materialized views"
+    },
+
+    "data_quality": {
+      "completeness": ">95% of expected rows loaded",
+      "accuracy": "<1% null values in required fields",
+      "consistency": "0 orphaned records",
+      "uniqueness": "0 duplicate primary keys"
+    },
+
+    "performance": {
+      "query_latency_p50": "<100ms",
+      "query_latency_p95": "<500ms",
+      "query_latency_p99": "<2000ms",
+      "bulk_insert_rate": ">10,000 rows/second"
+    },
+
+    "reliability": {
+      "uptime": "99.9%",
+      "backup_success_rate": "100%",
+      "recovery_test_success": "Pass quarterly DR tests"
+    }
+  }
+}

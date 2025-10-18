@@ -1,0 +1,708 @@
+{
+  "document_version": "1.0",
+  "last_updated": "2025-10-17",
+  "status": "Complete - All 674 fields mapped to sources",
+  "scope": {
+    "season": 2025,
+    "weeks_total": 18,
+    "update_frequency": "Real-time (WebSocket), Weekly, Daily",
+    "priority": "P0 - Critical (powers all other pages)"
+  },
+  "total_fields": 674,
+  "coverage_summary": {
+    "available": 150,
+    "partial": 320,
+    "planned": 186,
+    "missing": 18,
+    "coverage_percentage": 69.7
+  },
+  "data_sources": {
+    "websocket_feed": {
+      "source_id": "1.1",
+      "status": "planned",
+      "coverage": "Real-time play-by-play, live scores, game clock",
+      "fields_provided": 150,
+      "update_frequency": "Instant (~30 second updates during games)",
+      "cost": "TBD - ESPN API or NFL.com feed",
+      "priority": "P0 - Critical for live stats",
+      "sections_covered": ["Section 1: Live Game Stats", "Section 4: Real-Time Scores"],
+      "implementation_notes": "WebSocket connection for instant updates during games. Fallback to polling every 30s if WebSocket unavailable."
+    },
+    "nflreadpy": {
+      "source_id": "1.2",
+      "status": "active",
+      "coverage": "Current season stats, weekly leaderboards, season cumulative totals",
+      "fields_provided": 320,
+      "update_frequency": "Weekly (after games complete)",
+      "cost": "Free",
+      "priority": "P0 - Critical for season stats",
+      "sections_covered": ["Section 2: Weekly Leaderboards", "Section 3: Season Cumulative"],
+      "implementation_notes": "Primary source for aggregated weekly and season stats. Already integrated."
+    },
+    "espn_api": {
+      "source_id": "1.3",
+      "status": "planned",
+      "coverage": "Live game data, scores, play-by-play, news, injury updates",
+      "fields_provided": 50,
+      "update_frequency": "Real-time (during games), Daily (injury reports)",
+      "cost": "Free",
+      "priority": "P0 - Critical for live data",
+      "sections_covered": ["Section 4: Real-Time Scores", "Section 5: Player Status"],
+      "implementation_notes": "ESPN Hidden API for live scores, boxscores, and injury reports."
+    },
+    "the_odds_api": {
+      "source_id": "1.4",
+      "status": "planned",
+      "coverage": "Betting lines, player props, game totals, live in-game odds",
+      "fields_provided": 58,
+      "update_frequency": "Real-time (odds changes)",
+      "cost": "Free tier (500 requests/month) or $30/mo for unlimited",
+      "priority": "P1 - Important for betting features",
+      "sections_covered": ["Section 9: Betting Lines & Props"],
+      "implementation_notes": "The Odds API for all betting data. Free tier sufficient for MVP."
+    },
+    "dfs_apis": {
+      "source_id": "1.5",
+      "status": "planned",
+      "coverage": "DFS salaries, ownership percentages, optimal lineups",
+      "fields_provided": 12,
+      "update_frequency": "Weekly (salaries), Real-time (ownership)",
+      "cost": "TBD - DraftKings/FanDuel APIs or scraping",
+      "priority": "P0 - Critical for fantasy features",
+      "sections_covered": ["Section 6: Fantasy Stats (DFS subsection)"],
+      "implementation_notes": "DraftKings and FanDuel APIs for salaries. Ownership may require scraping or premium data."
+    },
+    "twitter_x_api": {
+      "source_id": "1.6",
+      "status": "planned",
+      "coverage": "Viral moments, trending topics, player/team tweets",
+      "fields_provided": 18,
+      "update_frequency": "Real-time",
+      "cost": "Twitter API v2 Basic ($100/mo for sufficient limits)",
+      "priority": "P2 - Nice-to-have",
+      "sections_covered": ["Section 10: Social/Viral Moments"],
+      "implementation_notes": "Twitter API v2 for trending analysis and viral tracking. Can be deferred to post-MVP."
+    },
+    "nfl_next_gen_stats": {
+      "source_id": "1.7",
+      "status": "planned",
+      "coverage": "Next Gen Stats (tracking data, separation, cushion, etc.)",
+      "fields_provided": 8,
+      "update_frequency": "Weekly (post-game)",
+      "cost": "Free (scraped from NFL.com)",
+      "priority": "P1 - Important for advanced analytics",
+      "sections_covered": ["Section 8: Advanced Analytics (NGS subsection)"],
+      "implementation_notes": "Scrape NFL Next Gen Stats from NFL.com or use unofficial API."
+    },
+    "manual_entry": {
+      "source_id": "1.8",
+      "status": "ongoing",
+      "coverage": "Beat reporter notes, roster move details, injury narratives",
+      "fields_provided": 10,
+      "update_frequency": "Daily/Weekly",
+      "cost": "Free (manual curation)",
+      "priority": "P1 - Important for context",
+      "sections_covered": ["Section 5: Player Status (beat reporter notes)"],
+      "implementation_notes": "Manual curation for qualitative insights from beat reporters."
+    },
+    "calculated_derived": {
+      "source_id": "1.9",
+      "status": "implementation",
+      "coverage": "Projections, trends, pace calculations, consistency scores",
+      "fields_provided": 48,
+      "update_frequency": "Weekly (calculated from other sources)",
+      "cost": "Free (internal calculations)",
+      "priority": "P0/P1 - Mixed priority",
+      "sections_covered": ["Section 6: Fantasy Stats (opportunities/advanced)", "Section 7: Trending Analytics"],
+      "implementation_notes": "Calculated fields derived from nflreadpy and live stats. Requires analytics engine."
+    }
+  },
+  "sections": {
+    "section_1_live_game_stats": {
+      "section_name": "Live Game Stats (P0)",
+      "total_fields": 87,
+      "update_frequency": "Instant (WebSocket)",
+      "field_groups": {
+        "game_metadata": {
+          "fields": ["game_id", "season", "season_type", "week", "game_date", "game_time", "venue_name", "venue_city", "venue_state", "roof_type", "surface_type", "game_status", "broadcast_network", "national_tv", "playoff_game"],
+          "total_fields": 15,
+          "data_source": "websocket_feed",
+          "status": "planned",
+          "coverage": "100% - All metadata available from game feed"
+        },
+        "game_clock_status": {
+          "fields": ["quarter", "time_remaining", "time_remaining_seconds", "is_halftime", "is_overtime", "overtime_period", "possession_team", "down", "distance", "yardline"],
+          "total_fields": 10,
+          "data_source": "websocket_feed",
+          "status": "planned",
+          "coverage": "100% - All clock data from live feed"
+        },
+        "score_team_info": {
+          "fields": ["away_team_id", "away_team_abbr", "away_team_name", "away_team_logo_url", "away_score", "away_record", "home_team_id", "home_team_abbr", "home_team_name", "home_team_logo_url", "home_score", "home_record"],
+          "total_fields": 12,
+          "data_source": "websocket_feed",
+          "status": "planned",
+          "coverage": "100% - All team/score data from live feed"
+        },
+        "live_player_stats": {
+          "fields": ["player_id", "player_name", "player_position", "player_team", "player_jersey", "pass_completions", "pass_attempts", "pass_yards", "pass_touchdowns", "pass_interceptions", "pass_sacks", "pass_sack_yards", "passer_rating", "qbr", "rush_attempts", "rush_yards", "rush_touchdowns", "rush_longest", "rush_yards_per_carry", "targets", "receptions", "rec_yards", "rec_touchdowns", "rec_longest", "rec_yards_per_reception", "tackles_solo", "tackles_assist", "tackles_total", "sacks", "tackles_for_loss", "qb_hits", "interceptions", "passes_defended", "forced_fumbles", "fumble_recoveries", "fg_made", "fg_attempts", "fg_longest", "xp_made", "xp_attempts", "punts", "punt_yards", "punt_average", "punt_inside_20", "fantasy_points_standard", "fantasy_points_ppr", "fantasy_points_half_ppr", "fantasy_points_dfs_dk", "fantasy_points_dfs_fd", "is_active"],
+          "total_fields": 50,
+          "data_source": "websocket_feed",
+          "status": "planned",
+          "coverage": "90% - Most stats available, DFS scoring requires calculation",
+          "partial_fields": {
+            "fantasy_points_dfs_dk": "calculated_derived",
+            "fantasy_points_dfs_fd": "calculated_derived",
+            "qbr": "espn_api"
+          }
+        }
+      },
+      "coverage_analysis": {
+        "available": 0,
+        "planned": 87,
+        "partial": 0,
+        "missing": 0,
+        "percentage": 100
+      }
+    },
+    "section_2_weekly_leaderboards": {
+      "section_name": "Weekly Leaderboards (P0)",
+      "total_fields": 288,
+      "update_frequency": "Weekly",
+      "field_groups": {
+        "leaderboard_categories": {
+          "categories": ["passing_yards", "rushing_yards", "receiving_yards", "touchdowns", "receptions", "fantasy_points_ppr", "interceptions_def", "sacks_def", "field_goals_made", "passer_rating", "yards_per_carry", "yards_after_catch"],
+          "fields_per_category": 24,
+          "total_fields": 288,
+          "data_source": "nflreadpy",
+          "status": "partial",
+          "coverage": "80% - Core leaderboard stats available, trending indicators require calculation",
+          "partial_fields": {
+            "trending_indicator": "calculated_derived",
+            "week_over_week_change": "calculated_derived"
+          }
+        }
+      },
+      "coverage_analysis": {
+        "available": 230,
+        "planned": 0,
+        "partial": 58,
+        "missing": 0,
+        "percentage": 80
+      }
+    },
+    "section_3_season_cumulative": {
+      "section_name": "Season Cumulative Stats (P0)",
+      "total_fields": 42,
+      "update_frequency": "Weekly",
+      "field_groups": {
+        "per_player_season_totals": {
+          "fields": ["season_player_id", "season_player_name", "season_player_position", "season_player_team", "season_games_played", "season_games_started", "season_pass_yards", "season_pass_tds", "season_pass_ints", "season_pass_completions", "season_pass_attempts", "season_passer_rating", "season_rush_yards", "season_rush_tds", "season_rush_attempts", "season_rush_avg", "season_receptions", "season_rec_yards", "season_rec_tds", "season_targets", "season_tackles", "season_sacks", "season_ints", "season_fantasy_ppr", "season_fantasy_standard", "season_fantasy_half_ppr"],
+          "total_fields": 26,
+          "data_source": "nflreadpy",
+          "status": "available",
+          "coverage": "100% - All core season stats available"
+        },
+        "pace_projections": {
+          "fields": ["season_pace_yards", "season_pace_tds", "season_pace_ranking", "season_games_remaining", "season_projected_final_stats", "season_historical_comparison"],
+          "total_fields": 6,
+          "data_source": "calculated_derived",
+          "status": "planned",
+          "coverage": "0% - Requires implementation of projection engine"
+        },
+        "quality_metrics": {
+          "fields": ["season_consistency_score", "season_boom_games", "season_bust_games", "season_milestone_watch", "season_career_highs", "season_awards_watch"],
+          "total_fields": 6,
+          "data_source": "calculated_derived",
+          "status": "planned",
+          "coverage": "0% - Requires analytics implementation"
+        },
+        "team_context": {
+          "fields": ["season_team_record", "season_team_rank", "season_playoff_odds", "season_last_updated"],
+          "total_fields": 4,
+          "data_source": "nflreadpy",
+          "status": "partial",
+          "coverage": "75% - Team record/rank available, playoff odds require calculation",
+          "partial_fields": {
+            "season_playoff_odds": "calculated_derived"
+          }
+        }
+      },
+      "coverage_analysis": {
+        "available": 26,
+        "planned": 12,
+        "partial": 4,
+        "missing": 0,
+        "percentage": 62
+      }
+    },
+    "section_4_realtime_scores": {
+      "section_name": "Real-Time Scores & Updates (P0)",
+      "total_fields": 35,
+      "update_frequency": "Instant (WebSocket)",
+      "field_groups": {
+        "scoreboard": {
+          "fields": ["scoreboard_game_id", "scoreboard_status", "scoreboard_away_team", "scoreboard_away_score", "scoreboard_home_team", "scoreboard_home_score", "scoreboard_quarter", "scoreboard_time", "scoreboard_possession", "scoreboard_redzone", "scoreboard_last_play", "scoreboard_away_timeouts", "scoreboard_home_timeouts", "scoreboard_tv_network", "scoreboard_weather"],
+          "total_fields": 15,
+          "data_source": "websocket_feed",
+          "status": "planned",
+          "coverage": "100% - All scoreboard data from live feed"
+        },
+        "drive_summary": {
+          "fields": ["drive_team", "drive_start_time", "drive_start_yardline", "drive_plays", "drive_yards", "drive_time_elapsed", "drive_result", "drive_scoring_play", "drive_key_plays", "drive_current_down_distance"],
+          "total_fields": 10,
+          "data_source": "websocket_feed",
+          "status": "planned",
+          "coverage": "100% - All drive data from live feed"
+        },
+        "betting_lines_live": {
+          "fields": ["betting_spread_current", "betting_spread_opening", "betting_spread_movement", "betting_total_current", "betting_total_opening", "betting_total_movement", "betting_moneyline_away", "betting_moneyline_home", "betting_live_win_probability_away", "betting_live_win_probability_home"],
+          "total_fields": 10,
+          "data_source": "the_odds_api",
+          "status": "planned",
+          "coverage": "100% - All betting lines from The Odds API"
+        }
+      },
+      "coverage_analysis": {
+        "available": 0,
+        "planned": 35,
+        "partial": 0,
+        "missing": 0,
+        "percentage": 100
+      }
+    },
+    "section_5_player_status": {
+      "section_name": "Player Status & Availability (P0)",
+      "total_fields": 28,
+      "update_frequency": "Daily/Real-time",
+      "field_groups": {
+        "injury_status": {
+          "fields": ["status_player_id", "status_player_name", "status_player_position", "status_player_team", "status_current", "status_injury_type", "status_injury_body_part", "status_injury_severity", "status_injury_date", "status_expected_return", "status_practice_wed", "status_practice_thu", "status_practice_fri", "status_game_time_decision", "status_snap_count_projection", "status_last_updated", "status_official_designation"],
+          "total_fields": 17,
+          "data_source": "espn_api",
+          "status": "planned",
+          "coverage": "85% - Core injury data available, snap count projection requires calculation",
+          "partial_fields": {
+            "status_snap_count_projection": "calculated_derived"
+          }
+        },
+        "beat_reporter_notes": {
+          "fields": ["status_beat_reporter_notes", "status_beat_reporter_name", "status_beat_reporter_note", "status_beat_reporter_timestamp", "status_social_media_updates"],
+          "total_fields": 5,
+          "data_source": "manual_entry",
+          "status": "planned",
+          "coverage": "50% - Manual curation required for qualitative insights"
+        },
+        "roster_moves": {
+          "fields": ["status_roster_move_type", "status_roster_move_date", "status_roster_move_details", "status_depth_chart_position", "status_starter", "status_games_missed_season"],
+          "total_fields": 6,
+          "data_source": "espn_api",
+          "status": "planned",
+          "coverage": "100% - Roster moves available from ESPN API"
+        }
+      },
+      "coverage_analysis": {
+        "available": 0,
+        "planned": 23,
+        "partial": 5,
+        "missing": 0,
+        "percentage": 82
+      }
+    },
+    "section_6_fantasy_stats": {
+      "section_name": "Fantasy Stats (P0)",
+      "total_fields": 51,
+      "update_frequency": "Real-time/Weekly",
+      "field_groups": {
+        "fantasy_scoring": {
+          "fields": ["fantasy_player_id", "fantasy_season_total_standard", "fantasy_season_total_ppr", "fantasy_season_total_half_ppr", "fantasy_season_rank_standard", "fantasy_season_rank_ppr", "fantasy_season_rank_half_ppr", "fantasy_week_points_standard", "fantasy_week_points_ppr", "fantasy_week_points_half_ppr", "fantasy_ppg_standard", "fantasy_ppg_ppr", "fantasy_ppg_half_ppr", "fantasy_boom_weeks", "fantasy_bust_weeks"],
+          "total_fields": 15,
+          "data_source": "calculated_derived",
+          "status": "partial",
+          "coverage": "80% - Fantasy points calculated from nflreadpy stats",
+          "partial_fields": {
+            "fantasy_boom_weeks": "calculated_derived",
+            "fantasy_bust_weeks": "calculated_derived"
+          }
+        },
+        "dfs_data": {
+          "fields": ["dfs_draftkings_salary", "dfs_fanduel_salary", "dfs_draftkings_ownership", "dfs_fanduel_ownership", "dfs_draftkings_value", "dfs_fanduel_value", "dfs_optimal_lineup", "dfs_projection_floor", "dfs_projection_median", "dfs_projection_ceiling", "dfs_leverage_score", "dfs_salary_change"],
+          "total_fields": 12,
+          "data_source": "dfs_apis",
+          "status": "planned",
+          "coverage": "50% - Salaries available, ownership/projections require additional sources"
+        },
+        "opportunities": {
+          "fields": ["opp_target_share", "opp_air_yards_share", "opp_snap_share", "opp_route_participation", "opp_red_zone_targets", "opp_red_zone_touches", "opp_goal_line_carries", "opp_passing_down_snaps", "opp_early_down_touches", "opp_team_pass_rate", "opp_team_run_rate", "opp_weighted_opportunity"],
+          "total_fields": 12,
+          "data_source": "nflreadpy",
+          "status": "partial",
+          "coverage": "60% - Some opportunity metrics available, others require scraping",
+          "partial_fields": {
+            "opp_snap_share": "nfl_next_gen_stats",
+            "opp_route_participation": "nfl_next_gen_stats",
+            "opp_weighted_opportunity": "calculated_derived"
+          }
+        },
+        "advanced_metrics": {
+          "fields": ["adv_yards_per_route_run", "adv_target_quality_rating", "adv_broken_tackles_per_touch", "adv_yards_created_per_touch", "adv_contested_catch_rate", "adv_separation_average", "adv_yards_after_contact_per_rush", "adv_true_catch_rate", "adv_boom_rate", "adv_bust_rate", "adv_consistency_rating", "adv_ceiling_games"],
+          "total_fields": 12,
+          "data_source": "calculated_derived",
+          "status": "planned",
+          "coverage": "30% - Requires advanced analytics engine and NGS data",
+          "partial_fields": {
+            "adv_separation_average": "nfl_next_gen_stats",
+            "adv_broken_tackles_per_touch": "nfl_next_gen_stats"
+          }
+        }
+      },
+      "coverage_analysis": {
+        "available": 12,
+        "planned": 6,
+        "partial": 33,
+        "missing": 0,
+        "percentage": 47
+      }
+    },
+    "section_7_trending_analytics": {
+      "section_name": "Trending Analytics (P1)",
+      "total_fields": 38,
+      "update_frequency": "Weekly",
+      "field_groups": {
+        "streaks_trends": {
+          "fields": ["trend_player_id", "trend_hot_streak", "trend_cold_streak", "trend_streak_length", "trend_streak_type", "trend_week_over_week_targets", "trend_week_over_week_yards", "trend_week_over_week_tds", "trend_week_over_week_fantasy", "trend_last_3_weeks_avg", "trend_last_5_weeks_avg", "trend_season_avg", "trend_trending_direction", "trend_momentum_score", "trend_volatility_score", "trend_floor_last_4_weeks", "trend_ceiling_last_4_weeks", "trend_breakout_candidate", "trend_buy_low_candidate", "trend_sell_high_candidate"],
+          "total_fields": 20,
+          "data_source": "calculated_derived",
+          "status": "planned",
+          "coverage": "0% - Requires trending analytics engine"
+        },
+        "projections": {
+          "fields": ["proj_next_week_yards", "proj_next_week_tds", "proj_next_week_fantasy_ppr", "proj_next_week_floor", "proj_next_week_ceiling", "proj_season_end_yards", "proj_season_end_tds", "proj_season_end_fantasy_ppr", "proj_confidence_level", "proj_last_updated"],
+          "total_fields": 10,
+          "data_source": "calculated_derived",
+          "status": "planned",
+          "coverage": "0% - Requires projection engine implementation"
+        },
+        "alerts_notifications": {
+          "fields": ["alert_breakout_alert", "alert_injury_concern", "alert_usage_spike", "alert_usage_decline", "alert_matchup_advantage", "alert_matchup_concern", "alert_value_alert", "alert_red_flag"],
+          "total_fields": 8,
+          "data_source": "calculated_derived",
+          "status": "planned",
+          "coverage": "0% - Requires alerting system"
+        }
+      },
+      "coverage_analysis": {
+        "available": 0,
+        "planned": 38,
+        "partial": 0,
+        "missing": 0,
+        "percentage": 0
+      }
+    },
+    "section_8_advanced_analytics": {
+      "section_name": "Advanced Analytics (P1)",
+      "total_fields": 29,
+      "update_frequency": "Weekly",
+      "field_groups": {
+        "epa_metrics": {
+          "fields": ["epa_player_id", "epa_total_season", "epa_per_play", "epa_passing", "epa_rushing", "epa_receiving", "epa_rank_position", "epa_rank_all_players", "epa_last_4_weeks", "epa_trend"],
+          "total_fields": 10,
+          "data_source": "nflreadpy",
+          "status": "partial",
+          "coverage": "60% - EPA data available from nflreadpy, ranking/trend requires calculation",
+          "partial_fields": {
+            "epa_rank_position": "calculated_derived",
+            "epa_rank_all_players": "calculated_derived",
+            "epa_trend": "calculated_derived"
+          }
+        },
+        "success_rate": {
+          "fields": ["success_rate_overall", "success_rate_passing", "success_rate_rushing", "success_rate_receiving", "success_rate_first_down", "success_rate_third_down"],
+          "total_fields": 6,
+          "data_source": "nflreadpy",
+          "status": "partial",
+          "coverage": "70% - Success rate available, situational splits require calculation"
+        },
+        "cpoe": {
+          "fields": ["cpoe_season", "cpoe_last_4_weeks", "cpoe_rank_qb", "cpoe_trend", "cpoe_by_depth"],
+          "total_fields": 5,
+          "data_source": "nflreadpy",
+          "status": "partial",
+          "coverage": "60% - CPOE available, ranking/trend requires calculation"
+        },
+        "next_gen_stats": {
+          "fields": ["ngs_avg_separation", "ngs_cushion", "ngs_avg_time_to_throw", "ngs_completion_pct_expected", "ngs_rush_yards_over_expected", "ngs_avg_rush_yards_before_contact", "ngs_rush_attempts_8_plus_box", "ngs_aggressiveness"],
+          "total_fields": 8,
+          "data_source": "nfl_next_gen_stats",
+          "status": "planned",
+          "coverage": "100% - All NGS metrics available from NFL.com"
+        }
+      },
+      "coverage_analysis": {
+        "available": 0,
+        "planned": 8,
+        "partial": 21,
+        "missing": 0,
+        "percentage": 72
+      }
+    },
+    "section_9_betting_lines_props": {
+      "section_name": "Betting Lines & Props (P1)",
+      "total_fields": 58,
+      "update_frequency": "Real-time",
+      "field_groups": {
+        "game_lines": {
+          "fields": ["betting_game_id", "betting_spread_opening", "betting_spread_current", "betting_spread_movement", "betting_spread_movement_direction", "betting_total_opening", "betting_total_current", "betting_total_movement", "betting_moneyline_away_opening", "betting_moneyline_away_current", "betting_moneyline_home_opening", "betting_moneyline_home_current"],
+          "total_fields": 12,
+          "data_source": "the_odds_api",
+          "status": "planned",
+          "coverage": "100% - All game lines available from The Odds API"
+        },
+        "player_props": {
+          "fields": ["prop_player_id", "prop_player_name", "prop_passing_yards_line", "prop_passing_yards_over_odds", "prop_passing_yards_under_odds", "prop_passing_tds_line", "prop_passing_tds_over_odds", "prop_passing_tds_under_odds", "prop_rushing_yards_line", "prop_rushing_yards_over_odds", "prop_rushing_yards_under_odds", "prop_receiving_yards_line", "prop_receiving_yards_over_odds", "prop_receiving_yards_under_odds", "prop_receptions_line", "prop_receptions_over_odds", "prop_receptions_under_odds", "prop_anytime_td_odds", "prop_first_td_odds", "prop_2plus_tds_odds", "prop_longest_reception_line", "prop_longest_rush_line", "prop_completions_line", "prop_interceptions_line", "prop_fantasy_points_line", "prop_season_hit_rate_passing_yards", "prop_season_hit_rate_rushing_yards", "prop_season_hit_rate_receiving_yards", "prop_season_hit_rate_tds", "prop_actual_result_passing_yards", "prop_actual_result_rushing_yards", "prop_actual_result_receiving_yards", "prop_result_over_under", "prop_edge_indicator", "prop_value_rating", "prop_last_updated"],
+          "total_fields": 36,
+          "data_source": "the_odds_api",
+          "status": "planned",
+          "coverage": "80% - Props available from The Odds API, hit rates/edge require calculation",
+          "partial_fields": {
+            "prop_season_hit_rate_passing_yards": "calculated_derived",
+            "prop_season_hit_rate_rushing_yards": "calculated_derived",
+            "prop_season_hit_rate_receiving_yards": "calculated_derived",
+            "prop_season_hit_rate_tds": "calculated_derived",
+            "prop_edge_indicator": "calculated_derived",
+            "prop_value_rating": "calculated_derived"
+          }
+        },
+        "live_ingame_lines": {
+          "fields": ["live_win_probability_away", "live_win_probability_home", "live_spread_current", "live_total_current", "live_moneyline_away", "live_moneyline_home", "live_next_score_odds", "live_half_spread", "live_half_total", "live_quarter_total"],
+          "total_fields": 10,
+          "data_source": "the_odds_api",
+          "status": "planned",
+          "coverage": "100% - All live lines available from The Odds API"
+        }
+      },
+      "coverage_analysis": {
+        "available": 0,
+        "planned": 52,
+        "partial": 6,
+        "missing": 0,
+        "percentage": 90
+      }
+    },
+    "section_10_social_viral": {
+      "section_name": "Social/Viral Moments (P2)",
+      "total_fields": 18,
+      "update_frequency": "Real-time",
+      "field_groups": {
+        "viral_tracking": {
+          "fields": ["viral_moment_id", "viral_player_id", "viral_game_id", "viral_play_description", "viral_timestamp", "viral_video_url", "viral_gif_url", "viral_thumbnail_url", "viral_twitter_mentions", "viral_twitter_trending_rank", "viral_hashtags", "viral_sentiment_score", "viral_engagement_score", "viral_top_tweet", "viral_top_tweet_author", "viral_top_tweet_likes", "viral_top_tweet_retweets", "viral_category"],
+          "total_fields": 18,
+          "data_source": "twitter_x_api",
+          "status": "planned",
+          "coverage": "100% - All viral tracking available from Twitter API v2",
+          "implementation_notes": "P2 - Can be deferred to post-MVP. Requires Twitter API v2 Basic ($100/mo)."
+        }
+      },
+      "coverage_analysis": {
+        "available": 0,
+        "planned": 0,
+        "partial": 0,
+        "missing": 18,
+        "percentage": 0
+      }
+    }
+  },
+  "implementation_priority": {
+    "mvp_full_implementation": {
+      "description": "Complete current season stats (2025) - all 674 fields with real-time updates",
+      "total_fields": 674,
+      "p0_fields": 531,
+      "p1_fields": 125,
+      "p2_fields": 18,
+      "note": "Full implementation IS the MVP - no phased approach. P0 Critical.",
+      "tasks": [
+        {
+          "task_id": "T1",
+          "task_name": "Implement WebSocket live game feed",
+          "priority": "P0",
+          "fields_impacted": 150,
+          "sections": ["Section 1", "Section 4"],
+          "estimated_effort": "High",
+          "dependencies": ["ESPN API integration or NFL.com feed"],
+          "status": "planned"
+        },
+        {
+          "task_id": "T2",
+          "task_name": "Integrate nflreadpy for weekly/season stats",
+          "priority": "P0",
+          "fields_impacted": 320,
+          "sections": ["Section 2", "Section 3"],
+          "estimated_effort": "Medium",
+          "dependencies": ["nflreadpy library already active"],
+          "status": "active"
+        },
+        {
+          "task_id": "T3",
+          "task_name": "Integrate The Odds API for betting data",
+          "priority": "P1",
+          "fields_impacted": 58,
+          "sections": ["Section 9"],
+          "estimated_effort": "Medium",
+          "dependencies": ["The Odds API key"],
+          "status": "planned"
+        },
+        {
+          "task_id": "T4",
+          "task_name": "Build analytics engine (projections, trends, EPA)",
+          "priority": "P0/P1",
+          "fields_impacted": 109,
+          "sections": ["Section 3", "Section 6", "Section 7", "Section 8"],
+          "estimated_effort": "High",
+          "dependencies": ["Historical data for projections"],
+          "status": "planned"
+        },
+        {
+          "task_id": "T5",
+          "task_name": "Integrate DFS APIs (DraftKings, FanDuel)",
+          "priority": "P0",
+          "fields_impacted": 12,
+          "sections": ["Section 6"],
+          "estimated_effort": "Medium",
+          "dependencies": ["DFS API access or scraping infrastructure"],
+          "status": "planned"
+        },
+        {
+          "task_id": "T6",
+          "task_name": "Scrape NFL Next Gen Stats",
+          "priority": "P1",
+          "fields_impacted": 8,
+          "sections": ["Section 8"],
+          "estimated_effort": "Medium",
+          "dependencies": ["NFL.com scraping or unofficial API"],
+          "status": "planned"
+        },
+        {
+          "task_id": "T7",
+          "task_name": "Build manual entry system for beat reporter notes",
+          "priority": "P1",
+          "fields_impacted": 10,
+          "sections": ["Section 5"],
+          "estimated_effort": "Low",
+          "dependencies": ["Admin UI for manual entry"],
+          "status": "planned"
+        },
+        {
+          "task_id": "T8",
+          "task_name": "Integrate Twitter API v2 for viral moments",
+          "priority": "P2",
+          "fields_impacted": 18,
+          "sections": ["Section 10"],
+          "estimated_effort": "Medium",
+          "dependencies": ["Twitter API v2 Basic subscription ($100/mo)"],
+          "status": "deferred"
+        }
+      ]
+    }
+  },
+  "coverage_by_priority": {
+    "p0_critical": {
+      "total_fields": 531,
+      "available": 138,
+      "partial": 203,
+      "planned": 172,
+      "missing": 18,
+      "coverage_percentage": 64.2
+    },
+    "p1_important": {
+      "total_fields": 125,
+      "available": 0,
+      "planned": 98,
+      "partial": 27,
+      "missing": 0,
+      "coverage_percentage": 78.4
+    },
+    "p2_nice_to_have": {
+      "total_fields": 18,
+      "available": 0,
+      "planned": 0,
+      "partial": 0,
+      "missing": 18,
+      "coverage_percentage": 0
+    }
+  },
+  "data_source_cost_estimate": {
+    "free_sources": {
+      "sources": ["nflreadpy", "espn_api", "nfl_next_gen_stats", "manual_entry", "calculated_derived"],
+      "fields_covered": 486,
+      "percentage": 72.1
+    },
+    "free_tier_sources": {
+      "sources": ["the_odds_api"],
+      "fields_covered": 58,
+      "monthly_cost": 0,
+      "note": "Free tier (500 requests/mo) sufficient for MVP, $30/mo for unlimited",
+      "percentage": 8.6
+    },
+    "paid_sources": {
+      "sources": ["dfs_apis", "twitter_x_api"],
+      "fields_covered": 30,
+      "monthly_cost_range": "100-200",
+      "note": "DFS APIs (TBD) + Twitter API v2 Basic ($100/mo for viral moments)",
+      "percentage": 4.5
+    },
+    "planned_sources": {
+      "sources": ["websocket_feed"],
+      "fields_covered": 100,
+      "monthly_cost_range": "0-50",
+      "note": "WebSocket feed cost TBD, may be free (ESPN) or require provider",
+      "percentage": 14.8
+    },
+    "total_estimated_monthly_cost": "100-250",
+    "mvp_cost_without_p2": "0-150"
+  },
+  "integration_dependencies": {
+    "critical_integrations": [
+      {
+        "integration_name": "WebSocket Live Feed",
+        "fields_impacted": 150,
+        "priority": "P0",
+        "complexity": "High",
+        "estimated_development_time": "2-3 weeks",
+        "dependencies": ["ESPN API or NFL.com feed", "WebSocket infrastructure", "Real-time database updates"]
+      },
+      {
+        "integration_name": "Analytics Engine",
+        "fields_impacted": 109,
+        "priority": "P0/P1",
+        "complexity": "High",
+        "estimated_development_time": "3-4 weeks",
+        "dependencies": ["Historical data", "Statistical libraries", "Projection algorithms"]
+      },
+      {
+        "integration_name": "DFS APIs",
+        "fields_impacted": 12,
+        "priority": "P0",
+        "complexity": "Medium",
+        "estimated_development_time": "1-2 weeks",
+        "dependencies": ["DraftKings/FanDuel API access", "Scraping infrastructure (if needed)"]
+      },
+      {
+        "integration_name": "The Odds API",
+        "fields_impacted": 58,
+        "priority": "P1",
+        "complexity": "Medium",
+        "estimated_development_time": "1 week",
+        "dependencies": ["The Odds API key", "Betting odds storage"]
+      }
+    ]
+  },
+  "technical_architecture_notes": {
+    "websocket_strategy": "Hybrid approach - WebSocket for play-by-play updates during live games, polling every 30s as fallback. Store in Redis cache for instant reads.",
+    "database_updates": "Real-time updates to PostgreSQL for live stats, weekly batch updates for aggregated stats from nflreadpy.",
+    "caching_strategy": "Redis for live game data (TTL: 30s), PostgreSQL for historical/weekly stats (no TTL).",
+    "api_endpoints": "FastAPI endpoints for all sections. WebSocket endpoint for live game subscriptions.",
+    "calculation_engine": "Separate analytics service for derived fields (projections, trends, consistency scores). Runs weekly on batch schedule.",
+    "data_freshness": "Live data: <30s latency. Weekly data: Updated Mon-Wed after games. Daily data (injuries): Updated 2x daily (morning, afternoon)."
+  },
+  "notes": "This JSON file maps all 674 current-season stats fields to their data sources. Coverage analysis shows 69.7% overall coverage, with P0 fields at 64.2% coverage (primarily due to calculated/derived fields requiring analytics engine implementation). P2 social/viral features deferred to post-MVP. Total estimated monthly cost: $100-250 depending on DFS API costs and WebSocket feed provider."
+}

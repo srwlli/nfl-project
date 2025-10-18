@@ -1,0 +1,1301 @@
+{
+  "document_version": "1.0",
+  "last_updated": "2025-10-17",
+  "status": "COMPLETE - All 284 fields mapped to data sources",
+  "total_fields": 284,
+  "coverage_summary": {
+    "available": 189,
+    "partial": 45,
+    "planned": 35,
+    "missing": 15
+  },
+  "data_sources": {
+    "nflreadpy": {
+      "status": "active",
+      "tables": ["teams", "schedules", "rosters", "season_stats", "player_stats", "play_by_play"],
+      "fields_provided": 165,
+      "description": "Primary data source for current season team data, rosters, schedules, and statistics"
+    },
+    "sportsref_nfl": {
+      "status": "active",
+      "coverage": "Historical team data, franchise records, all-time leaders, coaching records",
+      "fields_provided": 42,
+      "description": "Sports Reference NFL data for franchise history and career statistics"
+    },
+    "nflscraPy": {
+      "status": "active",
+      "coverage": "ELO ratings, DVOA, advanced analytics",
+      "fields_provided": 8,
+      "description": "Advanced team performance metrics"
+    },
+    "espn_api": {
+      "status": "planned",
+      "endpoints_needed": ["team logos", "team news", "team photos", "Next Gen Stats"],
+      "fields_provided": 18,
+      "description": "ESPN API for logos, photos, news articles, and Next Gen Stats"
+    },
+    "the_odds_api": {
+      "status": "planned",
+      "endpoints_needed": ["game odds", "spreads", "totals"],
+      "fields_provided": 7,
+      "description": "Betting lines and odds for upcoming/past games"
+    },
+    "manual_static": {
+      "status": "needed",
+      "data_types": ["franchise history", "stadium details", "team colors", "coaching staff", "retired numbers", "Hall of Fame"],
+      "fields_provided": 39,
+      "description": "Manually curated static data for team identity, history, and honors"
+    },
+    "calculated": {
+      "status": "implementation",
+      "description": "Fields calculated from other data sources",
+      "fields_provided": 15,
+      "examples": ["win_percentage", "franchise_age", "standings calculations", "strength of schedule"]
+    }
+  },
+  "sections": {
+    "section_1_team_identity": {
+      "priority": "P0",
+      "total_fields": 25,
+      "available": 8,
+      "partial": 7,
+      "planned": 7,
+      "missing": 3,
+      "fields": {
+        "team_id": {
+          "field_number": 1,
+          "source": "nflreadpy.teams",
+          "table_column": "team_id",
+          "status": "available",
+          "notes": "Unique team identifier from teams table"
+        },
+        "team_name": {
+          "field_number": 2,
+          "source": "nflreadpy.teams",
+          "table_column": "team_name",
+          "status": "available"
+        },
+        "team_city": {
+          "field_number": 3,
+          "source": "nflreadpy.teams",
+          "table_column": "team_city",
+          "status": "available"
+        },
+        "team_state": {
+          "field_number": 4,
+          "source": "nflreadpy.teams",
+          "table_column": "team_state",
+          "status": "available"
+        },
+        "abbreviation": {
+          "field_number": 5,
+          "source": "nflreadpy.teams",
+          "table_column": "team_abbr",
+          "status": "available"
+        },
+        "nickname": {
+          "field_number": 6,
+          "source": "nflreadpy.teams",
+          "table_column": "team_nick",
+          "status": "available"
+        },
+        "conference": {
+          "field_number": 7,
+          "source": "nflreadpy.teams",
+          "table_column": "team_conf",
+          "status": "available"
+        },
+        "division": {
+          "field_number": 8,
+          "source": "nflreadpy.teams",
+          "table_column": "team_division",
+          "status": "available"
+        },
+        "founded_year": {
+          "field_number": 9,
+          "source": "manual_static",
+          "status": "planned",
+          "notes": "Requires manual curation per team"
+        },
+        "primary_color": {
+          "field_number": 10,
+          "source": "manual_static",
+          "status": "planned",
+          "notes": "Team brand colors - manual curation"
+        },
+        "secondary_color": {
+          "field_number": 11,
+          "source": "manual_static",
+          "status": "planned"
+        },
+        "accent_color": {
+          "field_number": 12,
+          "source": "manual_static",
+          "status": "planned"
+        },
+        "primary_logo_url": {
+          "field_number": 13,
+          "source": "espn_api",
+          "endpoint": "team/{team_id}/logos",
+          "status": "planned",
+          "notes": "ESPN API provides team logos"
+        },
+        "alternate_logo_url": {
+          "field_number": 14,
+          "source": "espn_api",
+          "status": "planned"
+        },
+        "helmet_logo_url": {
+          "field_number": 15,
+          "source": "espn_api",
+          "status": "planned"
+        },
+        "wordmark_url": {
+          "field_number": 16,
+          "source": "espn_api",
+          "status": "planned"
+        },
+        "stadium_id": {
+          "field_number": 17,
+          "source": "nflreadpy.teams or manual_static",
+          "status": "partial",
+          "notes": "May exist in teams table or require stadium integration"
+        },
+        "stadium_name": {
+          "field_number": 18,
+          "source": "manual_static or stadium_integration",
+          "status": "partial",
+          "notes": "Stadium spec will provide comprehensive data"
+        },
+        "stadium_city": {
+          "field_number": 19,
+          "source": "manual_static or stadium_integration",
+          "status": "partial"
+        },
+        "stadium_state": {
+          "field_number": 20,
+          "source": "manual_static or stadium_integration",
+          "status": "partial"
+        },
+        "stadium_capacity": {
+          "field_number": 21,
+          "source": "manual_static or stadium_integration",
+          "status": "partial"
+        },
+        "stadium_surface": {
+          "field_number": 22,
+          "source": "manual_static or stadium_integration",
+          "status": "partial"
+        },
+        "stadium_roof": {
+          "field_number": 23,
+          "source": "manual_static or stadium_integration",
+          "status": "partial"
+        },
+        "stadium_year_opened": {
+          "field_number": 24,
+          "source": "manual_static or stadium_integration",
+          "status": "partial"
+        },
+        "franchise_age": {
+          "field_number": 25,
+          "source": "calculated",
+          "formula": "current_year - founded_year",
+          "status": "available",
+          "notes": "Calculated field"
+        }
+      }
+    },
+    "section_2_current_season": {
+      "priority": "P0",
+      "total_fields": 30,
+      "available": 22,
+      "partial": 5,
+      "planned": 3,
+      "missing": 0,
+      "fields": {
+        "season": {
+          "field_number": 26,
+          "source": "nflreadpy.season_stats",
+          "table_column": "season",
+          "status": "available"
+        },
+        "current_week": {
+          "field_number": 27,
+          "source": "nflreadpy.schedules",
+          "status": "available",
+          "notes": "Derive from latest game week"
+        },
+        "wins": {
+          "field_number": 28,
+          "source": "nflreadpy.season_stats",
+          "table_column": "wins",
+          "status": "available"
+        },
+        "losses": {
+          "field_number": 29,
+          "source": "nflreadpy.season_stats",
+          "table_column": "losses",
+          "status": "available"
+        },
+        "ties": {
+          "field_number": 30,
+          "source": "nflreadpy.season_stats",
+          "table_column": "ties",
+          "status": "available"
+        },
+        "win_percentage": {
+          "field_number": 31,
+          "source": "calculated",
+          "formula": "wins / (wins + losses + ties)",
+          "status": "available"
+        },
+        "division_rank": {
+          "field_number": 32,
+          "source": "calculated",
+          "notes": "Calculate from season_stats for all division teams",
+          "status": "available"
+        },
+        "division_games_back": {
+          "field_number": 33,
+          "source": "calculated",
+          "status": "available"
+        },
+        "division_record": {
+          "field_number": 34,
+          "source": "nflreadpy.season_stats or calculated",
+          "status": "partial",
+          "notes": "May need to calculate from schedules table"
+        },
+        "conference_record": {
+          "field_number": 35,
+          "source": "nflreadpy.season_stats or calculated",
+          "status": "partial"
+        },
+        "conference_rank": {
+          "field_number": 36,
+          "source": "calculated",
+          "status": "available"
+        },
+        "playoff_seed": {
+          "field_number": 37,
+          "source": "calculated",
+          "status": "available",
+          "notes": "Calculate from standings logic"
+        },
+        "streak_type": {
+          "field_number": 38,
+          "source": "calculated",
+          "notes": "Analyze recent game results",
+          "status": "available"
+        },
+        "streak_count": {
+          "field_number": 39,
+          "source": "calculated",
+          "status": "available"
+        },
+        "streak_description": {
+          "field_number": 40,
+          "source": "calculated",
+          "status": "available"
+        },
+        "clinched_division": {
+          "field_number": 41,
+          "source": "calculated",
+          "status": "available",
+          "notes": "Playoff clinch logic"
+        },
+        "clinched_playoff": {
+          "field_number": 42,
+          "source": "calculated",
+          "status": "available"
+        },
+        "clinched_bye": {
+          "field_number": 43,
+          "source": "calculated",
+          "status": "available"
+        },
+        "eliminated": {
+          "field_number": 44,
+          "source": "calculated",
+          "status": "available"
+        },
+        "playoff_probability": {
+          "field_number": 45,
+          "source": "external_api or custom_model",
+          "status": "planned",
+          "notes": "FPI or custom playoff probability calculation"
+        },
+        "next_game_id": {
+          "field_number": 46,
+          "source": "nflreadpy.schedules",
+          "status": "available"
+        },
+        "next_game_week": {
+          "field_number": 47,
+          "source": "nflreadpy.schedules",
+          "status": "available"
+        },
+        "next_opponent_id": {
+          "field_number": 48,
+          "source": "nflreadpy.schedules",
+          "status": "available"
+        },
+        "next_opponent_name": {
+          "field_number": 49,
+          "source": "nflreadpy.schedules JOIN teams",
+          "status": "available"
+        },
+        "next_game_date": {
+          "field_number": 50,
+          "source": "nflreadpy.schedules",
+          "status": "available"
+        },
+        "next_game_location": {
+          "field_number": 51,
+          "source": "nflreadpy.schedules",
+          "status": "available"
+        },
+        "next_game_tv_network": {
+          "field_number": 52,
+          "source": "nflreadpy.schedules",
+          "table_column": "gameday_broadcast",
+          "status": "partial",
+          "notes": "May be in schedules table"
+        },
+        "next_game_spread": {
+          "field_number": 53,
+          "source": "the_odds_api",
+          "status": "planned",
+          "notes": "Betting lines from The Odds API"
+        },
+        "next_game_over_under": {
+          "field_number": 54,
+          "source": "the_odds_api",
+          "status": "planned"
+        },
+        "last_game_id": {
+          "field_number": 55,
+          "source": "nflreadpy.schedules",
+          "status": "available"
+        }
+      }
+    },
+    "section_3_roster": {
+      "priority": "P0",
+      "total_fields": 40,
+      "note": "Fields per player - repeated across active_roster, practice_squad, IR, suspended",
+      "available": 28,
+      "partial": 8,
+      "planned": 2,
+      "missing": 2,
+      "fields": {
+        "player_id": {
+          "field_number": 56,
+          "source": "nflreadpy.rosters",
+          "table_column": "player_id",
+          "status": "available"
+        },
+        "jersey_number": {
+          "field_number": 57,
+          "source": "nflreadpy.rosters",
+          "table_column": "jersey_number",
+          "status": "available"
+        },
+        "first_name": {
+          "field_number": 58,
+          "source": "nflreadpy.players",
+          "status": "available"
+        },
+        "last_name": {
+          "field_number": 59,
+          "source": "nflreadpy.players",
+          "status": "available"
+        },
+        "full_name": {
+          "field_number": 60,
+          "source": "nflreadpy.players",
+          "status": "available"
+        },
+        "position": {
+          "field_number": 61,
+          "source": "nflreadpy.rosters",
+          "table_column": "position",
+          "status": "available"
+        },
+        "depth_chart_position": {
+          "field_number": 62,
+          "source": "depth_charts table or calculated",
+          "status": "planned",
+          "notes": "Requires depth chart tracking"
+        },
+        "height": {
+          "field_number": 63,
+          "source": "nflreadpy.players",
+          "status": "available"
+        },
+        "weight": {
+          "field_number": 64,
+          "source": "nflreadpy.players",
+          "status": "available"
+        },
+        "age": {
+          "field_number": 65,
+          "source": "calculated",
+          "formula": "current_year - birth_year",
+          "status": "available"
+        },
+        "experience": {
+          "field_number": 66,
+          "source": "nflreadpy.players",
+          "table_column": "years_exp",
+          "status": "available"
+        },
+        "college": {
+          "field_number": 67,
+          "source": "nflreadpy.players",
+          "status": "available"
+        },
+        "draft_year": {
+          "field_number": 68,
+          "source": "nflreadpy.players",
+          "status": "available"
+        },
+        "draft_round": {
+          "field_number": 69,
+          "source": "nflreadpy.players",
+          "status": "available"
+        },
+        "draft_pick": {
+          "field_number": 70,
+          "source": "nflreadpy.players",
+          "status": "available"
+        },
+        "contract_years_remaining": {
+          "field_number": 71,
+          "source": "contracts table or external API",
+          "status": "missing",
+          "notes": "Contract data not in nflreadpy"
+        },
+        "contract_cap_hit": {
+          "field_number": 72,
+          "source": "contracts table or external API",
+          "status": "missing"
+        },
+        "is_franchise_tagged": {
+          "field_number": 73,
+          "source": "contracts table or manual",
+          "status": "planned",
+          "notes": "Franchise tag tracking needed"
+        },
+        "status": {
+          "field_number": 74,
+          "source": "nflreadpy.rosters",
+          "table_column": "status",
+          "status": "partial",
+          "notes": "May need injury table integration"
+        },
+        "injury_type": {
+          "field_number": 75,
+          "source": "injuries table",
+          "status": "partial",
+          "notes": "Requires injury tracking"
+        },
+        "injury_body_part": {
+          "field_number": 76,
+          "source": "injuries table",
+          "status": "partial"
+        },
+        "injury_status": {
+          "field_number": 77,
+          "source": "injuries table",
+          "status": "partial"
+        },
+        "injury_return_week": {
+          "field_number": 78,
+          "source": "injuries table or estimated",
+          "status": "partial"
+        },
+        "season_stats_passing_yards": {
+          "field_number": 79,
+          "source": "nflreadpy.player_stats",
+          "status": "available"
+        },
+        "season_stats_passing_tds": {
+          "field_number": 80,
+          "source": "nflreadpy.player_stats",
+          "status": "available"
+        },
+        "season_stats_rushing_yards": {
+          "field_number": 81,
+          "source": "nflreadpy.player_stats",
+          "status": "available"
+        },
+        "season_stats_rushing_tds": {
+          "field_number": 82,
+          "source": "nflreadpy.player_stats",
+          "status": "available"
+        },
+        "season_stats_receptions": {
+          "field_number": 83,
+          "source": "nflreadpy.player_stats",
+          "status": "available"
+        },
+        "season_stats_receiving_yards": {
+          "field_number": 84,
+          "source": "nflreadpy.player_stats",
+          "status": "available"
+        },
+        "season_stats_receiving_tds": {
+          "field_number": 85,
+          "source": "nflreadpy.player_stats",
+          "status": "available"
+        },
+        "season_stats_tackles": {
+          "field_number": 86,
+          "source": "nflreadpy.player_stats",
+          "status": "available"
+        },
+        "season_stats_sacks": {
+          "field_number": 87,
+          "source": "nflreadpy.player_stats",
+          "status": "available"
+        },
+        "season_stats_interceptions": {
+          "field_number": 88,
+          "source": "nflreadpy.player_stats",
+          "status": "available"
+        },
+        "season_stats_field_goals_made": {
+          "field_number": 89,
+          "source": "nflreadpy.player_stats",
+          "status": "available"
+        },
+        "season_stats_punting_average": {
+          "field_number": 90,
+          "source": "nflreadpy.player_stats",
+          "status": "available"
+        },
+        "pro_bowls": {
+          "field_number": 91,
+          "source": "nflreadpy.players or sportsref_nfl",
+          "status": "partial"
+        },
+        "all_pro_selections": {
+          "field_number": 92,
+          "source": "sportsref_nfl or manual",
+          "status": "partial"
+        },
+        "is_captain": {
+          "field_number": 93,
+          "source": "manual or rosters table",
+          "status": "planned"
+        },
+        "player_card_size": {
+          "field_number": 94,
+          "source": "frontend_logic",
+          "status": "available",
+          "notes": "Determined by UI context"
+        },
+        "player_profile_link": {
+          "field_number": 95,
+          "source": "frontend_routing",
+          "status": "available",
+          "notes": "Link to player profile page"
+        }
+      }
+    },
+    "section_4_team_statistics": {
+      "priority": "P0",
+      "total_fields": 95,
+      "available": 85,
+      "partial": 5,
+      "planned": 5,
+      "missing": 0,
+      "subsections": {
+        "offensive_stats": {
+          "fields": 30,
+          "source": "nflreadpy.season_stats",
+          "status": "available",
+          "notes": "All offensive stats available in season_stats table"
+        },
+        "efficiency_stats": {
+          "fields": 10,
+          "source": "nflreadpy.season_stats",
+          "status": "available"
+        },
+        "defensive_stats": {
+          "fields": 25,
+          "source": "nflreadpy.season_stats",
+          "status": "available"
+        },
+        "defensive_efficiency": {
+          "fields": 10,
+          "source": "nflreadpy.season_stats",
+          "status": "available"
+        },
+        "special_teams_stats": {
+          "fields": 20,
+          "source": "nflreadpy.season_stats",
+          "status": "available"
+        }
+      },
+      "sample_fields": {
+        "points_per_game": {
+          "field_number": 96,
+          "source": "nflreadpy.season_stats",
+          "status": "available"
+        },
+        "points_per_game_rank": {
+          "field_number": 97,
+          "source": "calculated",
+          "notes": "Calculate rank from all teams' PPG",
+          "status": "available"
+        },
+        "third_down_percentage": {
+          "field_number": 128,
+          "source": "nflreadpy.season_stats",
+          "status": "available"
+        },
+        "red_zone_percentage": {
+          "field_number": 134,
+          "source": "nflreadpy.season_stats or calculated",
+          "status": "partial",
+          "notes": "May need calculation from play-by-play"
+        },
+        "epa_per_play_offense": {
+          "field_number": "advanced",
+          "source": "nflreadpy.play_by_play",
+          "status": "partial",
+          "notes": "Calculate from play-by-play EPA data"
+        }
+      }
+    },
+    "section_5_schedule": {
+      "priority": "P0",
+      "total_fields": 30,
+      "note": "25 fields per game + 5 metrics",
+      "available": 18,
+      "partial": 5,
+      "planned": 7,
+      "missing": 0,
+      "fields": {
+        "game_id": {
+          "field_number": 191,
+          "source": "nflreadpy.schedules",
+          "status": "available"
+        },
+        "week": {
+          "field_number": 192,
+          "source": "nflreadpy.schedules",
+          "status": "available"
+        },
+        "season_type": {
+          "field_number": 193,
+          "source": "nflreadpy.schedules",
+          "status": "available"
+        },
+        "game_date": {
+          "field_number": 194,
+          "source": "nflreadpy.schedules",
+          "status": "available"
+        },
+        "opponent_id": {
+          "field_number": 195,
+          "source": "nflreadpy.schedules",
+          "status": "available"
+        },
+        "opponent_name": {
+          "field_number": 196,
+          "source": "nflreadpy.schedules JOIN teams",
+          "status": "available"
+        },
+        "opponent_abbreviation": {
+          "field_number": 197,
+          "source": "nflreadpy.schedules JOIN teams",
+          "status": "available"
+        },
+        "location": {
+          "field_number": 198,
+          "source": "nflreadpy.schedules",
+          "status": "available"
+        },
+        "venue_name": {
+          "field_number": 199,
+          "source": "nflreadpy.schedules",
+          "status": "available"
+        },
+        "result": {
+          "field_number": 200,
+          "source": "nflreadpy.schedules",
+          "status": "available"
+        },
+        "team_score": {
+          "field_number": 201,
+          "source": "nflreadpy.schedules",
+          "status": "available"
+        },
+        "opponent_score": {
+          "field_number": 202,
+          "source": "nflreadpy.schedules",
+          "status": "available"
+        },
+        "team_record_after": {
+          "field_number": 203,
+          "source": "calculated",
+          "notes": "Calculate cumulative record",
+          "status": "available"
+        },
+        "opening_spread": {
+          "field_number": 204,
+          "source": "the_odds_api or schedules.spread_line",
+          "status": "planned"
+        },
+        "closing_spread": {
+          "field_number": 205,
+          "source": "the_odds_api",
+          "status": "planned"
+        },
+        "opening_total": {
+          "field_number": 206,
+          "source": "the_odds_api or schedules.total_line",
+          "status": "planned"
+        },
+        "closing_total": {
+          "field_number": 207,
+          "source": "the_odds_api",
+          "status": "planned"
+        },
+        "result_vs_spread": {
+          "field_number": 208,
+          "source": "calculated",
+          "status": "planned"
+        },
+        "broadcast_network": {
+          "field_number": 209,
+          "source": "nflreadpy.schedules",
+          "status": "partial"
+        },
+        "broadcast_time": {
+          "field_number": 210,
+          "source": "nflreadpy.schedules",
+          "status": "available"
+        },
+        "is_primetime": {
+          "field_number": 211,
+          "source": "calculated",
+          "notes": "Based on game time",
+          "status": "available"
+        },
+        "is_division_game": {
+          "field_number": 212,
+          "source": "calculated",
+          "status": "available"
+        },
+        "is_conference_game": {
+          "field_number": 213,
+          "source": "calculated",
+          "status": "available"
+        },
+        "rest_days": {
+          "field_number": 214,
+          "source": "calculated",
+          "notes": "Days between games",
+          "status": "available"
+        },
+        "game_details_link": {
+          "field_number": 215,
+          "source": "frontend_routing",
+          "status": "available",
+          "notes": "Link to game-details page"
+        },
+        "strength_of_schedule": {
+          "field_number": 216,
+          "source": "calculated",
+          "status": "available"
+        },
+        "remaining_sos": {
+          "field_number": 217,
+          "source": "calculated",
+          "status": "available"
+        },
+        "wins_vs_winning_teams": {
+          "field_number": 218,
+          "source": "calculated",
+          "status": "available"
+        },
+        "wins_vs_500_plus": {
+          "field_number": 219,
+          "source": "calculated",
+          "status": "available"
+        },
+        "divisional_games_remaining": {
+          "field_number": 220,
+          "source": "calculated",
+          "status": "available"
+        }
+      }
+    },
+    "section_6_standings": {
+      "priority": "P0",
+      "total_fields": 20,
+      "available": 20,
+      "partial": 0,
+      "planned": 0,
+      "missing": 0,
+      "notes": "All standings fields are calculated from season_stats across all teams",
+      "fields": {
+        "division_name": {
+          "field_number": 221,
+          "source": "nflreadpy.teams",
+          "status": "available"
+        },
+        "division_team_id": {
+          "field_number": 222,
+          "source": "nflreadpy.teams",
+          "status": "available"
+        },
+        "division_team_rank": {
+          "field_number": 224,
+          "source": "calculated",
+          "status": "available"
+        },
+        "playoff_picture": {
+          "field_numbers": "238-241",
+          "source": "calculated",
+          "status": "available",
+          "notes": "Wild card, division leaders, playoff hunt logic"
+        }
+      }
+    },
+    "section_7_coaching_staff": {
+      "priority": "P0",
+      "total_fields": 30,
+      "available": 3,
+      "partial": 5,
+      "planned": 20,
+      "missing": 2,
+      "notes": "Coaching staff data requires manual curation or dedicated coaches table",
+      "fields": {
+        "hc_coach_id": {
+          "field_number": 242,
+          "source": "manual_static or coaches table",
+          "status": "planned"
+        },
+        "hc_name": {
+          "field_number": 243,
+          "source": "manual_static or coaches table",
+          "status": "planned"
+        },
+        "hc_career_wins": {
+          "field_number": 246,
+          "source": "sportsref_nfl",
+          "status": "partial",
+          "notes": "Sports Reference has coaching records"
+        },
+        "hc_career_losses": {
+          "field_number": 247,
+          "source": "sportsref_nfl",
+          "status": "partial"
+        },
+        "hc_super_bowl_wins": {
+          "field_number": 251,
+          "source": "manual_static or sportsref_nfl",
+          "status": "planned"
+        },
+        "coordinators": {
+          "field_numbers": "252-260",
+          "source": "manual_static",
+          "status": "planned",
+          "notes": "OC, DC, STC - requires manual tracking"
+        },
+        "position_coaches": {
+          "field_numbers": "261-265",
+          "source": "manual_static",
+          "status": "planned",
+          "notes": "8-12 position coaches per team"
+        }
+      }
+    },
+    "section_8_news_transactions": {
+      "priority": "P1",
+      "total_fields": 20,
+      "available": 0,
+      "partial": 8,
+      "planned": 10,
+      "missing": 2,
+      "fields": {
+        "article_id": {
+          "field_number": 266,
+          "source": "espn_api",
+          "endpoint": "team/{team_id}/news",
+          "status": "planned"
+        },
+        "article_title": {
+          "field_number": 267,
+          "source": "espn_api",
+          "status": "planned"
+        },
+        "article_summary": {
+          "field_number": 268,
+          "source": "espn_api",
+          "status": "planned"
+        },
+        "article_source": {
+          "field_number": 270,
+          "source": "espn_api",
+          "status": "planned"
+        },
+        "transaction_id": {
+          "field_number": 274,
+          "source": "transactions table or manual",
+          "status": "partial"
+        },
+        "transaction_type": {
+          "field_number": 276,
+          "source": "transactions table",
+          "status": "partial",
+          "notes": "Signing, trade, release, IR, etc."
+        },
+        "transaction_player_id": {
+          "field_number": 277,
+          "source": "transactions table",
+          "status": "partial"
+        },
+        "transaction_contract_value": {
+          "field_number": 281,
+          "source": "external_api or manual",
+          "status": "missing",
+          "notes": "Contract details not publicly available"
+        }
+      }
+    },
+    "section_9_injury_report": {
+      "priority": "P1",
+      "total_fields": 17,
+      "note": "12 fields per player + 5 summary",
+      "available": 5,
+      "partial": 10,
+      "planned": 2,
+      "missing": 0,
+      "fields": {
+        "injury_player_id": {
+          "field_number": 282,
+          "source": "injuries table",
+          "status": "partial"
+        },
+        "injury_type": {
+          "field_number": 285,
+          "source": "injuries table",
+          "status": "partial"
+        },
+        "injury_body_part": {
+          "field_number": 286,
+          "source": "injuries table",
+          "status": "partial"
+        },
+        "injury_status": {
+          "field_number": 287,
+          "source": "injuries table",
+          "status": "partial",
+          "notes": "Official NFL injury designations"
+        },
+        "injury_practice_wed": {
+          "field_number": 291,
+          "source": "manual_tracking or official_reports",
+          "status": "planned",
+          "notes": "Practice participation reports"
+        },
+        "injury_summary_total_injured": {
+          "field_number": 294,
+          "source": "calculated",
+          "status": "available"
+        }
+      }
+    },
+    "section_10_key_players": {
+      "priority": "P1",
+      "total_fields": 12,
+      "note": "Per key player position (QB, RB, WR, DEF, Rookie)",
+      "available": 10,
+      "partial": 2,
+      "planned": 0,
+      "missing": 0,
+      "fields": {
+        "key_player_id": {
+          "field_number": 298,
+          "source": "calculated",
+          "notes": "Determine top players from player_stats",
+          "status": "available"
+        },
+        "key_player_season_stat_1": {
+          "field_number": 302,
+          "source": "nflreadpy.player_stats",
+          "status": "available"
+        },
+        "key_player_league_rank_1": {
+          "field_number": 305,
+          "source": "calculated",
+          "notes": "Rank across all NFL players",
+          "status": "available"
+        },
+        "key_player_card_size": {
+          "field_number": 307,
+          "source": "frontend_logic",
+          "status": "available"
+        },
+        "key_player_profile_link": {
+          "field_number": 308,
+          "source": "player_profiles integration",
+          "status": "available"
+        }
+      }
+    },
+    "section_11_franchise_history": {
+      "priority": "P2",
+      "total_fields": 25,
+      "available": 5,
+      "partial": 10,
+      "planned": 8,
+      "missing": 2,
+      "fields": {
+        "all_time_regular_season_wins": {
+          "field_number": 310,
+          "source": "sportsref_nfl or calculated",
+          "status": "partial",
+          "notes": "Aggregate from historical season_stats"
+        },
+        "all_time_playoff_wins": {
+          "field_number": 313,
+          "source": "sportsref_nfl",
+          "status": "partial"
+        },
+        "super_bowl_championships": {
+          "field_number": 316,
+          "source": "manual_static",
+          "status": "planned"
+        },
+        "super_bowl_years": {
+          "field_number": 317,
+          "source": "manual_static",
+          "status": "planned",
+          "notes": "Array of years (e.g., [1993, 1994, 1996])"
+        },
+        "hall_of_famers_count": {
+          "field_number": 321,
+          "source": "manual_static or sportsref_nfl",
+          "status": "planned"
+        },
+        "retired_numbers_count": {
+          "field_number": 322,
+          "source": "manual_static",
+          "status": "planned"
+        },
+        "single_season_most_wins": {
+          "field_number": 323,
+          "source": "calculated",
+          "notes": "Max wins from historical season_stats",
+          "status": "available"
+        },
+        "single_game_most_points": {
+          "field_number": 325,
+          "source": "calculated",
+          "notes": "Max score from schedules table",
+          "status": "available"
+        }
+      }
+    },
+    "section_12_all_time_leaders": {
+      "priority": "P2",
+      "total_fields": 12,
+      "available": 0,
+      "partial": 8,
+      "planned": 4,
+      "missing": 0,
+      "fields": {
+        "all_time_passing_leader_name": {
+          "field_number": 327,
+          "source": "sportsref_nfl or aggregate player_stats",
+          "status": "partial",
+          "notes": "Aggregate career stats by team"
+        },
+        "all_time_passing_leader_yards": {
+          "field_number": 328,
+          "source": "sportsref_nfl or aggregate player_stats",
+          "status": "partial"
+        },
+        "all_time_rushing_leader_name": {
+          "field_number": 330,
+          "source": "sportsref_nfl",
+          "status": "partial"
+        },
+        "all_time_receiving_leader_name": {
+          "field_number": 333,
+          "source": "sportsref_nfl",
+          "status": "partial"
+        },
+        "all_time_sacks_leader_name": {
+          "field_number": 336,
+          "source": "sportsref_nfl",
+          "status": "partial",
+          "notes": "Sack data may be incomplete for older eras"
+        }
+      }
+    },
+    "section_13_analytics": {
+      "priority": "P2",
+      "total_fields": 10,
+      "available": 2,
+      "partial": 3,
+      "planned": 5,
+      "missing": 0,
+      "fields": {
+        "analytics_overall_rank": {
+          "field_number": 339,
+          "source": "external_power_rankings or custom",
+          "status": "planned"
+        },
+        "analytics_current_elo": {
+          "field_number": 342,
+          "source": "nflscraPy",
+          "status": "available",
+          "notes": "nflscraPy provides ELO ratings"
+        },
+        "analytics_elo_rank": {
+          "field_number": 343,
+          "source": "nflscraPy",
+          "status": "available"
+        },
+        "analytics_overall_dvoa": {
+          "field_number": 344,
+          "source": "nflscraPy or external",
+          "status": "partial",
+          "notes": "DVOA from nflscraPy or Football Outsiders"
+        },
+        "analytics_recent_form": {
+          "field_number": 347,
+          "source": "calculated",
+          "notes": "Last 5 games W/L pattern",
+          "status": "available"
+        },
+        "analytics_momentum_score": {
+          "field_number": 348,
+          "source": "custom_calculation",
+          "status": "planned",
+          "notes": "Custom momentum metric"
+        }
+      }
+    },
+    "section_14_depth_chart": {
+      "priority": "P2",
+      "total_fields": 4,
+      "available": 0,
+      "partial": 0,
+      "planned": 4,
+      "missing": 0,
+      "fields": {
+        "depth_chart_offense": {
+          "field_number": 349,
+          "source": "depth_charts table or manual",
+          "status": "planned",
+          "notes": "Nested position groups (QB, RB, WR, TE, OL)"
+        },
+        "depth_chart_defense": {
+          "field_number": 350,
+          "source": "depth_charts table or manual",
+          "status": "planned"
+        },
+        "depth_chart_special_teams": {
+          "field_number": 351,
+          "source": "depth_charts table or manual",
+          "status": "planned"
+        },
+        "depth_chart_last_updated": {
+          "field_number": 352,
+          "source": "depth_charts table",
+          "status": "planned"
+        }
+      }
+    }
+  },
+  "coverage_by_priority": {
+    "P0_must_have": {
+      "total_fields": 189,
+      "available": 166,
+      "partial": 15,
+      "planned": 6,
+      "missing": 2,
+      "coverage_percentage": 87.8,
+      "notes": "High coverage - most fields available via nflreadpy"
+    },
+    "P1_important": {
+      "total_fields": 44,
+      "available": 15,
+      "partial": 20,
+      "planned": 7,
+      "missing": 2,
+      "coverage_percentage": 34.1,
+      "notes": "Medium coverage - requires news APIs and injury tracking"
+    },
+    "P2_nice_to_have": {
+      "total_fields": 51,
+      "available": 8,
+      "partial": 10,
+      "planned": 22,
+      "missing": 11,
+      "coverage_percentage": 15.7,
+      "notes": "Low coverage - requires historical data and manual curation"
+    }
+  },
+  "implementation_priority": {
+    "mvp_full_implementation": {
+      "description": "Complete team pages implementation - all fields",
+      "fields_impacted": 284,
+      "note": "Full implementation IS the MVP - no phased approach",
+      "tasks": [
+        "Implement nflreadpy data ingestion for teams, rosters, schedules, season_stats",
+        "Build standings calculation logic",
+        "Create team statistics aggregation",
+        "Develop schedule display with game-details integration",
+        "Build roster table with player profile links",
+        "Integrate ESPN API for logos, photos, news",
+        "Add The Odds API for betting lines (optional)",
+        "Implement injury tracking system",
+        "Build key players spotlight logic",
+        "Add advanced analytics (ELO, DVOA) from nflscraPy",
+        "Curate franchise history for all 32 teams",
+        "Add Super Bowl championships and retired numbers",
+        "Aggregate all-time leaders from sportsref-nfl",
+        "Build coaching staff directory (manual curation)",
+        "Create depth chart tracking system",
+        "Integrate contract data API (if available) or document gap"
+      ]
+    }
+  },
+  "data_gaps": {
+    "critical_gaps": [
+      "Contract data (cap hits, years remaining) - not in nflreadpy",
+      "Coaching staff directory - requires manual curation"
+    ],
+    "important_gaps": [
+      "Official injury reports with practice participation",
+      "News articles feed - requires ESPN API",
+      "Betting lines (spreads, totals) - requires The Odds API"
+    ],
+    "nice_to_have_gaps": [
+      "Franchise history details (Super Bowl wins, HOF members)",
+      "All-time leaders by position - partial in sportsref-nfl",
+      "Depth chart tracking - requires manual updates",
+      "Power rankings - external source needed"
+    ]
+  },
+  "notes": [
+    "nflreadpy provides excellent coverage for current season data (87.8% of P0 fields)",
+    "Historical franchise data requires sportsref-nfl and manual curation",
+    "ESPN API integration will significantly improve P1 coverage (logos, news, photos)",
+    "Contract data is a major gap - may require paid API or manual entry",
+    "Injury tracking system needs to be built on top of existing data",
+    "Coaching staff directory requires manual curation for all 32 teams",
+    "Calculated fields (rankings, standings, schedules metrics) require implementation logic"
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "feature_name": "migration",
+  "description": "Comprehensive migration of NFL betting backend system from Streamlit app to Next.js + FastAPI architecture with complete resource extraction and organization",
+  "goal": "Consolidate all backend capabilities (26 code files), documentation (9 files), and extract all valuable resources from original app (data processing scripts, reports, API sources, betting data sources) into organized next-scraper root structure with complete source inventory",
+  "requirements": [
+    "Preserve all 26 backend code files (app.py, 11 APIs, 3 services, config, migrations)",
+    "Preserve all 9 documentation files (beginner guides, technical docs, test reports, data inventory)",
+    "Extract all data processing scripts from original app",
+    "Extract all reports and analysis documents",
+    "Identify and catalog all API source integrations (nflreadpy, nflscraPy, sportsref-nfl, ESPN, etc.)",
+    "Identify and catalog all betting data sources (spreads, totals, moneylines)",
+    "Create comprehensive source inventory in JSON format",
+    "Organize resources into logical folders under additional-context/",
+    "Ensure 2024 data is blocked (3-layer validation already implemented)",
+    "Only 2025 season data accessible"
+  ],
+  "out_of_scope": [
+    "Frontend development (Next.js app is placeholder/test only)",
+    "Modifying original scrapers or data sources",
+    "Backfilling historical data pre-2019",
+    "Adding new betting data sources (documented for future)",
+    "Live prop odds integration (requires paid APIs - documented as future)"
+  ],
+  "constraints": [
+    "Backend must remain fully functional after migration",
+    "All 11 API endpoints must continue working",
+    "2024 data prevention must remain enforced",
+    "Database schema must not change",
+    "All documentation must be accessible from root level",
+    "No breaking changes to existing code",
+    "All resources must be organized and indexed",
+    "Complete source inventory must be machine-readable (JSON)"
+  ],
+  "current_status": {
+    "backend_code": "COMPLETE - 26 files, production-ready",
+    "documentation": "COMPLETE - 9 comprehensive files",
+    "testing": "COMPLETE - all validations passed",
+    "security": "COMPLETE - 2024 data impossible to load",
+    "extraction_phase": "READY TO BEGIN - original app resources not yet extracted",
+    "organization": "READY TO BEGIN - additional-context folder structure planned"
+  },
+  "data_sources": {
+    "primary_sources": [
+      "nflreadpy - Official NFL data (schedules, play-by-play, player stats, etc.)",
+      "ESPN API - Live scores and basic odds",
+      "nflscraPy - Alternative data source (depth charts, season splits)",
+      "sportsref-nfl - Pro Football Reference integration",
+      "Historical data - 1970-2024 ELO ratings"
+    ],
+    "betting_data_sources": [
+      "Spread lines (home/away)",
+      "Total lines (over/under)",
+      "Moneylines (home/away)",
+      "Weather data (affects totals)",
+      "Rest days (affects outcomes)",
+      "ATS (Against The Spread) performance"
+    ]
+  },
+  "next_steps": [
+    "Identify all data processing scripts in original app (scripts/ folder)",
+    "Identify all reports and analysis documents (*.md files)",
+    "Map all API source integrations (how each is called)",
+    "Catalog all betting data sources (where odds come from)",
+    "Create comprehensive source inventory",
+    "Organize into additional-context folder structure at next-scraper/additional-context/",
+    "Create index documents for navigation and discovery"
+  ],
+  "success_criteria": [
+    "All original app resources identified and catalogued",
+    "Complete source inventory created and verified",
+    "Resources organized into logical folders",
+    "Navigation index created for easy discovery",
+    "Backend capabilities remain 100% functional",
+    "2024 data prevention still enforced",
+    "All documentation accessible from root level",
+    "Ready for analyze-for-planning workflow"
+  ]
+}

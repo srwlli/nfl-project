@@ -1,0 +1,56 @@
+{
+  "feature_name": "fastapi-nfl-backend-migration",
+  "description": "Extract scraper logic from Streamlit UI and expose as REST API (15 endpoints) for Next.js consumption, using Supabase PostgreSQL for data storage and Supabase Functions for deployment",
+  "goal": "Enable Next.js PWA to consume NFL betting data via REST API instead of relying on Streamlit. Support static data (schedules, stats) + live data (gameday scoreboard with real-time updates)",
+
+  "requirements": [
+    "Implement all 15 REST endpoints (schedules, teams, stats, PBP, scoreboard, players, power ratings, etc.)",
+    "Load NFL data into Supabase PostgreSQL (from existing parquet files via ETL)",
+    "Support manual trigger for weekly season stats refresh (POST /v1/admin/jobs)",
+    "Live scoreboard endpoint with short TTL cache (gameday updates)",
+    "Redis caching for expensive queries only (PBP, large joins)",
+    "Deploy to Supabase Functions (serverless)",
+    "Background worker for manual job triggers + scheduled tasks (future: automated weekly refresh)"
+  ],
+
+  "data_model": {
+    "static_tables": ["schedules", "bye_weeks", "teams", "players"],
+    "weekly_refresh": ["season_stats_by_week"],
+    "live_updates": ["scoreboard", "live_odds (if available)"]
+  },
+
+  "out_of_scope": [
+    "Automated scheduled refresh (Phase 2)",
+    "Two-way sync with ESPN API (read-only for now)",
+    "Advanced analytics / predictive models"
+  ],
+
+  "constraints": [
+    "Use Supabase PostgreSQL for all persistent data",
+    "FastAPI with Supabase Functions",
+    "Redis for expensive query caching",
+    "Manual job trigger endpoint (no scheduling library yet)",
+    "Must work with existing nflreadpy scraper output (parquets)"
+  ],
+
+  "team": "Solo (user) with AI assistance",
+  "deployment": "Supabase Functions",
+
+  "endpoints_required": [
+    "GET /health",
+    "GET /v1/schedules?season=2025&week=…&team=…",
+    "GET /v1/games/{game_id}",
+    "GET /v1/scoreboard?date=2025-10-13",
+    "GET /v1/pbp?game_id=xxx&limit=100&offset=0",
+    "GET /v1/teams",
+    "GET /v1/teams/{team}/stats?season=2025",
+    "GET /v1/teams/{team}/profile",
+    "GET /v1/players/{player_id}",
+    "GET /v1/player_stats?season=2025&team=…",
+    "GET /v1/power_ratings?season=2025",
+    "GET /v1/injuries?season=2025&week=…",
+    "GET /v1/depth_charts?team=…&season=2025",
+    "GET /v1/data/inventory",
+    "POST /v1/admin/jobs (manual trigger for refresh)"
+  ]
+}

@@ -1,0 +1,880 @@
+{
+  "metadata": {
+    "game_type": "completed",
+    "game_description": "Final / Post-Game",
+    "update_frequency": "Static (updated once after game ends), Season context: hourly",
+    "user_context": "Reviewing results, analyzing performance, researching season trends, comparing to historical games",
+    "last_updated": "2025-10-17",
+    "overall_completion": "45%"
+  },
+  "data_sections": [
+    {
+      "section_id": "P0-1",
+      "section_name": "Final Game Header",
+      "priority": "P0",
+      "completion": "90%",
+      "data_fields": [
+        {
+          "field": "game_id, season, week, season_type",
+          "status": "✅ Available",
+          "source": "schedules table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "schedules.game_id, schedules.season, schedules.week, schedules.game_type"
+        },
+        {
+          "field": "teams (logos, names, abbreviations)",
+          "status": "⚠️ Partial",
+          "source": "teams table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "teams.name, teams.abbreviation",
+          "gap": "Team logos (URLs) missing"
+        },
+        {
+          "field": "final_score (home, away, winner)",
+          "status": "✅ Available",
+          "source": "schedules table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "schedules.home_score, schedules.away_score, schedules.result"
+        },
+        {
+          "field": "records_before_after (W-L-T)",
+          "status": "✅ Available",
+          "source": "season_stats table (calculated)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "Calculate from season_stats.wins, season_stats.losses before and after game"
+        },
+        {
+          "field": "venue (name, city, state, roof_type)",
+          "status": "⚠️ Partial",
+          "source": "schedules table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "schedules.stadium, schedules.roof",
+          "gap": "City and state may need static stadium reference table"
+        },
+        {
+          "field": "attendance",
+          "status": "✅ Available",
+          "source": "schedules table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "schedules.attendance or similar"
+        },
+        {
+          "field": "broadcast_network",
+          "status": "❌ Missing",
+          "source": "ESPN API or manual",
+          "source_id": "1.3",
+          "source_name": "ESPN API",
+          "gap": "Broadcast network not in database"
+        },
+        {
+          "field": "scheduled_date_time, actual_kickoff",
+          "status": "✅ Available",
+          "source": "schedules table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "schedules.gameday, schedules.gametime"
+        }
+      ]
+    },
+    {
+      "section_id": "P0-2",
+      "section_name": "Final Score Breakdown",
+      "priority": "P0",
+      "completion": "0%",
+      "data_fields": [
+        {
+          "field": "quarter_by_quarter_scores (Q1, Q2, Q3, Q4, OT, Total)",
+          "status": "❌ Missing",
+          "source": "ESPN API OR calculate from pbp",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "gap": "CRITICAL: Quarter scores not in database. Need ESPN API or aggregate from pbp with scoring plays"
+        }
+      ]
+    },
+    {
+      "section_id": "P0-3",
+      "section_name": "Complete Box Score - Passing",
+      "priority": "P0",
+      "completion": "30%",
+      "data_fields": [
+        {
+          "field": "completions, attempts, completion_percentage",
+          "status": "❌ Missing",
+          "source": "nflreadpy player stats OR ESPN API",
+          "source_id": "1.1 / 1.3",
+          "source_name": "nflreadpy / ESPN API",
+          "gap": "Need to add completions, attempts columns to player_stats table"
+        },
+        {
+          "field": "passing_yards",
+          "status": "✅ Available",
+          "source": "player_stats table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "player_stats.passing_yards"
+        },
+        {
+          "field": "yards_per_attempt",
+          "status": "✅ Available",
+          "source": "Calculated from yards / attempts",
+          "source_id": "1.1",
+          "source_name": "Calculate when attempts added"
+        },
+        {
+          "field": "passing_touchdowns",
+          "status": "✅ Available",
+          "source": "player_stats table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "player_stats.passing_tds"
+        },
+        {
+          "field": "interceptions",
+          "status": "❌ Missing",
+          "source": "nflreadpy player stats OR ESPN API",
+          "source_id": "1.1 / 1.3",
+          "source_name": "nflreadpy / ESPN API",
+          "gap": "Need to add interceptions column to player_stats"
+        },
+        {
+          "field": "sacks, sack_yards_lost",
+          "status": "❌ Missing",
+          "source": "nflreadpy player stats OR ESPN API",
+          "source_id": "1.1 / 1.3",
+          "source_name": "nflreadpy / ESPN API",
+          "gap": "Need to add sacks, sacked_yards columns to player_stats"
+        },
+        {
+          "field": "longest_pass",
+          "status": "❌ Missing",
+          "source": "nflreadpy player stats OR calculate from pbp",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "gap": "Need to add longest_pass or calculate MAX(yards_gained) for passing plays"
+        },
+        {
+          "field": "passer_rating, qbr",
+          "status": "❌ Missing",
+          "source": "nflreadpy player stats OR ESPN API",
+          "source_id": "1.1 / 1.3",
+          "source_name": "nflreadpy / ESPN API",
+          "gap": "Need to add passer_rating column or calculate from formula"
+        }
+      ]
+    },
+    {
+      "section_id": "P0-4",
+      "section_name": "Complete Box Score - Rushing",
+      "priority": "P0",
+      "completion": "30%",
+      "data_fields": [
+        {
+          "field": "carries",
+          "status": "❌ Missing",
+          "source": "nflreadpy player stats OR ESPN API",
+          "source_id": "1.1 / 1.3",
+          "source_name": "nflreadpy / ESPN API",
+          "gap": "Need to add carries column to player_stats"
+        },
+        {
+          "field": "rushing_yards",
+          "status": "✅ Available",
+          "source": "player_stats table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "player_stats.rushing_yards"
+        },
+        {
+          "field": "average (yards per carry)",
+          "status": "✅ Available",
+          "source": "Calculated from yards / carries",
+          "source_id": "1.1",
+          "source_name": "Calculate when carries added"
+        },
+        {
+          "field": "rushing_touchdowns",
+          "status": "✅ Available",
+          "source": "player_stats table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "player_stats.rushing_tds"
+        },
+        {
+          "field": "long (longest run)",
+          "status": "❌ Missing",
+          "source": "nflreadpy player stats OR calculate from pbp",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "gap": "Need to add rushing_longest or calculate MAX(yards_gained) for rushing plays"
+        },
+        {
+          "field": "fumbles, first_downs",
+          "status": "❌ Missing",
+          "source": "nflreadpy player stats OR ESPN API",
+          "source_id": "1.1 / 1.3",
+          "source_name": "nflreadpy / ESPN API",
+          "gap": "Need to add rushing_fumbles, rushing_first_downs columns"
+        }
+      ]
+    },
+    {
+      "section_id": "P0-5",
+      "section_name": "Complete Box Score - Receiving",
+      "priority": "P0",
+      "completion": "50%",
+      "data_fields": [
+        {
+          "field": "receptions",
+          "status": "✅ Available",
+          "source": "player_stats table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "player_stats.receptions"
+        },
+        {
+          "field": "targets",
+          "status": "✅ Available",
+          "source": "player_stats table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "player_stats.targets"
+        },
+        {
+          "field": "catch_rate",
+          "status": "✅ Available",
+          "source": "Calculated from receptions / targets",
+          "source_id": "1.1",
+          "source_name": "Calculate from existing columns"
+        },
+        {
+          "field": "receiving_yards",
+          "status": "✅ Available",
+          "source": "player_stats table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "player_stats.receiving_yards"
+        },
+        {
+          "field": "yards_per_reception",
+          "status": "✅ Available",
+          "source": "Calculated from yards / receptions",
+          "source_id": "1.1",
+          "source_name": "Calculate from existing columns"
+        },
+        {
+          "field": "receiving_touchdowns",
+          "status": "✅ Available",
+          "source": "player_stats table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "player_stats.receiving_tds"
+        },
+        {
+          "field": "long (longest reception)",
+          "status": "❌ Missing",
+          "source": "nflreadpy player stats OR calculate from pbp",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "gap": "Need to add receiving_longest column"
+        },
+        {
+          "field": "first_downs",
+          "status": "❌ Missing",
+          "source": "nflreadpy player stats OR ESPN API",
+          "source_id": "1.1 / 1.3",
+          "source_name": "nflreadpy / ESPN API",
+          "gap": "Need to add receiving_first_downs column"
+        }
+      ]
+    },
+    {
+      "section_id": "P0-6",
+      "section_name": "Complete Box Score - Defense",
+      "priority": "P0",
+      "completion": "0%",
+      "data_fields": [
+        {
+          "field": "tackles (solo, assists, total)",
+          "status": "❌ Missing",
+          "source": "nflreadpy player stats OR ESPN API",
+          "source_id": "1.1 / 1.3",
+          "source_name": "nflreadpy / ESPN API",
+          "gap": "CRITICAL: Defensive stats completely missing. Need new category in player_stats"
+        },
+        {
+          "field": "sacks, tackles_for_loss",
+          "status": "❌ Missing",
+          "source": "nflreadpy player stats OR ESPN API",
+          "source_id": "1.1 / 1.3",
+          "source_name": "nflreadpy / ESPN API",
+          "gap": "Need defensive stats category"
+        },
+        {
+          "field": "interceptions, passes_defended",
+          "status": "❌ Missing",
+          "source": "nflreadpy player stats OR ESPN API",
+          "source_id": "1.1 / 1.3",
+          "source_name": "nflreadpy / ESPN API",
+          "gap": "Need defensive stats category"
+        },
+        {
+          "field": "forced_fumbles, fumble_recoveries",
+          "status": "❌ Missing",
+          "source": "nflreadpy player stats OR ESPN API",
+          "source_id": "1.1 / 1.3",
+          "source_name": "nflreadpy / ESPN API",
+          "gap": "Need defensive stats category"
+        }
+      ]
+    },
+    {
+      "section_id": "P0-7",
+      "section_name": "Final Team Stats Comparison",
+      "priority": "P0",
+      "completion": "40%",
+      "data_fields": [
+        {
+          "field": "total_yards, passing_yards, rushing_yards",
+          "status": "⚠️ Partial",
+          "source": "season_stats table OR calculate from pbp",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "season_stats.total_yards_per_game (aggregate for game)",
+          "gap": "Season averages available, need per-game stats or aggregate from pbp"
+        },
+        {
+          "field": "first_downs (total, passing, rushing, penalty)",
+          "status": "❌ Missing",
+          "source": "ESPN API OR calculate from pbp",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "gap": "Need ESPN API or complex pbp calculation"
+        },
+        {
+          "field": "plays, yards_per_play",
+          "status": "⚠️ Partial",
+          "source": "Calculate from pbp",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "COUNT(plays), AVG(yards_gained)",
+          "gap": "Need aggregation logic"
+        },
+        {
+          "field": "turnovers (fumbles_lost, interceptions_thrown)",
+          "status": "⚠️ Partial",
+          "source": "Calculate from pbp",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "gap": "Need fumble/interception event flags in pbp"
+        },
+        {
+          "field": "penalties (number, yards)",
+          "status": "❌ Missing",
+          "source": "ESPN API OR calculate from pbp",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "gap": "Need penalty flag in pbp"
+        },
+        {
+          "field": "time_of_possession",
+          "status": "❌ Missing",
+          "source": "ESPN API",
+          "source_id": "1.3",
+          "source_name": "ESPN API",
+          "gap": "Complex to calculate from pbp - better from ESPN API"
+        },
+        {
+          "field": "third_down_conversions (made, attempts, %)",
+          "status": "❌ Missing",
+          "source": "ESPN API OR calculate from pbp",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "gap": "Need down column in pbp to calculate"
+        },
+        {
+          "field": "fourth_down_conversions (made, attempts, %)",
+          "status": "❌ Missing",
+          "source": "ESPN API OR calculate from pbp",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "gap": "Need down column in pbp to calculate"
+        },
+        {
+          "field": "red_zone_trips, red_zone_scores",
+          "status": "❌ Missing",
+          "source": "ESPN API OR calculate from pbp",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "gap": "Need yardline column in pbp to detect red zone"
+        },
+        {
+          "field": "sacks_allowed",
+          "status": "❌ Missing",
+          "source": "ESPN API OR calculate from pbp",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "gap": "Need sack event flag in pbp"
+        }
+      ]
+    },
+    {
+      "section_id": "P1-8",
+      "section_name": "Complete Scoring Summary",
+      "priority": "P1",
+      "completion": "50%",
+      "data_fields": [
+        {
+          "field": "scoring_plays_list (quarter, time, team, score_type, description, yards)",
+          "status": "⚠️ Partial",
+          "source": "play_by_play table (filter scoring plays)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "play_by_play.quarter, play_by_play.clock, play_by_play.posteam, play_by_play.play_text",
+          "gap": "Need touchdown/field_goal/safety event flags to filter scoring plays"
+        },
+        {
+          "field": "score_after_play (home, away)",
+          "status": "❌ Missing",
+          "source": "ESPN API OR calculate running total",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "gap": "Need to track running score or get from ESPN"
+        },
+        {
+          "field": "drive_info (plays, yards, time)",
+          "status": "❌ Missing",
+          "source": "ESPN API OR aggregate from pbp",
+          "source_id": "1.3 / 1.1",
+          "source_name": "ESPN API / nflreadpy",
+          "gap": "Need drive column in pbp and aggregation logic"
+        }
+      ]
+    },
+    {
+      "section_id": "P1-9",
+      "section_name": "Season Context & Playoff Implications",
+      "priority": "P1",
+      "completion": "70%",
+      "data_fields": [
+        {
+          "field": "playoff_status (clinched, in_hunt, eliminated)",
+          "status": "⚠️ Partial",
+          "source": "Calculate from season_stats + schedules",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "gap": "Need playoff calculation logic"
+        },
+        {
+          "field": "division_standing (1-4), conference_standing (1-16)",
+          "status": "✅ Available",
+          "source": "season_stats table (calculated)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "Calculate ranks from season_stats.wins, season_stats.losses"
+        },
+        {
+          "field": "playoff_probability",
+          "status": "❌ Missing",
+          "source": "Custom model OR ESPN FPI",
+          "source_id": "1.3",
+          "source_name": "ESPN API",
+          "gap": "Need external playoff probability model"
+        },
+        {
+          "field": "current_streak (W3, L2)",
+          "status": "✅ Available",
+          "source": "schedules table (calculated)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "Filter schedules by team, order DESC, detect streak"
+        },
+        {
+          "field": "home_record, away_record, division_record",
+          "status": "✅ Available",
+          "source": "schedules table (calculated)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "Filter schedules and count wins/losses"
+        },
+        {
+          "field": "season_series (e.g., Series tied 1-1)",
+          "status": "✅ Available",
+          "source": "schedules table (filtered)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "Filter by both teams in current season"
+        }
+      ]
+    },
+    {
+      "section_id": "P1-10",
+      "section_name": "Final Betting Results",
+      "priority": "P1",
+      "completion": "80%",
+      "data_fields": [
+        {
+          "field": "spread (opening_line, closing_line, favorite, actual_margin, result)",
+          "status": "⚠️ Partial",
+          "source": "schedules table + calculate result",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "schedules.spread_line",
+          "gap": "Only opening line available. Closing line needs The Odds API historical data"
+        },
+        {
+          "field": "total (opening_line, closing_line, actual_total, result)",
+          "status": "⚠️ Partial",
+          "source": "schedules table + calculate result",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "schedules.total",
+          "gap": "Only opening total available. Closing line needs The Odds API"
+        },
+        {
+          "field": "moneyline (home_odds, away_odds, winner)",
+          "status": "⚠️ Partial",
+          "source": "Calculate from final score",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "schedules.result",
+          "gap": "Moneyline odds not in database - need The Odds API"
+        }
+      ]
+    },
+    {
+      "section_id": "P1-11",
+      "section_name": "Player Milestones & Achievements",
+      "priority": "P1",
+      "completion": "50%",
+      "data_fields": [
+        {
+          "field": "milestones (career, season, game achievements)",
+          "status": "⚠️ Partial",
+          "source": "player_stats table + milestone detection logic",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "player_stats (aggregate career/season totals)",
+          "gap": "Need logic to detect milestones (100-yard games, 5+ receptions, career totals, etc.)"
+        }
+      ]
+    },
+    {
+      "section_id": "P1-12",
+      "section_name": "Historical Comparisons",
+      "priority": "P1",
+      "completion": "90%",
+      "data_fields": [
+        {
+          "field": "head_to_head_all_time (wins, losses, ties)",
+          "status": "✅ Available",
+          "source": "schedules table (historical)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "Filter schedules by both teams, count results"
+        },
+        {
+          "field": "at_this_venue (home wins, away wins)",
+          "status": "✅ Available",
+          "source": "schedules table (historical)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "Filter by stadium + both teams"
+        },
+        {
+          "field": "previous_meeting_this_season",
+          "status": "✅ Available",
+          "source": "schedules table (filtered)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "Filter by season, both teams, previous date"
+        },
+        {
+          "field": "similar_games (same records, playoff implications)",
+          "status": "⚠️ Partial",
+          "source": "schedules table + season_stats (logic)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "gap": "Need algorithm to find similar matchups"
+        }
+      ]
+    },
+    {
+      "section_id": "P2-13",
+      "section_name": "Complete Play-by-Play",
+      "priority": "P2",
+      "completion": "80%",
+      "data_fields": [
+        {
+          "field": "every_play (quarter, time, down, distance, yardline, play_type, description, yards_gained)",
+          "status": "⚠️ Partial",
+          "source": "play_by_play table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "play_by_play (all columns)",
+          "gap": "Missing down, ydstogo, yardline_100 columns. Need to expand pbp table"
+        },
+        {
+          "field": "scoring_play, turnover, penalty flags",
+          "status": "⚠️ Partial",
+          "source": "play_by_play table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "play_by_play.play_type",
+          "gap": "Need touchdown, fumble, interception, penalty event flags"
+        }
+      ]
+    },
+    {
+      "section_id": "P2-14",
+      "section_name": "Game Information & Details",
+      "priority": "P2",
+      "completion": "60%",
+      "data_fields": [
+        {
+          "field": "weather (temperature, condition, wind_speed, wind_direction)",
+          "status": "✅ Available",
+          "source": "schedules table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "schedules.temp, schedules.wind"
+        },
+        {
+          "field": "officials (referee, umpire, judges)",
+          "status": "❌ Missing",
+          "source": "nflreadpy officials data OR ESPN API",
+          "source_id": "1.1 / 1.3",
+          "source_name": "nflreadpy / ESPN API",
+          "gap": "Officials data available in nflreadpy but not currently collected"
+        },
+        {
+          "field": "broadcast (network, announcers, ratings)",
+          "status": "❌ Missing",
+          "source": "ESPN API or manual",
+          "source_id": "1.3",
+          "source_name": "ESPN API",
+          "gap": "Broadcast info not in database"
+        }
+      ]
+    },
+    {
+      "section_id": "P2-15",
+      "section_name": "Advanced Analytics",
+      "priority": "P2",
+      "completion": "70%",
+      "data_fields": [
+        {
+          "field": "win_probability_chart (play-by-play WP values)",
+          "status": "⚠️ Partial",
+          "source": "play_by_play table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "play_by_play.wp",
+          "gap": "Need to add wp (win probability) column to pbp table"
+        },
+        {
+          "field": "epa_summary (total, passing, rushing by team)",
+          "status": "✅ Available",
+          "source": "play_by_play table",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "play_by_play.epa (aggregate by team and play type)"
+        },
+        {
+          "field": "success_rate",
+          "status": "✅ Available",
+          "source": "play_by_play table OR season_stats",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "play_by_play.success OR season_stats.success_rate_off/def"
+        },
+        {
+          "field": "explosive_plays (plays > 20 yards)",
+          "status": "✅ Available",
+          "source": "play_by_play table (calculated)",
+          "source_id": "1.1",
+          "source_name": "nflreadpy",
+          "column": "COUNT(play_by_play.yards_gained > 20)"
+        }
+      ]
+    },
+    {
+      "section_id": "P2-16",
+      "section_name": "Video Highlights & Media",
+      "priority": "P2",
+      "completion": "0%",
+      "data_fields": [
+        {
+          "field": "highlights (video_id, title, description, thumbnail_url, video_url)",
+          "status": "❌ Missing",
+          "source": "ESPN API (highlights endpoint) OR YouTube API",
+          "source_id": "1.3",
+          "source_name": "ESPN API",
+          "gap": "Need ESPN highlights API or YouTube integration"
+        },
+        {
+          "field": "post_game_interviews (video_id, title, interviewee, video_url)",
+          "status": "❌ Missing",
+          "source": "Manual curation OR YouTube API",
+          "source_id": null,
+          "source_name": "Manual or YouTube",
+          "gap": "Requires manual curation or YouTube scraping"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_sections": 16,
+    "p0_sections": 7,
+    "p1_sections": 5,
+    "p2_sections": 4,
+    "overall_completion": "45%",
+    "data_gaps": [
+      {
+        "priority": "CRITICAL",
+        "gap": "Quarter-by-quarter scores",
+        "details": "Score breakdown by quarter (Q1, Q2, Q3, Q4, OT)",
+        "solution": "ESPN API scoreboard endpoint OR aggregate from pbp scoring plays",
+        "source_id": "1.3 / 1.1",
+        "estimated_effort": "2-3 days"
+      },
+      {
+        "priority": "CRITICAL",
+        "gap": "Complete player box score stats (passing, rushing, receiving, defense)",
+        "details": "Missing 70% of traditional box score stats: completions, attempts, interceptions, sacks, carries, longest, tackles, TFL, PD, etc.",
+        "solution": "Expand nflreadpy player_stats collection to include 30-40 additional columns",
+        "source_id": "1.1",
+        "columns_to_add": [
+          "Passing: completions, attempts, interceptions, sacks, sacked_yards, passer_rating",
+          "Rushing: carries, rushing_fumbles, rushing_longest",
+          "Receiving: receiving_fumbles, receiving_longest, yards_after_catch",
+          "Defense: tackles_solo, tackles_assist, sacks_def, tackles_for_loss, pass_deflections, qb_hits, interceptions_def, interception_yards",
+          "Kicking: fg_made, fg_attempts, fg_longest, xp_made, xp_attempts",
+          "Punting: punts, punt_yards, punt_longest, punts_inside_20, punt_touchbacks",
+          "Returns: kick_returns, kick_return_yards, punt_returns, punt_return_yards, return_touchdowns"
+        ],
+        "estimated_effort": "5-7 days"
+      },
+      {
+        "priority": "CRITICAL",
+        "gap": "Per-game team statistics",
+        "details": "First downs, 3rd/4th down %, red zone efficiency, turnovers, penalties, time of possession",
+        "solution": "ESPN API team stats endpoint OR aggregate from pbp (complex)",
+        "source_id": "1.3 / 1.1",
+        "estimated_effort": "3-5 days"
+      },
+      {
+        "priority": "HIGH",
+        "gap": "Drive-level statistics for scoring summary",
+        "details": "Drive start/end, plays in drive, yards, time of possession, result",
+        "solution": "Add drive column to pbp table and build aggregation logic",
+        "source_id": "1.1",
+        "estimated_effort": "3-5 days"
+      },
+      {
+        "priority": "HIGH",
+        "gap": "Expand play-by-play columns",
+        "details": "Missing down, ydstogo, yardline_100, event flags (touchdown, fumble, interception, penalty), player IDs",
+        "solution": "Add 20-30 columns to play_by_play table from nflreadpy's 372 available columns",
+        "source_id": "1.1",
+        "estimated_effort": "3-5 days"
+      },
+      {
+        "priority": "MEDIUM",
+        "gap": "Betting results (closing lines)",
+        "details": "Only opening lines available. Need closing lines for accurate ATS/O-U results",
+        "solution": "The Odds API historical data or store closing lines before kickoff",
+        "source_id": "1.5",
+        "estimated_effort": "2-3 days"
+      },
+      {
+        "priority": "MEDIUM",
+        "gap": "Player milestone detection",
+        "details": "Logic to identify career/season/game achievements (100-yard games, career totals, etc.)",
+        "solution": "Build milestone detection algorithm using player_stats aggregations",
+        "source_id": "1.1",
+        "estimated_effort": "3-5 days"
+      },
+      {
+        "priority": "LOW",
+        "gap": "Officials data",
+        "details": "Referee, umpire, judges for each game",
+        "solution": "nflreadpy officials data (available but not currently collected)",
+        "source_id": "1.1",
+        "estimated_effort": "1-2 days"
+      },
+      {
+        "priority": "LOW",
+        "gap": "Video highlights and media",
+        "details": "Highlight videos, post-game interviews",
+        "solution": "ESPN API highlights endpoint or YouTube integration",
+        "source_id": "1.3",
+        "estimated_effort": "3-5 days"
+      },
+      {
+        "priority": "LOW",
+        "gap": "Win probability chart",
+        "details": "Play-by-play win probability values for chart visualization",
+        "solution": "Add wp column to pbp table (available in nflreadpy)",
+        "source_id": "1.1",
+        "estimated_effort": "1-2 days"
+      }
+    ],
+    "currently_available": [
+      "Final score and game header (90%)",
+      "Basic passing stats (yards, TDs) (30%)",
+      "Basic rushing stats (yards, TDs) (30%)",
+      "Basic receiving stats (receptions, targets, yards, TDs) (50%)",
+      "Season context (streaks, records, standings) (70%)",
+      "Historical comparisons (head-to-head, venue records) (90%)",
+      "Betting results - opening lines only (80%)",
+      "Play-by-play text descriptions (80%)",
+      "Advanced analytics (EPA, success rate) (70%)",
+      "Weather data (60%)"
+    ],
+    "needs_integration": [
+      "ESPN API - Quarter scores, team stats, box scores, officials, broadcast info",
+      "Expanded nflreadpy player_stats - 30-40 additional columns for complete box scores",
+      "Expanded nflreadpy pbp columns - down, distance, yardline, drive, wp, event flags, player IDs",
+      "The Odds API - Closing betting lines for accurate ATS/O-U results",
+      "Milestone detection logic",
+      "Video highlights (ESPN API or YouTube)"
+    ],
+    "implementation_strategy": {
+      "phase_1_critical": {
+        "priority": "CRITICAL - Blocks complete game details",
+        "tasks": [
+          "Add quarter-by-quarter scores (ESPN API or pbp aggregation)",
+          "Expand player_stats table with 30-40 columns for complete box scores",
+          "Integrate ESPN API for team game stats OR build pbp aggregation"
+        ],
+        "estimated_effort": "10-15 days"
+      },
+      "phase_2_high": {
+        "priority": "HIGH - Important for full experience",
+        "tasks": [
+          "Add drive column to pbp and build scoring summary aggregation",
+          "Expand pbp table with down, distance, yardline, event flags",
+          "Store closing betting lines (The Odds API or manual)"
+        ],
+        "estimated_effort": "7-10 days"
+      },
+      "phase_3_enhancements": {
+        "priority": "MEDIUM/LOW - Enhances UX",
+        "tasks": [
+          "Build milestone detection algorithm",
+          "Add officials data (nflreadpy)",
+          "Add win probability column to pbp",
+          "Integrate video highlights (ESPN API)"
+        ],
+        "estimated_effort": "5-7 days"
+      }
+    }
+  }
+}

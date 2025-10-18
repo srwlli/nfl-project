@@ -1,0 +1,70 @@
+{
+  "foundation_docs": {
+    "available": [
+      "README.md (root)",
+      "USER-GUIDE.md (root)"
+    ],
+    "missing": [
+      "API.md",
+      "ARCHITECTURE.md",
+      "COMPONENTS.md",
+      "SCHEMA.md"
+    ]
+  },
+  "coding_standards": {
+    "available": [],
+    "missing": [
+      "BEHAVIOR-STANDARDS.md",
+      "COMPONENT-PATTERN.md",
+      "UI-STANDARDS.md",
+      "UX-PATTERNS.md",
+      "COMPONENT-INDEX.md"
+    ]
+  },
+  "reference_components": {
+    "primary": null,
+    "secondary": [],
+    "note": "Reference component matching requires feature name - not yet implemented"
+  },
+  "key_patterns_identified": [],
+  "technology_stack": {
+    "language": "unknown",
+    "framework": "unknown",
+    "database": "unknown",
+    "testing": "unknown",
+    "build": "unknown"
+  },
+  "project_structure": {
+    "main_directories": [
+      "scripts",
+      "a\\pages",
+      "a\\rosters",
+      "data\\raw",
+      "scrapers\\open-source\\nflreadpy",
+      "scrapers\\open-source\\nflscraPy\\nflscraPy",
+      "scrapers\\open-source\\nfl_data_py\\data\\schedules",
+      "scrapers\\open-source\\nflreadpy\\src\\nflreadpy",
+      "a\\context\\scrapers\\open-source\\nflreadpy",
+      "a\\context\\scrapers\\open-source\\nflscraPy\\nflscraPy"
+    ],
+    "file_counts": {
+      "data\\raw": 45,
+      "scrapers\\open-source\\nflreadpy\\src\\nflreadpy": 24,
+      "a\\context\\scrapers\\open-source\\nflreadpy\\src\\nflreadpy": 24,
+      "scrapers\\open-source\\nfl_data_py\\data\\schedules": 23,
+      "a\\context\\scrapers\\open-source\\nfl_data_py\\data\\schedules": 23,
+      "scripts": 21,
+      "a\\pages": 12,
+      "scrapers\\open-source\\nflscraPy\\nflscraPy": 11,
+      "a\\context\\scrapers\\open-source\\nflscraPy\\nflscraPy": 11,
+      "a\\rosters": 10
+    },
+    "organization_pattern": "unknown"
+  },
+  "gaps_and_risks": [
+    "Missing foundation docs: API.md, ARCHITECTURE.md, COMPONENTS.md",
+    "No coding standards directory found (coderef/standards/)",
+    "No test directory found (tests/, test/, or __tests__/)",
+    "No CI configuration found (.github/workflows/, .gitlab-ci.yml, etc.)"
+  ]
+}

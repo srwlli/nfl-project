@@ -1,0 +1,1477 @@
+{
+  "document_version": "1.0",
+  "last_updated": "2025-10-18",
+  "status": "Complete - Ready for implementation",
+  "scope": {
+    "years_covered": "1970-2024",
+    "total_seasons": 54,
+    "granularity": "Season + Game + Play-level",
+    "priority": "P0 - Critical (powers all other pages)"
+  },
+  "total_fields": 850,
+  "coverage_summary": {
+    "available": 652,
+    "partial": 138,
+    "planned": 45,
+    "missing": 15,
+    "coverage_percentage": 76.7
+  },
+  "data_sources": {
+    "nflreadpy": {
+      "id": "source_1",
+      "status": "✅ active",
+      "type": "Python Package",
+      "cost": "Free",
+      "coverage": "Historical seasons, player stats, team stats, schedules, rosters",
+      "fields_provided": 487,
+      "years_available": "1970-2024",
+      "update_frequency": "Seasonal",
+      "reliability": "High",
+      "documentation": "https://pypi.org/project/nflreadpy/"
+    },
+    "sportsref_nfl": {
+      "id": "source_2",
+      "status": "✅ active",
+      "type": "Web Scraping (Pro Football Reference)",
+      "cost": "Free",
+      "coverage": "Career records, franchise history, Hall of Fame, play-by-play, awards",
+      "fields_provided": 218,
+      "years_available": "1970-2024",
+      "update_frequency": "Weekly during season",
+      "reliability": "High",
+      "documentation": "https://www.pro-football-reference.com/"
+    },
+    "nflscrapy": {
+      "id": "source_3",
+      "status": "✅ active",
+      "type": "Python Package",
+      "cost": "Free",
+      "coverage": "Historical ELO ratings, DVOA, EPA, advanced analytics",
+      "fields_provided": 73,
+      "years_available": "1999-2024 (varies by metric)",
+      "update_frequency": "Weekly during season",
+      "reliability": "Medium-High",
+      "documentation": "https://github.com/scrapy/nflscrapy"
+    },
+    "nfl_next_gen_stats": {
+      "id": "source_4",
+      "status": "⚠️ partial",
+      "type": "Official NFL API",
+      "cost": "Free",
+      "coverage": "Next Gen Stats (tracking data: separation, cushion, speed, etc.)",
+      "fields_provided": 42,
+      "years_available": "2016-2024 only",
+      "update_frequency": "Real-time during games",
+      "reliability": "Very High",
+      "documentation": "https://nextgenstats.nfl.com/"
+    },
+    "manual_curation": {
+      "id": "source_5",
+      "status": "🔧 needed",
+      "type": "Manual Research & Entry",
+      "cost": "Time/Labor",
+      "coverage": "Awards, accolades, historical context, era definitions, curated notes",
+      "fields_provided": 30,
+      "years_available": "1970-2024",
+      "update_frequency": "Ad-hoc",
+      "reliability": "High (if sourced properly)",
+      "documentation": "Research from NFL.com, Hall of Fame, team sites"
+    }
+  },
+  "sections": {
+    "player_season_stats": {
+      "total_fields": 95,
+      "available": 71,
+      "partial": 18,
+      "planned": 4,
+      "missing": 2,
+      "coverage_percentage": 74.7,
+      "fields": {
+        "player_id": {
+          "field_number": 1,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "string",
+          "required": true,
+          "notes": "Standardized player identifiers"
+        },
+        "player_name": {
+          "field_number": 2,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "string",
+          "required": true
+        },
+        "season": {
+          "field_number": 3,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": [],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": true
+        },
+        "team_id": {
+          "field_number": 4,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "string",
+          "required": true
+        },
+        "team_name": {
+          "field_number": 5,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "string",
+          "required": true
+        },
+        "position": {
+          "field_number": 6,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "string",
+          "required": true
+        },
+        "jersey_number": {
+          "field_number": 7,
+          "status": "⚠️ partial",
+          "primary_source": "sportsref_nfl",
+          "secondary_sources": [],
+          "coverage_years": "1970-2024 (spotty in early years)",
+          "data_type": "integer",
+          "required": false,
+          "notes": "Not consistently tracked before 1990s"
+        },
+        "games_played": {
+          "field_number": 8,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": true
+        },
+        "games_started": {
+          "field_number": 9,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": true
+        },
+        "team_games_total": {
+          "field_number": 10,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": [],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": true
+        },
+        "games_missed": {
+          "field_number": 11,
+          "status": "🔧 planned",
+          "primary_source": "calculated",
+          "secondary_sources": ["nflreadpy"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "notes": "Calculated: team_games_total - games_played"
+        },
+        "injury_games": {
+          "field_number": 12,
+          "status": "⚠️ partial",
+          "primary_source": "manual_curation",
+          "secondary_sources": [],
+          "coverage_years": "Varies - limited historical data",
+          "data_type": "integer",
+          "required": false,
+          "notes": "Injury reports not consistently tracked historically"
+        },
+        "pass_attempts": {
+          "field_number": 13,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "QB"
+        },
+        "pass_completions": {
+          "field_number": 14,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "QB"
+        },
+        "pass_completion_pct": {
+          "field_number": 15,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["calculated"],
+          "coverage_years": "1970-2024",
+          "data_type": "float",
+          "required": false,
+          "position_specific": "QB"
+        },
+        "pass_yards": {
+          "field_number": 16,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "QB"
+        },
+        "pass_yards_per_attempt": {
+          "field_number": 17,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["calculated"],
+          "coverage_years": "1970-2024",
+          "data_type": "float",
+          "required": false,
+          "position_specific": "QB"
+        },
+        "pass_yards_per_completion": {
+          "field_number": 18,
+          "status": "🔧 planned",
+          "primary_source": "calculated",
+          "secondary_sources": [],
+          "coverage_years": "1970-2024",
+          "data_type": "float",
+          "required": false,
+          "position_specific": "QB",
+          "notes": "Calculated from pass_yards / pass_completions"
+        },
+        "pass_touchdowns": {
+          "field_number": 19,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "QB"
+        },
+        "pass_interceptions": {
+          "field_number": 20,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "QB"
+        },
+        "pass_td_int_ratio": {
+          "field_number": 21,
+          "status": "🔧 planned",
+          "primary_source": "calculated",
+          "secondary_sources": [],
+          "coverage_years": "1970-2024",
+          "data_type": "float",
+          "required": false,
+          "position_specific": "QB",
+          "notes": "Calculated: touchdowns / interceptions"
+        },
+        "pass_rating": {
+          "field_number": 22,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl", "calculated"],
+          "coverage_years": "1970-2024",
+          "data_type": "float",
+          "required": false,
+          "position_specific": "QB"
+        },
+        "pass_sacks": {
+          "field_number": 23,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "QB"
+        },
+        "pass_sack_yards": {
+          "field_number": 24,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "QB"
+        },
+        "pass_first_downs": {
+          "field_number": 25,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1999-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "QB",
+          "notes": "Limited availability before 1999"
+        },
+        "pass_20plus_yards": {
+          "field_number": 26,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1999-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "QB"
+        },
+        "pass_40plus_yards": {
+          "field_number": 27,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1999-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "QB"
+        },
+        "pass_longest": {
+          "field_number": 28,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "QB"
+        },
+        "pass_air_yards": {
+          "field_number": 29,
+          "status": "⚠️ partial",
+          "primary_source": "nfl_next_gen_stats",
+          "secondary_sources": [],
+          "coverage_years": "2016-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "QB",
+          "notes": "Next Gen Stats only - 2016+"
+        },
+        "pass_yards_after_catch": {
+          "field_number": 30,
+          "status": "⚠️ partial",
+          "primary_source": "nfl_next_gen_stats",
+          "secondary_sources": [],
+          "coverage_years": "2016-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "QB",
+          "notes": "Next Gen Stats only - 2016+"
+        },
+        "pass_intended_air_yards": {
+          "field_number": 31,
+          "status": "⚠️ partial",
+          "primary_source": "nfl_next_gen_stats",
+          "secondary_sources": [],
+          "coverage_years": "2016-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "QB",
+          "notes": "Next Gen Stats only - 2016+"
+        },
+        "pass_accuracy_pct": {
+          "field_number": 32,
+          "status": "⚠️ partial",
+          "primary_source": "nfl_next_gen_stats",
+          "secondary_sources": [],
+          "coverage_years": "2016-2024",
+          "data_type": "float",
+          "required": false,
+          "position_specific": "QB",
+          "notes": "Next Gen Stats only - 2016+"
+        },
+        "pass_on_target_pct": {
+          "field_number": 33,
+          "status": "⚠️ partial",
+          "primary_source": "nfl_next_gen_stats",
+          "secondary_sources": [],
+          "coverage_years": "2016-2024",
+          "data_type": "float",
+          "required": false,
+          "position_specific": "QB",
+          "notes": "Next Gen Stats only - 2016+"
+        },
+        "pass_drops": {
+          "field_number": 34,
+          "status": "⚠️ partial",
+          "primary_source": "nfl_next_gen_stats",
+          "secondary_sources": [],
+          "coverage_years": "2016-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "QB",
+          "notes": "Next Gen Stats only - 2016+"
+        },
+        "pass_drop_pct": {
+          "field_number": 35,
+          "status": "⚠️ partial",
+          "primary_source": "nfl_next_gen_stats",
+          "secondary_sources": ["calculated"],
+          "coverage_years": "2016-2024",
+          "data_type": "float",
+          "required": false,
+          "position_specific": "QB",
+          "notes": "Calculated from drops / targets"
+        },
+        "pass_batted_balls": {
+          "field_number": 36,
+          "status": "⚠️ partial",
+          "primary_source": "nfl_next_gen_stats",
+          "secondary_sources": [],
+          "coverage_years": "2016-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "QB",
+          "notes": "Next Gen Stats only - 2016+"
+        },
+        "pass_throwaways": {
+          "field_number": 37,
+          "status": "⚠️ partial",
+          "primary_source": "nfl_next_gen_stats",
+          "secondary_sources": [],
+          "coverage_years": "2016-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "QB",
+          "notes": "Next Gen Stats only - 2016+"
+        },
+        "pass_spikes": {
+          "field_number": 38,
+          "status": "⚠️ partial",
+          "primary_source": "nfl_next_gen_stats",
+          "secondary_sources": [],
+          "coverage_years": "2016-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "QB",
+          "notes": "Next Gen Stats only - 2016+"
+        },
+        "rush_attempts": {
+          "field_number": 39,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "RB/QB/WR"
+        },
+        "rush_yards": {
+          "field_number": 40,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "RB/QB/WR"
+        },
+        "rush_yards_per_attempt": {
+          "field_number": 41,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["calculated"],
+          "coverage_years": "1970-2024",
+          "data_type": "float",
+          "required": false,
+          "position_specific": "RB/QB/WR"
+        },
+        "rush_touchdowns": {
+          "field_number": 42,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "RB/QB/WR"
+        },
+        "rush_first_downs": {
+          "field_number": 43,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1999-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "RB/QB/WR"
+        },
+        "rush_20plus_yards": {
+          "field_number": 44,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1999-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "RB/QB/WR"
+        },
+        "rush_40plus_yards": {
+          "field_number": 45,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1999-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "RB/QB/WR"
+        },
+        "rush_longest": {
+          "field_number": 46,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "RB/QB/WR"
+        },
+        "rush_fumbles": {
+          "field_number": 47,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "RB/QB/WR"
+        },
+        "rush_yards_before_contact": {
+          "field_number": 48,
+          "status": "⚠️ partial",
+          "primary_source": "nfl_next_gen_stats",
+          "secondary_sources": [],
+          "coverage_years": "2016-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "RB",
+          "notes": "Next Gen Stats only - 2016+"
+        },
+        "rush_yards_after_contact": {
+          "field_number": 49,
+          "status": "⚠️ partial",
+          "primary_source": "nfl_next_gen_stats",
+          "secondary_sources": [],
+          "coverage_years": "2016-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "RB",
+          "notes": "Next Gen Stats only - 2016+"
+        },
+        "rush_broken_tackles": {
+          "field_number": 50,
+          "status": "⚠️ partial",
+          "primary_source": "nfl_next_gen_stats",
+          "secondary_sources": [],
+          "coverage_years": "2016-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "RB",
+          "notes": "Next Gen Stats only - 2016+"
+        },
+        "rush_stuffed": {
+          "field_number": 51,
+          "status": "⚠️ partial",
+          "primary_source": "nflreadpy",
+          "secondary_sources": [],
+          "coverage_years": "1999-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "RB"
+        },
+        "targets": {
+          "field_number": 52,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1999-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "WR/TE/RB",
+          "notes": "Targets tracked consistently from 1999+"
+        },
+        "receptions": {
+          "field_number": 53,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "WR/TE/RB"
+        },
+        "reception_pct": {
+          "field_number": 54,
+          "status": "🔧 planned",
+          "primary_source": "calculated",
+          "secondary_sources": [],
+          "coverage_years": "1999-2024",
+          "data_type": "float",
+          "required": false,
+          "position_specific": "WR/TE/RB",
+          "notes": "Calculated: receptions / targets"
+        },
+        "receiving_yards": {
+          "field_number": 55,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "WR/TE/RB"
+        },
+        "yards_per_reception": {
+          "field_number": 56,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["calculated"],
+          "coverage_years": "1970-2024",
+          "data_type": "float",
+          "required": false,
+          "position_specific": "WR/TE/RB"
+        },
+        "yards_per_target": {
+          "field_number": 57,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["calculated"],
+          "coverage_years": "1999-2024",
+          "data_type": "float",
+          "required": false,
+          "position_specific": "WR/TE/RB"
+        },
+        "receiving_touchdowns": {
+          "field_number": 58,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "WR/TE/RB"
+        },
+        "receiving_first_downs": {
+          "field_number": 59,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1999-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "WR/TE/RB"
+        },
+        "receiving_20plus_yards": {
+          "field_number": 60,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1999-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "WR/TE/RB"
+        },
+        "receiving_40plus_yards": {
+          "field_number": 61,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1999-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "WR/TE/RB"
+        },
+        "receiving_longest": {
+          "field_number": 62,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "WR/TE/RB"
+        },
+        "receiving_air_yards": {
+          "field_number": 63,
+          "status": "⚠️ partial",
+          "primary_source": "nfl_next_gen_stats",
+          "secondary_sources": [],
+          "coverage_years": "2016-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "WR/TE/RB",
+          "notes": "Next Gen Stats only - 2016+"
+        },
+        "receiving_yards_after_catch": {
+          "field_number": 64,
+          "status": "⚠️ partial",
+          "primary_source": "nfl_next_gen_stats",
+          "secondary_sources": [],
+          "coverage_years": "2016-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "WR/TE/RB",
+          "notes": "Next Gen Stats only - 2016+"
+        },
+        "receiving_yac_per_reception": {
+          "field_number": 65,
+          "status": "⚠️ partial",
+          "primary_source": "nfl_next_gen_stats",
+          "secondary_sources": ["calculated"],
+          "coverage_years": "2016-2024",
+          "data_type": "float",
+          "required": false,
+          "position_specific": "WR/TE/RB"
+        },
+        "receiving_drops": {
+          "field_number": 66,
+          "status": "⚠️ partial",
+          "primary_source": "nfl_next_gen_stats",
+          "secondary_sources": [],
+          "coverage_years": "2016-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "WR/TE/RB",
+          "notes": "Next Gen Stats only - 2016+"
+        },
+        "receiving_contested_catches": {
+          "field_number": 67,
+          "status": "⚠️ partial",
+          "primary_source": "nfl_next_gen_stats",
+          "secondary_sources": [],
+          "coverage_years": "2016-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "WR/TE/RB",
+          "notes": "Next Gen Stats only - 2016+"
+        },
+        "receiving_contested_catch_pct": {
+          "field_number": 68,
+          "status": "⚠️ partial",
+          "primary_source": "nfl_next_gen_stats",
+          "secondary_sources": ["calculated"],
+          "coverage_years": "2016-2024",
+          "data_type": "float",
+          "required": false,
+          "position_specific": "WR/TE/RB"
+        },
+        "receiving_fumbles": {
+          "field_number": 69,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "WR/TE/RB"
+        },
+        "tackles_solo": {
+          "field_number": 70,
+          "status": "⚠️ partial",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "2001-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "Defensive",
+          "notes": "Solo tackles tracked from 2001+"
+        },
+        "tackles_assisted": {
+          "field_number": 71,
+          "status": "⚠️ partial",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "2001-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "Defensive",
+          "notes": "Assisted tackles tracked from 2001+"
+        },
+        "tackles_total": {
+          "field_number": 72,
+          "status": "⚠️ partial",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "2001-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "Defensive",
+          "notes": "Total tackles tracked from 2001+"
+        },
+        "tackles_for_loss": {
+          "field_number": 73,
+          "status": "⚠️ partial",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1999-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "Defensive"
+        },
+        "sacks": {
+          "field_number": 74,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1982-2024",
+          "data_type": "float",
+          "required": false,
+          "position_specific": "Defensive",
+          "notes": "Sacks officially tracked from 1982"
+        },
+        "sack_yards": {
+          "field_number": 75,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1999-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "Defensive"
+        },
+        "qb_hits": {
+          "field_number": 76,
+          "status": "⚠️ partial",
+          "primary_source": "nflreadpy",
+          "secondary_sources": [],
+          "coverage_years": "2006-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "Defensive",
+          "notes": "QB hits tracked from 2006+"
+        },
+        "interceptions": {
+          "field_number": 77,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "Defensive"
+        },
+        "interception_yards": {
+          "field_number": 78,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "Defensive"
+        },
+        "interception_touchdowns": {
+          "field_number": 79,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "Defensive"
+        },
+        "interception_longest": {
+          "field_number": 80,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "Defensive"
+        },
+        "passes_defended": {
+          "field_number": 81,
+          "status": "⚠️ partial",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1999-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "Defensive"
+        },
+        "forced_fumbles": {
+          "field_number": 82,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1994-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "Defensive"
+        },
+        "fumble_recoveries": {
+          "field_number": 83,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "Defensive"
+        },
+        "fumble_recovery_yards": {
+          "field_number": 84,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "Defensive"
+        },
+        "fumble_recovery_touchdowns": {
+          "field_number": 85,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "Defensive"
+        },
+        "safeties": {
+          "field_number": 86,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "Defensive"
+        },
+        "defensive_snaps": {
+          "field_number": 87,
+          "status": "⚠️ partial",
+          "primary_source": "nflreadpy",
+          "secondary_sources": [],
+          "coverage_years": "2012-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "Defensive",
+          "notes": "Snap counts tracked from 2012+"
+        },
+        "coverage_snaps": {
+          "field_number": 88,
+          "status": "⚠️ partial",
+          "primary_source": "nfl_next_gen_stats",
+          "secondary_sources": [],
+          "coverage_years": "2016-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "DB",
+          "notes": "Next Gen Stats only - 2016+"
+        },
+        "targets_allowed": {
+          "field_number": 89,
+          "status": "⚠️ partial",
+          "primary_source": "nfl_next_gen_stats",
+          "secondary_sources": [],
+          "coverage_years": "2016-2024",
+          "data_type": "integer",
+          "required": false,
+          "position_specific": "DB",
+          "notes": "Next Gen Stats only - 2016+"
+        },
+        "special_teams_tackles": {
+          "field_number": 90,
+          "status": "⚠️ partial",
+          "primary_source": "nflreadpy",
+          "secondary_sources": [],
+          "coverage_years": "2001-2024",
+          "data_type": "integer",
+          "required": false
+        },
+        "kickoff_returns": {
+          "field_number": 91,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false
+        },
+        "kickoff_return_yards": {
+          "field_number": 92,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false
+        },
+        "punt_returns": {
+          "field_number": 93,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false
+        },
+        "punt_return_yards": {
+          "field_number": 94,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false
+        },
+        "special_teams_touchdowns": {
+          "field_number": 95,
+          "status": "✅ available",
+          "primary_source": "nflreadpy",
+          "secondary_sources": ["sportsref_nfl"],
+          "coverage_years": "1970-2024",
+          "data_type": "integer",
+          "required": false
+        }
+      }
+    },
+    "player_game_logs": {
+      "total_fields": 85,
+      "available": 63,
+      "partial": 17,
+      "planned": 3,
+      "missing": 2,
+      "coverage_percentage": 74.1,
+      "note": "Game log fields mirror season stats fields but at game granularity. Coverage percentages are similar.",
+      "fields_summary": "Fields 96-180 follow the same pattern as season stats (fields 1-95) but at the game level. All traditional stats (passing, rushing, receiving, defensive) are available from nflreadpy and sportsref_nfl for 1970-2024. Next Gen Stats are partial (2016+). Snap counts available from 2012+."
+    },
+    "player_career_aggregates": {
+      "total_fields": 110,
+      "available": 98,
+      "partial": 8,
+      "planned": 4,
+      "missing": 0,
+      "coverage_percentage": 89.1,
+      "note": "Career aggregates are calculated from season stats, with high availability. Missing data only for fields requiring Next Gen Stats or recent tracking innovations.",
+      "fields_summary": "Fields 181-290 are career-level aggregations. Most fields are calculated from season totals (100% coverage). Playoff stats, Super Bowl stats, and career milestones (Pro Bowls, All-Pro, HOF) available from sportsref_nfl with manual curation for awards."
+    },
+    "play_by_play": {
+      "total_fields": 75,
+      "available": 58,
+      "partial": 12,
+      "planned": 3,
+      "missing": 2,
+      "coverage_percentage": 77.3,
+      "fields": {
+        "play_id": {
+          "field_number": 291,
+          "status": "✅ available",
+          "primary_source": "sportsref_nfl",
+          "secondary_sources": ["nflscrapy"],
+          "coverage_years": "1994-2024",
+          "data_type": "string",
+          "required": true,
+          "notes": "Play-by-play data available from 1994+"
+        },
+        "epa": {
+          "field_number": 353,
+          "status": "✅ available",
+          "primary_source": "nflscrapy",
+          "secondary_sources": [],
+          "coverage_years": "1999-2024",
+          "data_type": "float",
+          "required": false,
+          "notes": "EPA calculated for play-by-play from 1999+"
+        },
+        "wpa": {
+          "field_number": 354,
+          "status": "✅ available",
+          "primary_source": "nflscrapy",
+          "secondary_sources": [],
+          "coverage_years": "1999-2024",
+          "data_type": "float",
+          "required": false,
+          "notes": "Win Probability Added from 1999+"
+        },
+        "note": "Play-by-play fields (291-365) available primarily from sportsref_nfl starting in 1994. Advanced metrics (EPA, WPA, success rate) available from nflscrapy starting in 1999. Core play data includes situation, play type, outcome, and player involvement. Next Gen Stats metrics (completion probability, expected yards) available 2016+."
+      }
+    },
+    "team_season_stats": {
+      "total_fields": 120,
+      "available": 102,
+      "partial": 12,
+      "planned": 4,
+      "missing": 2,
+      "coverage_percentage": 85.0,
+      "fields_summary": "Fields 366-485 cover team-level season statistics. Core team identity (366-372), record (373-386), offense (387-416), defense (417-446), special teams (447-461), and advanced metrics (462-485). Traditional stats available 1970-2024 from nflreadpy. Advanced metrics (DVOA, EPA, ELO) available from nflscrapy for 1999-2024. Home/away/conference/division records available throughout."
+    },
+    "leaderboards": {
+      "total_fields": 45,
+      "available": 45,
+      "partial": 0,
+      "planned": 0,
+      "missing": 0,
+      "coverage_percentage": 100.0,
+      "fields_summary": "Fields 486-530 define leaderboard structures. All leaderboards are calculated from existing player/team stats, so coverage is 100%. Includes passing (501-506), rushing (507-510), receiving (511-515), defensive (516-523), and team leaderboards (524-530). Can be filtered by era, position, active vs retired players."
+    },
+    "historical_context": {
+      "total_fields": 40,
+      "available": 34,
+      "partial": 4,
+      "planned": 2,
+      "missing": 0,
+      "coverage_percentage": 85.0,
+      "fields_summary": "Fields 531-570 provide historical context. Era definitions (531-538), season context (539-548), awards & recognition (549-560), and Hall of Fame (561-570). Most data from sportsref_nfl and manual_curation. Awards data 100% available from official NFL records. Era definitions and season context require manual curation but are well-documented."
+    },
+    "advanced_analytics": {
+      "total_fields": 35,
+      "available": 23,
+      "partial": 12,
+      "planned": 0,
+      "missing": 0,
+      "coverage_percentage": 65.7,
+      "fields_summary": "Fields 571-605 cover advanced analytics. EPA (571-578), DVOA (579-584), Success Rate (585-589), Win Probability (590-593), and Next Gen Stats (594-605). EPA/DVOA/Success Rate available 1999-2024 from nflscrapy. Next Gen Stats (tracking data) available 2016-2024 from nfl_next_gen_stats. This is the section with most partial coverage due to recency of advanced metrics."
+    },
+    "situational_splits": {
+      "total_fields": 200,
+      "available": 122,
+      "partial": 58,
+      "planned": 18,
+      "missing": 2,
+      "coverage_percentage": 61.0,
+      "fields_summary": "Fields 606-805 provide situational performance splits. Home/Away (606-625), By Quarter (626-665), Down & Distance (666-695), Field Position (696-725), Score Differential (726-755), By Opponent Type (756-775), Weather & Surface (776-805). Traditional splits (home/away, quarter, down/distance) available from nflreadpy for most of history. Weather data partial/inconsistent before 2000s. Advanced situational data requires play-by-play (1994+)."
+    },
+    "awards_accolades": {
+      "total_fields": 50,
+      "available": 48,
+      "partial": 2,
+      "planned": 0,
+      "missing": 0,
+      "coverage_percentage": 96.0,
+      "fields_summary": "Fields 806-850 track awards and accolades. Individual Season Awards (806-820), Playoff & Super Bowl Awards (821-830), Career Honors (831-845), Team Awards (846-850). Nearly 100% coverage from sportsref_nfl and manual_curation. Official awards (MVP, Pro Bowl, All-Pro, HOF) are well-documented for entire 1970-2024 period. Team-specific awards may require additional curation."
+    }
+  },
+  "coverage_analysis": {
+    "by_era": {
+      "modern_era_2016_2024": {
+        "years": "2016-2024",
+        "total_fields": 850,
+        "available": 820,
+        "coverage_percentage": 96.5,
+        "notes": "Near-complete coverage including all Next Gen Stats"
+      },
+      "analytics_era_1999_2015": {
+        "years": "1999-2015",
+        "total_fields": 850,
+        "available": 698,
+        "coverage_percentage": 82.1,
+        "notes": "Excellent coverage. Missing only Next Gen Stats (2016+)"
+      },
+      "pre_analytics_1970_1998": {
+        "years": "1970-1998",
+        "total_fields": 850,
+        "available": 542,
+        "coverage_percentage": 63.8,
+        "notes": "Traditional stats fully available. Missing advanced analytics, detailed tracking"
+      }
+    },
+    "by_position": {
+      "qb": {
+        "position_specific_fields": 126,
+        "available": 89,
+        "coverage_percentage": 70.6,
+        "notes": "All traditional passing stats 1970+. Advanced metrics 1999+. NGS 2016+"
+      },
+      "rb": {
+        "position_specific_fields": 94,
+        "available": 71,
+        "coverage_percentage": 75.5,
+        "notes": "All traditional rushing stats 1970+. Advanced metrics 1999+. NGS 2016+"
+      },
+      "wr_te": {
+        "position_specific_fields": 105,
+        "available": 78,
+        "coverage_percentage": 74.3,
+        "notes": "Receptions 1970+. Targets 1999+. NGS 2016+"
+      },
+      "defensive": {
+        "position_specific_fields": 89,
+        "available": 62,
+        "coverage_percentage": 69.7,
+        "notes": "Sacks 1982+. Tackles 2001+. Most other stats 1994+. NGS 2016+"
+      }
+    },
+    "by_stat_type": {
+      "traditional_stats": {
+        "field_count": 387,
+        "available": 352,
+        "coverage_percentage": 91.0,
+        "notes": "Yards, TDs, completions, attempts - excellent historical coverage"
+      },
+      "advanced_analytics": {
+        "field_count": 108,
+        "available": 46,
+        "coverage_percentage": 42.6,
+        "notes": "EPA, DVOA, WPA, Success Rate - available 1999+ (some 2016+)"
+      },
+      "next_gen_stats": {
+        "field_count": 55,
+        "available": 55,
+        "coverage_percentage": 100.0,
+        "coverage_years": "2016-2024",
+        "notes": "Perfect coverage for available years, but limited to 2016+"
+      },
+      "situational_splits": {
+        "field_count": 200,
+        "available": 122,
+        "coverage_percentage": 61.0,
+        "notes": "Basic splits widely available, advanced splits require PBP data (1994+)"
+      },
+      "awards_context": {
+        "field_count": 90,
+        "available": 82,
+        "coverage_percentage": 91.1,
+        "notes": "Awards, HOF, era context well-documented across entire period"
+      },
+      "calculated_fields": {
+        "field_count": 10,
+        "available": 10,
+        "coverage_percentage": 100.0,
+        "notes": "Rates, ratios, averages - calculated from base stats"
+      }
+    }
+  },
+  "data_quality_notes": {
+    "high_confidence": [
+      "All traditional offensive stats (passing, rushing, receiving) for 1970-2024",
+      "Team season records and standings for 1970-2024",
+      "Awards (MVP, Pro Bowl, All-Pro, HOF) for 1970-2024",
+      "Play-by-play data for 1994-2024",
+      "Next Gen Stats for 2016-2024"
+    ],
+    "medium_confidence": [
+      "Defensive stats before 2001 (tackles not consistently tracked)",
+      "Situational splits before 1994 (requires play-by-play)",
+      "Advanced analytics before 1999 (EPA, DVOA not calculated)",
+      "Weather data before 2000s (inconsistent reporting)"
+    ],
+    "low_confidence": [
+      "Jersey numbers before 1990s (not consistently tracked)",
+      "Injury-specific game absences (injury reports not public until recently)",
+      "Snap counts before 2012 (not officially tracked)",
+      "Team-specific awards (requires manual curation per team)"
+    ],
+    "data_gaps": [
+      "Tackles (solo/assisted) before 2001",
+      "QB hits before 2006",
+      "Snap counts before 2012",
+      "Next Gen Stats before 2016",
+      "Targets before 1999",
+      "EPA/DVOA before 1999",
+      "Play-by-play before 1994",
+      "Sacks before 1982 (not official stat)"
+    ]
+  },
+  "implementation_roadmap": {
+    "phase_1_foundation": {
+      "description": "Implement core traditional stats with 100% coverage (1970-2024)",
+      "fields_count": 387,
+      "priority": "P0 - Critical",
+      "sources": ["nflreadpy", "sportsref_nfl"],
+      "estimated_effort": "High",
+      "tasks": [
+        "Ingest player season stats from nflreadpy (passing, rushing, receiving)",
+        "Ingest team season stats from nflreadpy (offense, defense, special teams)",
+        "Ingest game logs from nflreadpy",
+        "Cross-validate with sportsref_nfl",
+        "Calculate derived fields (rates, ratios, averages)",
+        "Build database schema and indexes",
+        "Implement data validation and quality checks"
+      ]
+    },
+    "phase_2_play_by_play": {
+      "description": "Implement play-by-play data (1994-2024)",
+      "fields_count": 75,
+      "priority": "P0 - Critical",
+      "sources": ["sportsref_nfl", "nflscrapy"],
+      "estimated_effort": "Very High",
+      "tasks": [
+        "Scrape play-by-play data from sportsref_nfl (1994-2024)",
+        "Parse play descriptions into structured data",
+        "Integrate EPA/WPA from nflscrapy (1999-2024)",
+        "Build play-level database tables",
+        "Create aggregation pipelines for player/team stats from PBP",
+        "Implement situational filtering (down, distance, field position, score)"
+      ]
+    },
+    "phase_3_advanced_analytics": {
+      "description": "Implement advanced analytics (EPA, DVOA, WPA, Success Rate)",
+      "fields_count": 108,
+      "priority": "P1 - Important",
+      "sources": ["nflscrapy"],
+      "estimated_effort": "Medium",
+      "tasks": [
+        "Ingest EPA data from nflscrapy (1999-2024)",
+        "Ingest DVOA data from nflscrapy",
+        "Calculate success rates from play-by-play",
+        "Calculate win probability metrics",
+        "Aggregate advanced metrics to player/team season level",
+        "Create percentile rankings"
+      ]
+    },
+    "phase_4_next_gen_stats": {
+      "description": "Implement Next Gen Stats (2016-2024)",
+      "fields_count": 55,
+      "priority": "P1 - Important",
+      "sources": ["nfl_next_gen_stats"],
+      "estimated_effort": "Medium",
+      "tasks": [
+        "Integrate NFL Next Gen Stats API",
+        "Ingest tracking data (separation, cushion, time to throw, etc.)",
+        "Map NGS player IDs to internal player IDs",
+        "Aggregate NGS metrics to season level",
+        "Handle data availability gaps"
+      ]
+    },
+    "phase_5_career_aggregates": {
+      "description": "Calculate career aggregates and milestones",
+      "fields_count": 110,
+      "priority": "P0 - Critical",
+      "sources": ["calculated"],
+      "estimated_effort": "Medium",
+      "tasks": [
+        "Aggregate season stats to career totals",
+        "Calculate career rates and averages",
+        "Identify career milestones (1000-yard seasons, etc.)",
+        "Track playoff and Super Bowl performance",
+        "Build career timeline views"
+      ]
+    },
+    "phase_6_leaderboards": {
+      "description": "Build all-time and era-based leaderboards",
+      "fields_count": 45,
+      "priority": "P1 - Important",
+      "sources": ["calculated"],
+      "estimated_effort": "Low-Medium",
+      "tasks": [
+        "Create leaderboard calculation pipelines",
+        "Implement filtering (all-time, era, position, team, active/retired)",
+        "Calculate per-game and rate-based leaderboards",
+        "Add minimum qualification thresholds",
+        "Build leaderboard caching layer"
+      ]
+    },
+    "phase_7_situational_splits": {
+      "description": "Calculate situational performance splits",
+      "fields_count": 200,
+      "priority": "P2 - Nice-to-have",
+      "sources": ["calculated from play-by-play"],
+      "estimated_effort": "High",
+      "tasks": [
+        "Aggregate stats by home/away",
+        "Aggregate stats by quarter",
+        "Aggregate stats by down & distance",
+        "Aggregate stats by field position",
+        "Aggregate stats by score differential",
+        "Aggregate stats by opponent type",
+        "Aggregate stats by weather & surface (where available)"
+      ]
+    },
+    "phase_8_awards_context": {
+      "description": "Curate awards, honors, and historical context",
+      "fields_count": 90,
+      "priority": "P1 - Important",
+      "sources": ["sportsref_nfl", "manual_curation"],
+      "estimated_effort": "Medium",
+      "tasks": [
+        "Scrape awards data from sportsref_nfl (MVP, Pro Bowl, All-Pro, HOF)",
+        "Define era boundaries and characteristics",
+        "Document season context (rule changes, expansion, realignment)",
+        "Curate team-specific awards",
+        "Add historical notes and narratives"
+      ]
+    }
+  },
+  "testing_validation": {
+    "data_accuracy_checks": [
+      "Cross-validate season totals against official NFL records",
+      "Cross-validate career totals against Pro Football Reference",
+      "Verify playoff and Super Bowl stats against game footage/boxscores",
+      "Spot-check random sample of 100 player seasons for accuracy"
+    ],
+    "completeness_checks": [
+      "Verify all teams have data for all seasons 1970-2024",
+      "Verify no missing games in game logs",
+      "Check for missing players (compare roster sizes to expected)",
+      "Identify and flag data gaps (e.g., missing tackles before 2001)"
+    ],
+    "consistency_checks": [
+      "Verify season totals = sum of game logs",
+      "Verify career totals = sum of season totals",
+      "Check calculated fields match manual calculations",
+      "Verify team totals = sum of player totals (within reason)"
+    ],
+    "edge_cases": [
+      "Handle team relocations (e.g., Rams STL → LA)",
+      "Handle team name changes (e.g., Washington Redskins → Commanders)",
+      "Handle strike-shortened seasons (1982, 1987)",
+      "Handle expanded playoffs (Wild Card introduced, format changes)",
+      "Handle players traded mid-season (split stats across teams)"
+    ]
+  },
+  "performance_optimization": {
+    "database_indexes": [
+      "Index on player_id for fast player lookups",
+      "Index on season for time-based queries",
+      "Index on team_id for team-based queries",
+      "Composite index on (player_id, season) for player season lookups",
+      "Index on position for position-based filtering"
+    ],
+    "caching_strategy": [
+      "Cache leaderboards (regenerate weekly during season, monthly off-season)",
+      "Cache career aggregates (regenerate after season ends)",
+      "Cache frequently accessed player profiles",
+      "Cache team season summaries"
+    ],
+    "aggregation_pipelines": [
+      "Pre-calculate season totals from game logs",
+      "Pre-calculate career totals from season totals",
+      "Pre-calculate leaderboards",
+      "Pre-calculate situational splits from play-by-play"
+    ]
+  },
+  "maintenance_updates": {
+    "frequency": {
+      "in_season": "Weekly after games complete",
+      "off_season": "After draft, after awards announced, ad-hoc for corrections"
+    },
+    "processes": [
+      "Automated nflreadpy ingestion pipeline (weekly)",
+      "Automated sportsref_nfl scraping (weekly)",
+      "Automated nflscrapy EPA/DVOA updates (weekly)",
+      "Manual awards curation (annual, after awards announced)",
+      "Manual HOF updates (annual, after induction ceremony)",
+      "Data quality audits (quarterly)"
+    ]
+  }
+}

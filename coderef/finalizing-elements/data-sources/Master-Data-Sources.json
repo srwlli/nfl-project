@@ -1,0 +1,713 @@
+{
+  "metadata": {
+    "project": "Next-Scraper NFL Data Platform",
+    "last_updated": "2025-10-17",
+    "total_sources": 33
+  },
+  "data_scope_legend": {
+    "both": "📊 Both Historical + 2025",
+    "current": "📅 2025 Only",
+    "historical": "📚 Historical Only"
+  },
+  "sources": [
+    {
+      "id": "1.1",
+      "name": "nflreadpy",
+      "category": "Core APIs",
+      "type": "Python Package (Open Source)",
+      "cost": "Free",
+      "authentication": "None",
+      "status": "✅ Currently Active",
+      "github": "https://github.com/nflverse/nflverse-pbp",
+      "pypi": "https://pypi.org/project/nflreadpy/",
+      "url": null,
+      "coverage": "1999-present (varies by data type)",
+      "data_scope": "both",
+      "update_frequency": "Real-time during season",
+      "data_provided": [
+        "Schedules with betting lines",
+        "Play-by-play (372 columns: EPA, Win Probability, etc.)",
+        "Player stats (weekly & seasonal)",
+        "Injuries",
+        "Depth charts",
+        "Snap counts",
+        "Next Gen Stats (passing, rushing, receiving)",
+        "Rosters",
+        "Teams metadata",
+        "Officials",
+        "FTN charting data"
+      ]
+    },
+    {
+      "id": "1.2",
+      "name": "nflscraPy",
+      "category": "Core APIs",
+      "type": "Python Package (Open Source)",
+      "cost": "Free",
+      "authentication": "None",
+      "rate_limit": "3.5 seconds between requests",
+      "status": "✅ Currently Active",
+      "github": "https://github.com/HurricaneLabs/nflscrapy",
+      "pypi": "https://pypi.org/project/nflscrapy/",
+      "url": null,
+      "coverage": "1970-present (ELO), 2000-present (others)",
+      "data_scope": "both",
+      "update_frequency": "Daily",
+      "data_provided": [
+        "FiveThirtyEight ELO ratings (1970-2025)",
+        "Season splits (team performance by situation)",
+        "Expected points model"
+      ]
+    },
+    {
+      "id": "1.3",
+      "name": "ESPN API",
+      "category": "Core APIs",
+      "type": "Public REST API",
+      "cost": "Free",
+      "authentication": "None",
+      "status": "⚠️ Need to Add",
+      "github": null,
+      "pypi": null,
+      "url": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/",
+      "coverage": "Current season",
+      "data_scope": "current",
+      "update_frequency": "Real-time during games",
+      "endpoints": [
+        "/scoreboard - Live game scores and status",
+        "/standings - Current team standings"
+      ],
+      "data_provided": [
+        "Live game scores",
+        "Game status & timing (quarter, clock)",
+        "Basic odds",
+        "Win probability",
+        "Team stats during games",
+        "Standings (wins, losses, point differential)"
+      ]
+    },
+    {
+      "id": "1.4",
+      "name": "sportsref-nfl",
+      "category": "Core APIs",
+      "type": "Python Package (Pro Football Reference wrapper)",
+      "cost": "Free",
+      "authentication": "None",
+      "status": "✅ Currently Active",
+      "github": "https://github.com/roclark/sportsref",
+      "pypi": "https://pypi.org/project/sportsref/",
+      "url": null,
+      "coverage": "1920-present",
+      "data_scope": "both",
+      "update_frequency": "Daily",
+      "data_provided": [
+        "Pro Football Reference advanced stats",
+        "Historical team & player data",
+        "Game logs",
+        "Career statistics"
+      ]
+    },
+    {
+      "id": "1.5",
+      "name": "The Odds API",
+      "category": "Core APIs",
+      "type": "Commercial REST API",
+      "cost": "Paid (Free: 500 req/mo, Starter: $99/mo, Pro: $500/mo)",
+      "authentication": "API Key (ODDS_API_KEY)",
+      "status": "❌ Optional - Not Currently Used",
+      "github": null,
+      "pypi": null,
+      "url": "https://api.the-odds-api.com/v4",
+      "coverage": "Live/Current odds",
+      "data_scope": "current",
+      "update_frequency": "Real-time (1-5 minutes)",
+      "markets": ["h2h (Moneyline)", "spreads", "totals", "player_props"],
+      "bookmakers": ["DraftKings", "FanDuel", "BetMGM", "Caesars", "Bovada"],
+      "data_provided": [
+        "Live betting odds from multiple sportsbooks",
+        "Line movement tracking",
+        "Player props markets"
+      ]
+    },
+    {
+      "id": "1.6",
+      "name": "OpenWeatherMap API",
+      "category": "Core APIs",
+      "type": "Commercial REST API",
+      "cost": "Paid (Free: 1k calls/day, Startup: $40/mo)",
+      "authentication": "API Key (WEATHER_API_KEY)",
+      "status": "❌ Optional - Not Currently Used",
+      "github": null,
+      "pypi": null,
+      "url": "https://api.openweathermap.org/data/2.5",
+      "coverage": "32 NFL stadiums (23 outdoor, 9 domes)",
+      "data_scope": "current",
+      "update_frequency": "Hourly forecasts",
+      "data_provided": [
+        "Temperature (Fahrenheit)",
+        "Wind speed (mph)",
+        "Precipitation chance",
+        "Humidity",
+        "Weather description"
+      ]
+    },
+    {
+      "id": "2.1",
+      "name": "SportsDataIO",
+      "category": "Premium/Enterprise APIs",
+      "type": "Premium Enterprise API",
+      "cost": "Enterprise-level pricing",
+      "status": "📋 Researched Only",
+      "github": null,
+      "pypi": null,
+      "url": "https://sportsdata.io",
+      "data_scope": "both",
+      "data_provided": [
+        "Comprehensive NFL data",
+        "Live scores",
+        "Play-by-play",
+        "Rosters",
+        "Depth charts",
+        "Player profiles",
+        "Betting odds",
+        "Fantasy projections",
+        "News",
+        "Statistical matchups"
+      ]
+    },
+    {
+      "id": "2.2",
+      "name": "Sportradar",
+      "category": "Premium/Enterprise APIs",
+      "type": "Premium Enterprise API (Official NFL Data Partner)",
+      "cost": "Enterprise pricing",
+      "status": "📋 Researched Only",
+      "github": null,
+      "pypi": null,
+      "url": "https://developer.sportradar.com",
+      "data_scope": "both",
+      "data_provided": [
+        "Schedules",
+        "Standings",
+        "Live scores",
+        "Play-by-play (full coverage including preseason)",
+        "Rosters",
+        "Depth charts",
+        "Injuries",
+        "Statistics",
+        "Draft information",
+        "Real-time push feeds"
+      ]
+    },
+    {
+      "id": "2.3",
+      "name": "Genius Sports",
+      "category": "Premium/Enterprise APIs",
+      "type": "Premium Enterprise API (Official NFL Sports Data Partner)",
+      "cost": "Enterprise pricing",
+      "status": "📋 Researched Only",
+      "github": null,
+      "pypi": null,
+      "url": "https://www.geniussports.com",
+      "focus": "Live betting operations",
+      "data_scope": "both",
+      "data_provided": [
+        "Ultra-low latency live NFL data",
+        "Comprehensive historical data",
+        "Detailed play-by-play",
+        "Real-time stats"
+      ]
+    },
+    {
+      "id": "2.4",
+      "name": "OddsMatrix",
+      "category": "Premium/Enterprise APIs",
+      "type": "Premium Enterprise API",
+      "cost": "Premium sportsbook-focused pricing",
+      "status": "📋 Researched Only",
+      "github": null,
+      "pypi": null,
+      "url": "https://oddsmatrix.com",
+      "data_scope": "both",
+      "data_provided": [
+        "Real-time NFL betting odds",
+        "Pre-game & live betting odds",
+        "Play-by-play updates",
+        "Player stats",
+        "Game-changing moments",
+        "Market settlement data"
+      ]
+    },
+    {
+      "id": "2.5",
+      "name": "Sports Info Solutions (SIS DataHub Pro)",
+      "category": "Premium/Enterprise APIs",
+      "type": "Premium Enterprise Service",
+      "cost": "Enterprise pricing (no public pricing)",
+      "status": "📋 Researched Only",
+      "github": null,
+      "pypi": null,
+      "url": "https://www.sportsinfosolutions.com",
+      "unique_feature": "Referee tendencies",
+      "data_scope": "both",
+      "data_provided": [
+        "Advanced NFL data",
+        "Formations",
+        "Offensive/defensive analysis",
+        "Injury tracking",
+        "Referee reports",
+        "Predictive analytics",
+        "Situational analysis"
+      ]
+    },
+    {
+      "id": "2.6",
+      "name": "SumerSports",
+      "category": "Premium/Enterprise APIs",
+      "type": "Premium Analytics Platform",
+      "cost": "Premium pricing",
+      "status": "📋 Researched Only",
+      "github": null,
+      "pypi": null,
+      "url": "https://sumersports.com",
+      "data_scope": "current",
+      "data_provided": [
+        "Football intelligence by NFL veterans combined with AI",
+        "AI-powered analysis",
+        "Expert analysis",
+        "Predictive modeling"
+      ]
+    },
+    {
+      "id": "2.7",
+      "name": "Goalserve NFL API",
+      "category": "Premium/Enterprise APIs",
+      "type": "Premium API",
+      "cost": "Premium pricing",
+      "status": "📋 Researched Only",
+      "github": null,
+      "pypi": null,
+      "url": "https://www.goalserve.com",
+      "data_scope": "both",
+      "data_provided": [
+        "Live scores",
+        "Player statistics",
+        "Team data",
+        "Rosters",
+        "Injuries",
+        "Standings",
+        "Betting odds",
+        "Historical stats"
+      ]
+    },
+    {
+      "id": "2.8",
+      "name": "OpticOdds NFL API",
+      "category": "Premium/Enterprise APIs",
+      "type": "Premium Enterprise API",
+      "cost": "Enterprise pricing",
+      "status": "📋 Researched Only",
+      "github": null,
+      "pypi": null,
+      "url": "https://opticodds.com",
+      "data_scope": "current",
+      "data_provided": [
+        "Real-time NFL data for sportsbook operators",
+        "Live game information",
+        "In-play markets",
+        "Player stats",
+        "Play-by-play updates",
+        "Bet settlement",
+        "Risk monitoring"
+      ]
+    },
+    {
+      "id": "2.9",
+      "name": "Zyla Labs NFL Players API",
+      "category": "Premium/Enterprise APIs",
+      "type": "Premium/Freemium API",
+      "cost": "Premium with unknown limits",
+      "status": "📋 Researched Only",
+      "github": null,
+      "pypi": null,
+      "url": "https://zylalabs.com",
+      "unique_feature": "Social media sentiment tracking",
+      "data_scope": "current",
+      "data_provided": [
+        "Player profile details",
+        "Social media analysis",
+        "Player popularity tracking",
+        "Sentiment analysis",
+        "Real-time player updates"
+      ]
+    },
+    {
+      "id": "2.10",
+      "name": "Entity Sport NFL API",
+      "category": "Premium/Enterprise APIs",
+      "type": "Premium API",
+      "cost": "Premium pricing",
+      "status": "📋 Researched Only",
+      "github": null,
+      "pypi": null,
+      "url": "https://www.entitysport.com",
+      "data_scope": "both",
+      "data_provided": [
+        "Real-time player statistics",
+        "Live scores",
+        "Career stats",
+        "News highlights",
+        "Player profiles"
+      ]
+    },
+    {
+      "id": "2.11",
+      "name": "Statorium NFL API",
+      "category": "Premium/Enterprise APIs",
+      "type": "Premium API",
+      "cost": "Premium pricing",
+      "status": "📋 Researched Only",
+      "github": null,
+      "pypi": null,
+      "url": "https://statorium.com",
+      "unique_feature": "Official player photos",
+      "data_scope": "current",
+      "data_provided": [
+        "Player photos",
+        "Season stats",
+        "Live player scores",
+        "News feeds"
+      ]
+    },
+    {
+      "id": "2.12",
+      "name": "Apify NFL Stats Scraper",
+      "category": "Premium/Enterprise APIs",
+      "type": "Paid Web Scraping Service",
+      "cost": "Unknown pricing",
+      "status": "📋 Researched Only",
+      "github": null,
+      "pypi": null,
+      "url": "https://apify.com/payai/nfl-stats",
+      "data_scope": "both",
+      "data_provided": [
+        "Multi-source scraping (ESPN, NFL.com, TeamRankings, Pro Football Reference)",
+        "Aggregated data",
+        "EV calculations"
+      ]
+    },
+    {
+      "id": "3.1",
+      "name": "Pro Football Reference",
+      "category": "Free/Low-Cost Sources",
+      "type": "Free Website with CSV Exports",
+      "cost": "Free",
+      "status": "📋 Available (sportsref-nfl library already integrated)",
+      "github": null,
+      "pypi": null,
+      "url": "https://www.pro-football-reference.com",
+      "coverage": "1967-present",
+      "data_scope": "both",
+      "update_frequency": "Weekly during season",
+      "export_options": "CSV/Excel available",
+      "data_provided": [
+        "Complete historical data",
+        "Individual player and team statistics",
+        "Advanced metrics (AV, ANY/A, DVOA)",
+        "Awards and honors",
+        "Draft history and combine data",
+        "Coaches and staff records",
+        "Play Index search tool",
+        "Game logs and career stats"
+      ]
+    },
+    {
+      "id": "3.2",
+      "name": "NFL Next Gen Stats",
+      "category": "Free/Low-Cost Sources",
+      "type": "Official NFL Website (Free)",
+      "cost": "Free",
+      "status": "📋 Available (Web scraping possible but against TOS)",
+      "github": null,
+      "pypi": null,
+      "url": "https://nextgenstats.nfl.com",
+      "coverage": "2016-present",
+      "data_scope": "both",
+      "update_frequency": "Weekly during season",
+      "data_provided": [
+        "Real-time player tracking data (speed, acceleration, separation)",
+        "Machine learning models: Completion Probability, Expected Rushing Yards, Win Probability, Defensive rankings",
+        "Player rankings by position with NGS metrics",
+        "Weekly insights and analysis"
+      ]
+    },
+    {
+      "id": "3.3",
+      "name": "StatMuse",
+      "category": "Free/Low-Cost Sources",
+      "type": "Free Website",
+      "cost": "Free",
+      "status": "📋 Available",
+      "github": null,
+      "pypi": null,
+      "url": "https://www.statmuse.com/nfl",
+      "features": "Natural language queries, voice search support",
+      "data_scope": "both",
+      "data_provided": [
+        "Natural language search capability",
+        "Player stats and team stats",
+        "Historical data and trends",
+        "Player comparisons",
+        "Game logs and career stats",
+        "Data visualizations"
+      ]
+    },
+    {
+      "id": "3.4",
+      "name": "NFL.com Stats",
+      "category": "Free/Low-Cost Sources",
+      "type": "Official NFL Website (Free)",
+      "cost": "Free",
+      "status": "📋 Available (Limited historical data, no API access)",
+      "github": null,
+      "pypi": null,
+      "url": "https://www.nfl.com/stats",
+      "coverage": "Current season focus",
+      "data_scope": "current",
+      "data_provided": [
+        "Official NFL player and team stats",
+        "Stat leaders by category",
+        "Fantasy football stats",
+        "Video highlights linked to stats",
+        "Game summaries"
+      ]
+    },
+    {
+      "id": "3.5",
+      "name": "NFLsavant.com",
+      "category": "Free/Low-Cost Sources",
+      "type": "Free Website with CSV Downloads",
+      "cost": "Free",
+      "status": "📋 Available",
+      "github": null,
+      "pypi": null,
+      "url": "https://nflsavant.com",
+      "coverage": "Play-by-play data 2013-2024",
+      "data_scope": "historical",
+      "format": "CSV files",
+      "data_provided": [
+        "Free CSV downloads of play-by-play data (2013-2024)",
+        "Custom stat queries",
+        "Advanced filters (formation, play type, down, team)",
+        "Target distribution charts",
+        "Route tree visualizations"
+      ]
+    },
+    {
+      "id": "3.6",
+      "name": "Sports Insights",
+      "category": "Free/Low-Cost Sources",
+      "type": "Free Website",
+      "cost": "Free",
+      "status": "📋 Available (API access unclear, may be web-only)",
+      "github": null,
+      "pypi": null,
+      "url": "https://www.sportsinsights.com/nfl/",
+      "data_scope": "both",
+      "data_provided": [
+        "Free live NFL odds",
+        "Sportsbook movement tracking",
+        "Betting market trends and analysis",
+        "Historical odds data"
+      ]
+    },
+    {
+      "id": "3.7",
+      "name": "TeamRankings",
+      "category": "Free/Low-Cost Sources",
+      "type": "Freemium Website",
+      "cost": "Free tier available, Premium $99-299/year",
+      "status": "📋 Available",
+      "github": null,
+      "pypi": null,
+      "url": "https://www.teamrankings.com",
+      "data_scope": "both",
+      "data_provided": [
+        "200,000+ pages of projections, stats, rankings, odds",
+        "NFL team stats in tables",
+        "ATS (Against The Spread) trends and splits",
+        "Custom betting trends tool",
+        "Betting picks and predictions (premium)"
+      ]
+    },
+    {
+      "id": "3.8",
+      "name": "RotoBaller Fantasy API",
+      "category": "Free/Low-Cost Sources",
+      "type": "Freemium",
+      "cost": "$-$$ (freemium with unknown limits)",
+      "status": "📋 Available (API access unknown)",
+      "github": null,
+      "pypi": null,
+      "url": "https://www.rotoballer.com",
+      "data_scope": "current",
+      "data_provided": [
+        "Fantasy-focused player news",
+        "Player updates",
+        "Fantasy-specific insights"
+      ]
+    },
+    {
+      "id": "4.1",
+      "name": "Pro Football Focus (PFF)",
+      "category": "Premium Stats Sites",
+      "type": "Premium Subscription Service",
+      "cost": "$40-200/year (Edge: $39.99, Plus: $99.99, Elite: $199.99)",
+      "status": "📋 Reference/Inspiration",
+      "github": null,
+      "pypi": null,
+      "url": "https://www.pff.com",
+      "coverage": "2006-present (player grades)",
+      "data_scope": "both",
+      "data_provided": [
+        "Proprietary player grading (0-100 scale) on every play",
+        "All-22 film analysis",
+        "Advanced metrics: WAR, EPA, success rate",
+        "Fantasy tools and projections",
+        "Draft analysis and prospect grades",
+        "Betting insights and picks"
+      ]
+    },
+    {
+      "id": "4.2",
+      "name": "FTN Fantasy (StatsHub)",
+      "category": "Premium Stats Sites",
+      "type": "Premium Subscription Service",
+      "cost": "$60-120/year",
+      "status": "📋 Reference (Data available via nflreadpy)",
+      "github": null,
+      "pypi": null,
+      "url": "https://ftnfantasy.com/nfl/stats",
+      "coverage": "2022-present (manual charting)",
+      "data_scope": "both",
+      "integration": "Data available via nflreadpy (MIT license, CC-BY-SA 4.0)",
+      "data_provided": [
+        "All-in-one research tool powered by FTN Data",
+        "Proprietary metrics: DVOA, EPA per play, explosive run rate",
+        "Manual play charting (route tracking, coverage schemes, pressure)",
+        "Fantasy football projections and rankings"
+      ]
+    },
+    {
+      "id": "4.3",
+      "name": "Football Outsiders",
+      "category": "Premium Stats Sites",
+      "type": "Premium Subscription Service",
+      "cost": "$50/year",
+      "status": "📋 Reference/Inspiration",
+      "github": null,
+      "pypi": null,
+      "url": "https://www.footballoutsiders.com",
+      "coverage": "DVOA 1989-present",
+      "data_scope": "both",
+      "data_provided": [
+        "DVOA (Defense-adjusted Value Over Average)",
+        "Advanced team and player efficiency metrics",
+        "Play-by-play analysis",
+        "Almanac (annual book with deep stats)",
+        "Premium articles and analysis"
+      ]
+    },
+    {
+      "id": "4.4",
+      "name": "Sharp Football Analysis",
+      "category": "Premium Stats Sites",
+      "type": "Premium Subscription Service",
+      "cost": "$499-999/year",
+      "status": "📋 Reference/Inspiration",
+      "github": null,
+      "pypi": null,
+      "url": "https://www.sharpfootballanalysis.com",
+      "data_scope": "both",
+      "data_provided": [
+        "Data-driven analysis by Warren Sharp",
+        "Coaching and play-calling insights",
+        "Betting predictions (19-year documented track record)",
+        "Weekly matchup previews",
+        "Coaching tendency analysis"
+      ]
+    },
+    {
+      "id": "4.5",
+      "name": "PlayerProfiler",
+      "category": "Premium Stats Sites",
+      "type": "Freemium Subscription Service",
+      "cost": "Free tier available, Premium ~$50/year",
+      "status": "📋 Reference/Inspiration",
+      "github": null,
+      "pypi": null,
+      "url": "https://www.playerprofiler.com",
+      "data_scope": "both",
+      "data_provided": [
+        "Advanced fantasy football metrics",
+        "College dominator ratings",
+        "NFL athleticism scores",
+        "Market share analysis (targets, carries, snaps)"
+      ]
+    },
+    {
+      "id": "4.6",
+      "name": "Opta Analyst (The Analyst)",
+      "category": "Premium Stats Sites",
+      "type": "Freemium Service",
+      "status": "📋 Reference/Inspiration",
+      "github": null,
+      "pypi": null,
+      "url": "https://theanalyst.com/articles/nfl-advanced-stats-zone",
+      "data_scope": "both",
+      "data_provided": [
+        "Opta's advanced NFL stats and player rankings",
+        "Expected goals models",
+        "Performance analytics",
+        "Data visualizations"
+      ]
+    },
+    {
+      "id": "4.7",
+      "name": "Advanced Football Analytics",
+      "category": "Premium Stats Sites",
+      "type": "Free Website",
+      "cost": "Free",
+      "status": "📋 Reference/Inspiration",
+      "github": null,
+      "pypi": null,
+      "url": "http://www.advancedfootballanalytics.com",
+      "data_scope": "both",
+      "data_provided": [
+        "Win Probability (WP) models",
+        "Expected Points Added (EPA) analysis",
+        "4th down decision analysis",
+        "Statistical articles and research"
+      ]
+    }
+  ],
+  "summary": {
+    "by_status": {
+      "active": 4,
+      "need_to_add": 1,
+      "optional": 2,
+      "researched": 26
+    },
+    "by_data_scope": {
+      "both": 24,
+      "current": 8,
+      "historical": 1
+    },
+    "by_category": {
+      "core_apis": 6,
+      "premium_enterprise": 12,
+      "free_low_cost": 8,
+      "premium_stats_sites": 7
+    }
+  }
+}

@@ -1,0 +1,458 @@
+{
+  "project": "2025-26 NFL Season Data Loading Scripts",
+  "created": "2025-10-18",
+  "status": "planning",
+  "overview": {
+    "goal": "Build comprehensive data loading scripts for 2025-26 NFL season",
+    "organization": {
+      "seed": "scripts/seed/ - Initial data loading (teams, stadiums, static data)",
+      "scrapers": "scripts/scrapers/ - Live data fetchers (stats, games, injuries)",
+      "utils": "scripts/utils/ - Shared utilities (Supabase client, logging, rate limiting)"
+    },
+    "execution_model": "Both manual and scheduled",
+    "season": "2025-26",
+    "database": "Supabase (41 tables)"
+  },
+  "project_setup": {
+    "tasks": [
+      {
+        "id": "setup-1",
+        "name": "Initialize Node.js project",
+        "action": "Create package.json with project metadata",
+        "priority": "P0"
+      },
+      {
+        "id": "setup-2",
+        "name": "Install dependencies",
+        "packages": [
+          "@supabase/supabase-js",
+          "axios",
+          "dotenv",
+          "node-cron",
+          "winston"
+        ],
+        "priority": "P0"
+      },
+      {
+        "id": "setup-3",
+        "name": "Create directory structure",
+        "directories": [
+          "scripts/seed/",
+          "scripts/scrapers/",
+          "scripts/utils/"
+        ],
+        "priority": "P0"
+      }
+    ]
+  },
+  "seed_scripts": {
+    "description": "Manual execution - Run once to populate initial data",
+    "scripts": [
+      {
+        "id": "seed-1",
+        "file": "scripts/seed/01-teams.js",
+        "name": "Load NFL Teams",
+        "description": "Load all 32 NFL teams with metadata",
+        "data_source": "Manual/Static JSON",
+        "target_table": "teams",
+        "estimated_records": 32,
+        "fields": [
+          "team_id",
+          "abbreviation",
+          "full_name",
+          "city",
+          "conference",
+          "division",
+          "founded_year",
+          "logo_url",
+          "primary_color",
+          "secondary_color"
+        ],
+        "priority": "P0",
+        "dependencies": []
+      },
+      {
+        "id": "seed-2",
+        "file": "scripts/seed/02-stadiums.js",
+        "name": "Load Stadiums",
+        "description": "Load all NFL stadiums with location data",
+        "data_source": "Manual/Static JSON",
+        "target_table": "stadiums",
+        "estimated_records": 30,
+        "fields": [
+          "stadium_id",
+          "stadium_name",
+          "city",
+          "state",
+          "capacity",
+          "surface_type",
+          "roof_type",
+          "latitude",
+          "longitude",
+          "opened_year"
+        ],
+        "priority": "P0",
+        "dependencies": ["seed-1"]
+      },
+      {
+        "id": "seed-3",
+        "file": "scripts/seed/03-players.js",
+        "name": "Load Player Rosters",
+        "description": "Load current rosters for all 32 teams (~2,700 players)",
+        "data_source": "ESPN API / nflreadpy",
+        "target_tables": [
+          "player_profiles",
+          "player_bio",
+          "team_rosters"
+        ],
+        "estimated_records": 2700,
+        "fields": [
+          "player_id",
+          "player_name",
+          "team_id",
+          "position",
+          "jersey_number",
+          "height",
+          "weight",
+          "age",
+          "college",
+          "draft_year",
+          "draft_round",
+          "draft_pick"
+        ],
+        "priority": "P0",
+        "dependencies": ["seed-1"]
+      },
+      {
+        "id": "seed-4",
+        "file": "scripts/seed/04-schedule.js",
+        "name": "Load 2025-26 Schedule",
+        "description": "Load complete season schedule (272 regular season + playoff games)",
+        "data_source": "ESPN API / nflreadpy",
+        "target_table": "game_schedules",
+        "estimated_records": 285,
+        "fields": [
+          "game_id",
+          "season",
+          "week",
+          "game_type",
+          "home_team_id",
+          "away_team_id",
+          "game_date",
+          "game_time",
+          "stadium_id",
+          "broadcast_network"
+        ],
+        "priority": "P0",
+        "dependencies": ["seed-1", "seed-2"]
+      }
+    ]
+  },
+  "scraper_scripts": {
+    "description": "Automated execution - Scheduled to run periodically",
+    "scripts": [
+      {
+        "id": "scraper-1",
+        "file": "scripts/scrapers/stats-scraper.js",
+        "name": "Player Stats Scraper",
+        "description": "Fetch and update weekly player statistics",
+        "data_source": "nflreadpy / ESPN API",
+        "target_tables": [
+          "player_season_stats",
+          "player_game_logs"
+        ],
+        "update_frequency": "Weekly (Tuesday after Monday Night Football)",
+        "cron_schedule": "0 6 * * 2",
+        "estimated_records_per_run": 2700,
+        "fields_covered": 674,
+        "priority": "P0"
+      },
+      {
+        "id": "scraper-2",
+        "file": "scripts/scrapers/live-games-scraper.js",
+        "name": "Live Game Updates",
+        "description": "Real-time game scores, play-by-play, and box scores",
+        "data_source": "ESPN API / WebSocket",
+        "target_tables": [
+          "games",
+          "game_box_scores",
+          "game_play_by_play",
+          "game_scoring_plays"
+        ],
+        "update_frequency": "Every 30 seconds during live games",
+        "cron_schedule": "*/1 * * * * (conditionally during game days)",
+        "estimated_records_per_run": 16,
+        "priority": "P1"
+      },
+      {
+        "id": "scraper-3",
+        "file": "scripts/scrapers/injuries-scraper.js",
+        "name": "Injury Report Scraper",
+        "description": "Daily injury reports and player availability",
+        "data_source": "ESPN API / nflreadpy",
+        "target_table": "injuries",
+        "update_frequency": "Daily at 2 PM ET (after practice reports)",
+        "cron_schedule": "0 14 * * *",
+        "estimated_records_per_run": 150,
+        "fields": [
+          "player_id",
+          "injury_status",
+          "injury_type",
+          "body_part",
+          "date_reported",
+          "practice_status",
+          "return_date"
+        ],
+        "priority": "P0"
+      },
+      {
+        "id": "scraper-4",
+        "file": "scripts/scrapers/roster-updates-scraper.js",
+        "name": "Roster Moves Scraper",
+        "description": "Daily roster updates (signings, cuts, IR, practice squad)",
+        "data_source": "ESPN API",
+        "target_tables": [
+          "player_transactions",
+          "team_rosters"
+        ],
+        "update_frequency": "Daily at 5 PM ET",
+        "cron_schedule": "0 17 * * *",
+        "estimated_records_per_run": 20,
+        "fields": [
+          "transaction_id",
+          "player_id",
+          "team_id",
+          "transaction_type",
+          "transaction_date",
+          "notes"
+        ],
+        "priority": "P1"
+      }
+    ]
+  },
+  "utility_scripts": {
+    "description": "Shared infrastructure for all scripts",
+    "scripts": [
+      {
+        "id": "util-1",
+        "file": "scripts/utils/supabase-client.js",
+        "name": "Supabase Client",
+        "description": "Reusable Supabase connection with error handling",
+        "exports": [
+          "getSupabaseClient()",
+          "insertBatch(table, data)",
+          "upsertBatch(table, data, conflictColumns)",
+          "queryWithRetry(query, retries)"
+        ],
+        "priority": "P0"
+      },
+      {
+        "id": "util-2",
+        "file": "scripts/utils/logger.js",
+        "name": "Logger",
+        "description": "Winston-based logging utility",
+        "exports": [
+          "logger.info(message)",
+          "logger.error(message, error)",
+          "logger.warn(message)",
+          "logger.debug(message)"
+        ],
+        "log_location": "logs/",
+        "priority": "P0"
+      },
+      {
+        "id": "util-3",
+        "file": "scripts/utils/rate-limiter.js",
+        "name": "Rate Limiter",
+        "description": "API rate limiting to prevent throttling",
+        "exports": [
+          "createRateLimiter(requestsPerSecond)",
+          "throttle(fn, delay)"
+        ],
+        "priority": "P1"
+      }
+    ]
+  },
+  "scheduler_script": {
+    "id": "scheduler",
+    "file": "scripts/scheduler.js",
+    "name": "Cron Job Orchestrator",
+    "description": "Manages all scheduled scrapers with node-cron",
+    "schedules": [
+      {
+        "script": "stats-scraper.js",
+        "cron": "0 6 * * 2",
+        "description": "Weekly stats - Tuesdays 6 AM"
+      },
+      {
+        "script": "injuries-scraper.js",
+        "cron": "0 14 * * *",
+        "description": "Daily injuries - 2 PM ET"
+      },
+      {
+        "script": "roster-updates-scraper.js",
+        "cron": "0 17 * * *",
+        "description": "Daily roster moves - 5 PM ET"
+      },
+      {
+        "script": "live-games-scraper.js",
+        "cron": "conditional",
+        "description": "Live games - Only during scheduled game times"
+      }
+    ],
+    "priority": "P1"
+  },
+  "npm_scripts": {
+    "seed:all": "Run all seed scripts sequentially",
+    "seed:teams": "node scripts/seed/01-teams.js",
+    "seed:stadiums": "node scripts/seed/02-stadiums.js",
+    "seed:players": "node scripts/seed/03-players.js",
+    "seed:schedule": "node scripts/seed/04-schedule.js",
+    "scrape:stats": "node scripts/scrapers/stats-scraper.js",
+    "scrape:live": "node scripts/scrapers/live-games-scraper.js",
+    "scrape:injuries": "node scripts/scrapers/injuries-scraper.js",
+    "scrape:roster": "node scripts/scrapers/roster-updates-scraper.js",
+    "scheduler": "node scripts/scheduler.js",
+    "scheduler:start": "pm2 start scripts/scheduler.js --name nfl-scheduler",
+    "scheduler:stop": "pm2 stop nfl-scheduler"
+  },
+  "data_sources": {
+    "primary": [
+      {
+        "name": "ESPN API",
+        "type": "REST API",
+        "cost": "Free",
+        "authentication": "None",
+        "url": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/",
+        "endpoints": [
+          "/scoreboard - Live scores",
+          "/standings - Team standings",
+          "/teams/{id}/roster - Team rosters",
+          "/athletes/{id} - Player details"
+        ],
+        "coverage": "2025 season only",
+        "priority": "P0"
+      },
+      {
+        "name": "nflreadpy",
+        "type": "Python Package",
+        "cost": "Free",
+        "authentication": "None",
+        "url": "https://github.com/nflverse/nflverse-pbp",
+        "data_provided": [
+          "Schedules with betting lines",
+          "Play-by-play (372 columns)",
+          "Player stats (weekly & seasonal)",
+          "Injuries",
+          "Depth charts",
+          "Snap counts",
+          "Next Gen Stats",
+          "Rosters"
+        ],
+        "coverage": "1999-present (historical + 2025)",
+        "priority": "P0",
+        "note": "Will need Python wrapper or direct file downloads"
+      }
+    ],
+    "optional": [
+      {
+        "name": "The Odds API",
+        "type": "REST API",
+        "cost": "Free tier: 500 requests/month",
+        "url": "https://api.the-odds-api.com/v4",
+        "data_provided": "Betting lines, spreads, totals",
+        "priority": "P1"
+      }
+    ]
+  },
+  "database_targets": {
+    "total_tables": 41,
+    "key_tables": [
+      "teams (32 records)",
+      "stadiums (30 records)",
+      "player_profiles (~2,700 records)",
+      "player_season_stats (~2,700 records)",
+      "player_game_logs (~50,000 records/season)",
+      "game_schedules (~285 records)",
+      "games (~285 records)",
+      "game_box_scores (~285 records)",
+      "injuries (~150 active records)",
+      "player_transactions (~1,000 records/season)"
+    ]
+  },
+  "implementation_phases": {
+    "phase_1": {
+      "name": "Foundation Setup",
+      "tasks": [
+        "Initialize Node.js project",
+        "Install dependencies",
+        "Create directory structure",
+        "Build utility scripts (Supabase client, logger)"
+      ],
+      "estimated_time": "1-2 hours"
+    },
+    "phase_2": {
+      "name": "Seed Scripts",
+      "tasks": [
+        "Build teams seed script",
+        "Build stadiums seed script",
+        "Build players seed script",
+        "Build schedule seed script",
+        "Test all seed scripts"
+      ],
+      "estimated_time": "4-6 hours"
+    },
+    "phase_3": {
+      "name": "Scraper Scripts",
+      "tasks": [
+        "Build stats scraper",
+        "Build live games scraper",
+        "Build injuries scraper",
+        "Build roster updates scraper",
+        "Test all scrapers"
+      ],
+      "estimated_time": "6-8 hours"
+    },
+    "phase_4": {
+      "name": "Automation",
+      "tasks": [
+        "Build scheduler script",
+        "Configure cron jobs",
+        "Add error handling and logging",
+        "Test scheduled execution"
+      ],
+      "estimated_time": "2-3 hours"
+    }
+  },
+  "success_criteria": {
+    "foundation_data": [
+      "32 teams loaded",
+      "30 stadiums loaded",
+      "~2,700 players loaded with bios",
+      "285 games scheduled for 2025-26 season"
+    ],
+    "live_data": [
+      "Weekly player stats updated after each week",
+      "Live game scores updated during games",
+      "Daily injury reports current",
+      "Roster moves tracked daily"
+    ],
+    "automation": [
+      "Scheduler runs without intervention",
+      "Error logging captures issues",
+      "Rate limiting prevents API throttling",
+      "Data quality checks prevent bad inserts"
+    ]
+  },
+  "estimated_timeline": "13-19 hours total development time",
+  "next_steps": [
+    "1. Review and approve this plan",
+    "2. Initialize Node.js project with package.json",
+    "3. Install dependencies",
+    "4. Build foundation scripts (utils)",
+    "5. Build seed scripts",
+    "6. Build scraper scripts",
+    "7. Build scheduler",
+    "8. Test end-to-end"
+  ]
+}
