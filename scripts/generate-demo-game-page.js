@@ -194,6 +194,16 @@ function generateHTML(data) {
     year: 'numeric'
   })
 
+  // Format time (convert 00:15:00 to 12:15 AM ET)
+  let formattedTime = game.game_time || 'TBD'
+  if (game.game_time && game.game_time !== 'TBD') {
+    const [hours, minutes] = game.game_time.split(':')
+    const hour = parseInt(hours)
+    const ampm = hour >= 12 ? 'PM' : 'AM'
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour
+    formattedTime = `${displayHour}:${minutes} ${ampm} ET`
+  }
+
   // Weather
   const weather = game.game_weather?.[0]
   const weatherDisplay = weather
@@ -893,15 +903,30 @@ function generateHTML(data) {
                 padding: 12px;
             }
 
-            .quarter-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 8px;
-                font-size: 12px;
+            .quarter-breakdown {
+                margin-top: 24px;
+                padding-top: 24px;
             }
 
-            .quarter-header,
+            .quarter-grid {
+                grid-template-columns: repeat(6, 1fr);
+                gap: 4px;
+                font-size: 10px;
+            }
+
+            .quarter-header {
+                padding: 8px 4px;
+                font-size: 9px;
+            }
+
             .quarter-score {
-                padding: 10px 8px;
+                padding: 10px 4px;
+                font-size: 14px;
+            }
+
+            .quarter-score.final {
+                font-size: 16px;
+                font-weight: 700;
             }
 
             .info-cards {
@@ -946,7 +971,7 @@ function generateHTML(data) {
                 <div class="meta-item">•</div>
                 <div class="meta-item">${formattedDate}</div>
                 <div class="meta-item">•</div>
-                <div class="meta-item">${game.game_time || 'TBD'}</div>
+                <div class="meta-item">${formattedTime}</div>
                 <div class="meta-item">•</div>
                 <div class="meta-item">${game.broadcast_network || 'TBD'}</div>
                 <div class="meta-item">•</div>
