@@ -642,6 +642,74 @@ function generateHTML(data) {
             display: block;
         }
 
+        /* Team-level tabs (same styling as stat tabs) */
+        .team-tab {
+            padding: 12px 24px;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-default);
+            font-family: var(--font-display);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s ease;
+        }
+
+        .team-tab:hover {
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
+        }
+
+        .team-tab.active {
+            color: var(--accent-green);
+            border-bottom-color: var(--accent-green);
+            box-shadow: 0 -2px 8px var(--glow-green);
+        }
+
+        .team-tab-content {
+            display: none;
+        }
+
+        .team-tab-content.active {
+            display: block;
+        }
+
+        /* Stat-level tabs (nested within team tabs) */
+        .stat-tab {
+            padding: 10px 20px;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-default);
+            font-family: var(--font-display);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s ease;
+        }
+
+        .stat-tab:hover {
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
+        }
+
+        .stat-tab.active {
+            color: var(--accent-blue);
+            border-bottom-color: var(--accent-blue);
+            box-shadow: 0 -2px 8px var(--glow-blue);
+        }
+
+        .stat-tab-content {
+            display: none;
+        }
+
+        .stat-tab-content.active {
+            display: block;
+        }
+
         /* ═══ TABLES ═══ */
         .data-table {
             width: 100%;
