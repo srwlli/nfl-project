@@ -63,12 +63,23 @@ async function fetchGameData(gameId) {
     .eq('game_id', gameId)
     .limit(1)
 
-  game.home_team = homeTeam
-  game.away_team = awayTeam
+  // Add to game object (using aliases for consistency with template)
+  game.home_team = homeTeam ? {
+    ...homeTeam,
+    full_name: homeTeam.team_name,
+    abbreviation: homeTeam.team_abbr
+  } : null
+
+  game.away_team = awayTeam ? {
+    ...awayTeam,
+    full_name: awayTeam.team_name,
+    abbreviation: awayTeam.team_abbr
+  } : null
+
   game.venue = venue
   game.game_weather = gameWeather
 
-  logger.info(`✓ Loaded game: ${game.away_team.full_name} @ ${game.home_team.full_name}`)
+  logger.info(`✓ Loaded game: ${game.away_team?.full_name || 'Unknown'} @ ${game.home_team?.full_name || 'Unknown'}`)
 
   // Team season stats (standings, records, playoff probability)
   const { data: homeStats } = await supabase
