@@ -853,30 +853,86 @@ function generateHTML(data) {
                 font-size: 28px;
             }
 
+            .meta-bar {
+                flex-wrap: wrap;
+                gap: 12px;
+                font-size: 10px;
+            }
+
             .scorebug {
-                padding: 24px;
+                padding: 20px;
             }
 
             .score-row {
-                grid-template-columns: 1fr;
-                gap: 24px;
+                grid-template-columns: 1fr auto;
+                gap: 16px;
+                margin-bottom: 20px;
+            }
+
+            .team-block {
+                gap: 12px;
+            }
+
+            .team-logo {
+                width: 60px;
+                height: 60px;
+                font-size: 20px;
+            }
+
+            .team-info h2 {
+                font-size: 20px;
+            }
+
+            .team-record {
+                font-size: 12px;
             }
 
             .score-display {
                 font-size: 48px;
+                min-width: 80px;
+                padding: 12px;
             }
 
             .quarter-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+                font-size: 12px;
+            }
+
+            .quarter-header,
+            .quarter-score {
+                padding: 10px 8px;
+            }
+
+            .info-cards {
                 grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .info-card {
+                padding: 16px;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            .section-header {
+                font-size: 18px;
             }
 
             .data-table {
-                font-size: 12px;
+                font-size: 11px;
             }
 
             .data-table th,
             .data-table td {
-                padding: 8px 6px;
+                padding: 8px 4px;
+            }
+
+            .two-column,
+            .betting-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
