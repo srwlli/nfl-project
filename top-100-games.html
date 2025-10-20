@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NFL's 100 Greatest Games | Next Down Metrics</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* =====================================================
+       NEXT DOWN METRICS THEME
+       - Monochrome base (black, gunmetal, slate gray)
+       - Neon accents (green, red, blue, purple)
+       - HUD-style UI elements
+       - Typography: JetBrains Mono (display) + Space Grotesk (body)
+       ===================================================== */
+
+    :root {
+      /* Base colors */
+      --bg-primary: #0a0e14;
+      --bg-secondary: #1a1e24;
+      --bg-tertiary: #2a2e34;
+
+      /* Text colors */
+      --text-primary: #e6e8eb;
+      --text-secondary: #a0a4a8;
+      --text-tertiary: #6b7075;
+
+      /* Accent colors */
+      --accent-green: #00ff88;
+      --accent-red: #ff3366;
+      --accent-blue: #00d4ff;
+      --accent-purple: #b388ff;
+
+      /* Glow effects */
+      --glow-green: rgba(0, 255, 136, 0.3);
+      --glow-blue: rgba(0, 212, 255, 0.3);
+
+      /* Fonts */
+      --font-display: 'JetBrains Mono', monospace;
+      --font-body: 'Space Grotesk', sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      background: var(--bg-secondary);
+      border-bottom: 2px solid var(--accent-green);
+      padding: 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(0, 255, 136, 0.1);
+    }
+
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent-green);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px var(--glow-green);
+    }
+
+    .nav {
+      display: flex;
+      gap: 24px;
+    }
+
+    .nav a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s;
+      padding: 8px 16px;
+      border-radius: 4px;
+    }
+
+    .nav a:hover {
+      color: var(--accent-green);
+      background: rgba(0, 255, 136, 0.1);
+    }
+
+    /* Container */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 48px 24px;
+    }
+
+    /* Page title */
+    .page-title {
+      font-family: var(--font-display);
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--accent-green);
+      text-align: center;
+      margin-bottom: 16px;
+      text-shadow: 0 0 20px var(--glow-green);
+    }
+
+    .page-subtitle {
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 18px;
+      margin-bottom: 48px;
+    }
+
+    /* Stats bar */
+    .stats-bar {
+      background: var(--bg-secondary);
+      border: 2px solid var(--accent-blue);
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 48px;
+      display: flex;
+      justify-content: space-around;
+      gap: 24px;
+      box-shadow: 0 0 20px var(--glow-blue);
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-family: var(--font-display);
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--accent-blue);
+    }
+
+    .stat-label {
+      color: var(--text-secondary);
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Games grid */
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 24px;
+    }
+
+    /* Game card */
+    .game-card {
+      background: var(--bg-secondary);
+      border: 2px solid var(--bg-tertiary);
+      border-radius: 8px;
+      padding: 20px;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+
+    .game-card:hover {
+      border-color: var(--accent-green);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px var(--glow-green);
+    }
+
+    .game-rank {
+      font-family: var(--font-display);
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--accent-green);
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+
+    .game-rank.top-10 {
+      color: var(--accent-red);
+      text-shadow: 0 0 15px rgba(255, 51, 102, 0.5);
+    }
+
+    .game-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+      line-height: 1.3;
+    }
+
+    .game-matchup {
+      color: var(--text-secondary);
+      font-size: 14px;
+      margin-bottom: 8px;
+      font-family: var(--font-display);
+    }
+
+    .game-date {
+      color: var(--text-tertiary);
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    .game-context {
+      color: var(--accent-blue);
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .game-significance {
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.5;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--bg-tertiary);
+    }
+
+    /* Tier badges */
+    .tier-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .tier-legendary {
+      background: rgba(255, 51, 102, 0.2);
+      color: var(--accent-red);
+      border: 1px solid var(--accent-red);
+    }
+
+    .tier-epic {
+      background: rgba(0, 255, 136, 0.2);
+      color: var(--accent-green);
+      border: 1px solid var(--accent-green);
+    }
+
+    .tier-memorable {
+      background: rgba(0, 212, 255, 0.2);
+      color: var(--accent-blue);
+      border: 1px solid var(--accent-blue);
+    }
+
+    .tier-classic {
+      background: rgba(179, 136, 255, 0.2);
+      color: var(--accent-purple);
+      border: 1px solid var(--accent-purple);
+    }
+
+    /* Footer */
+    .footer {
+      background: var(--bg-secondary);
+      border-top: 2px solid var(--accent-green);
+      padding: 24px;
+      margin-top: 64px;
+      text-align: center;
+      color: var(--text-secondary);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .page-title {
+        font-size: 32px;
+      }
+
+      .stats-bar {
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .games-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .nav {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <div class="logo">Next Down Metrics</div>
+      <nav class="nav">
+        <a href="index.html">Home</a>
+        <a href="top-100-games.html">Top 100 Games</a>
+        <a href="demo-game-page-with-players.html">Demo Game</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <main class="container">
+    <h1 class="page-title">NFL's 100 Greatest Games</h1>
+    <p class="page-subtitle">
+      Official rankings from NFL's 100th season celebration (2019) • Scraped from Pro-Football-Reference
+    </p>
+
+    <!-- Stats bar -->
+    <div class="stats-bar">
+      <div class="stat-item">
+        <div class="stat-value">100</div>
+        <div class="stat-label">Total Games</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">40</div>
+        <div class="stat-label">Since 2000</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">20</div>
+        <div class="stat-label">Super Bowls</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">1958</div>
+        <div class="stat-label">Oldest Game</div>
+      </div>
+    </div>
+
+    <!-- Games grid -->
+    <div class="games-grid">
+      <div class="game-card">
+        <span class="tier-badge tier-legendary">LEGENDARY</span>
+        <div class="game-rank top-10">#1</div>
+        <h3 class="game-title">The Greatest Game Ever Played</h3>
+        <div class="game-matchup">BAL @ NYG</div>
+        <div class="game-date">December 27, 1958</div>
+        <div class="game-context">1958 NFL Championship</div>
+        <div class="game-significance">The Greatest Game Ever Played</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-legendary">LEGENDARY</span>
+        <div class="game-rank top-10">#2</div>
+        <h3 class="game-title">The Catch</h3>
+        <div class="game-matchup">DAL @ SFO</div>
+        <div class="game-date">January 9, 1982</div>
+        <div class="game-context">1981 NFC Championship</div>
+        <div class="game-significance">The Catch</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-legendary">LEGENDARY</span>
+        <div class="game-rank top-10">#3</div>
+        <h3 class="game-title">The Ice Bowl</h3>
+        <div class="game-matchup">DAL @ GNB</div>
+        <div class="game-date">December 30, 1967</div>
+        <div class="game-context">1967 NFL Championship</div>
+        <div class="game-significance">The Ice Bowl</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-legendary">LEGENDARY</span>
+        <div class="game-rank top-10">#4</div>
+        <h3 class="game-title">Epic in Miami</h3>
+        <div class="game-matchup">SDG @ MIA</div>
+        <div class="game-date">January 1, 1982</div>
+        <div class="game-context">1981 AFC Divisional</div>
+        <div class="game-significance">Epic in Miami</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-legendary">LEGENDARY</span>
+        <div class="game-rank top-10">#5</div>
+        <h3 class="game-title">David Tyree's helmet catch, 18-1 Patriots</h3>
+        <div class="game-matchup">NWE @ NYG</div>
+        <div class="game-date">February 2, 2008</div>
+        <div class="game-context">Super Bowl XLII (2007)</div>
+        <div class="game-significance">David Tyree's helmet catch, 18-1 Patriots</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-legendary">LEGENDARY</span>
+        <div class="game-rank top-10">#6</div>
+        <h3 class="game-title">The Guarantee</h3>
+        <div class="game-matchup">BAL @ NYJ</div>
+        <div class="game-date">January 11, 1969</div>
+        <div class="game-context">Super Bowl III (1968)</div>
+        <div class="game-significance">The Guarantee</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-legendary">LEGENDARY</span>
+        <div class="game-rank top-10">#7</div>
+        <h3 class="game-title">The Comeback</h3>
+        <div class="game-matchup">HOU @ BUF</div>
+        <div class="game-date">January 2, 1993</div>
+        <div class="game-context">1992 AFC Wild Card</div>
+        <div class="game-significance">The Comeback</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-legendary">LEGENDARY</span>
+        <div class="game-rank top-10">#8</div>
+        <h3 class="game-title">Malcolm Butler goal-line INT</h3>
+        <div class="game-matchup">NWE @ SEA</div>
+        <div class="game-date">January 31, 2015</div>
+        <div class="game-context">Super Bowl XLIX (2014)</div>
+        <div class="game-significance">Malcolm Butler goal-line INT</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-legendary">LEGENDARY</span>
+        <div class="game-rank top-10">#9</div>
+        <h3 class="game-title">28-3</h3>
+        <div class="game-matchup">ATL @ NWE</div>
+        <div class="game-date">February 4, 2017</div>
+        <div class="game-context">Super Bowl LI (2016)</div>
+        <div class="game-significance">28-3</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-legendary">LEGENDARY</span>
+        <div class="game-rank top-10">#10</div>
+        <h3 class="game-title">Wide Right</h3>
+        <div class="game-matchup">BUF @ NYG</div>
+        <div class="game-date">January 26, 1991</div>
+        <div class="game-context">Super Bowl XXV (1990)</div>
+        <div class="game-significance">Wide Right</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-epic">EPIC</span>
+        <div class="game-rank ">#11</div>
+        <h3 class="game-title">The Drive</h3>
+        <div class="game-matchup">DEN @ CLE</div>
+        <div class="game-date">January 10, 1987</div>
+        <div class="game-context">1986 AFC Championship</div>
+        <div class="game-significance">The Drive</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-epic">EPIC</span>
+        <div class="game-rank ">#12</div>
+        <h3 class="game-title">James Harrison's 100-yd INT return, Santonio Holmes' game-winning catch</h3>
+        <div class="game-matchup">ARI @ PIT</div>
+        <div class="game-date">January 31, 2009</div>
+        <div class="game-context">Super Bowl XLIII (2008)</div>
+        <div class="game-significance">James Harrison's 100-yd INT return, Santonio Holmes' game-winning catch</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-epic">EPIC</span>
+        <div class="game-rank ">#13</div>
+        <h3 class="game-title">The Immaculate Reception</h3>
+        <div class="game-matchup">OAK @ PIT</div>
+        <div class="game-date">December 22, 1972</div>
+        <div class="game-context">1972 AFC Divisional</div>
+        <div class="game-significance">The Immaculate Reception</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-epic">EPIC</span>
+        <div class="game-rank ">#14</div>
+        <h3 class="game-title">Philly Special</h3>
+        <div class="game-matchup">NWE @ PHI</div>
+        <div class="game-date">February 3, 2018</div>
+        <div class="game-context">Super Bowl LII (2017)</div>
+        <div class="game-significance">Philly Special</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-epic">EPIC</span>
+        <div class="game-rank ">#15</div>
+        <h3 class="game-title">The Tuck Rule Game</h3>
+        <div class="game-matchup">OAK @ NWE</div>
+        <div class="game-date">January 18, 2002</div>
+        <div class="game-context">2001 AFC Divisional</div>
+        <div class="game-significance">The Tuck Rule Game</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-epic">EPIC</span>
+        <div class="game-rank ">#16</div>
+        <h3 class="game-title">One Yard Short</h3>
+        <div class="game-matchup">TEN @ STL</div>
+        <div class="game-date">January 29, 2000</div>
+        <div class="game-context">Super Bowl XXXIV (1999)</div>
+        <div class="game-significance">One Yard Short</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-epic">EPIC</span>
+        <div class="game-rank ">#17</div>
+        <h3 class="game-title">First Super Bowl rematch</h3>
+        <div class="game-matchup">DAL @ PIT</div>
+        <div class="game-date">January 20, 1979</div>
+        <div class="game-context">Super Bowl XIII (1978)</div>
+        <div class="game-significance">First Super Bowl rematch</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-epic">EPIC</span>
+        <div class="game-rank ">#18</div>
+        <h3 class="game-title">The longest game in NFL history</h3>
+        <div class="game-matchup">MIA @ KAN</div>
+        <div class="game-date">December 24, 1971</div>
+        <div class="game-context">1971 AFC Divisional</div>
+        <div class="game-significance">The longest game in NFL history</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-epic">EPIC</span>
+        <div class="game-rank ">#19</div>
+        <h3 class="game-title">Joe Montana's GWD results in his 3rd ring</h3>
+        <div class="game-matchup">CIN @ SFO</div>
+        <div class="game-date">January 21, 1989</div>
+        <div class="game-context">Super Bowl XXIII (1988)</div>
+        <div class="game-significance">Joe Montana's GWD results in his 3rd ring</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-epic">EPIC</span>
+        <div class="game-rank ">#20</div>
+        <h3 class="game-title">First Super Bowl of the Patriots dynasty</h3>
+        <div class="game-matchup">NWE @ STL</div>
+        <div class="game-date">February 2, 2002</div>
+        <div class="game-context">Super Bowl XXXVI (2001)</div>
+        <div class="game-significance">First Super Bowl of the Patriots dynasty</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-epic">EPIC</span>
+        <div class="game-rank ">#21</div>
+        <h3 class="game-title">Peyton Manning finally beats Patriots in playoffs</h3>
+        <div class="game-matchup">NWE @ IND</div>
+        <div class="game-date">January 20, 2007</div>
+        <div class="game-context">2006 AFC Championship</div>
+        <div class="game-significance">Peyton Manning finally beats Patriots in playoffs</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-epic">EPIC</span>
+        <div class="game-rank ">#22</div>
+        <h3 class="game-title">The Fumble</h3>
+        <div class="game-matchup">CLE @ DEN</div>
+        <div class="game-date">January 16, 1988</div>
+        <div class="game-context">1987 AFC Championship</div>
+        <div class="game-significance">The Fumble</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-epic">EPIC</span>
+        <div class="game-rank ">#23</div>
+        <h3 class="game-title">The Sea of Hands</h3>
+        <div class="game-matchup">MIA @ OAK</div>
+        <div class="game-date">December 20, 1974</div>
+        <div class="game-context">1974 AFC Divisional</div>
+        <div class="game-significance">The Sea of Hands</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-epic">EPIC</span>
+        <div class="game-rank ">#24</div>
+        <h3 class="game-title">Minneapolis Miracle</h3>
+        <div class="game-matchup">NOR @ MIN</div>
+        <div class="game-date">January 13, 2018</div>
+        <div class="game-context">2017 NFC Divisional</div>
+        <div class="game-significance">Minneapolis Miracle</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-epic">EPIC</span>
+        <div class="game-rank ">#25</div>
+        <h3 class="game-title">Giants prevent 49ers from reaching 3rd Super Bowl in a row</h3>
+        <div class="game-matchup">NYG @ SFO</div>
+        <div class="game-date">January 19, 1991</div>
+        <div class="game-context">1990 NFC Championship</div>
+        <div class="game-significance">Giants prevent 49ers from reaching 3rd Super Bowl in a row</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-epic">EPIC</span>
+        <div class="game-rank ">#26</div>
+        <h3 class="game-title">Music City Miracle</h3>
+        <div class="game-matchup">BUF @ TEN</div>
+        <div class="game-date">January 7, 2000</div>
+        <div class="game-context">1999 AFC Wild Card</div>
+        <div class="game-significance">Music City Miracle</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-epic">EPIC</span>
+        <div class="game-rank ">#27</div>
+        <h3 class="game-title">John Elway and Denver's first Super Bowl win</h3>
+        <div class="game-matchup">DEN @ GNB</div>
+        <div class="game-date">January 24, 1998</div>
+        <div class="game-context">Super Bowl XXXII (1997)</div>
+        <div class="game-significance">John Elway and Denver's first Super Bowl win</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-epic">EPIC</span>
+        <div class="game-rank ">#28</div>
+        <h3 class="game-title">Ghost to the Post</h3>
+        <div class="game-matchup">OAK @ BAL</div>
+        <div class="game-date">December 23, 1977</div>
+        <div class="game-context">1977 AFC Divisional</div>
+        <div class="game-significance">Ghost to the Post</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-epic">EPIC</span>
+        <div class="game-rank ">#29</div>
+        <h3 class="game-title">Dolphins thwart '85 Bears' bid for perfect season</h3>
+        <div class="game-matchup">CHI @ MIA</div>
+        <div class="game-date">December 1, 1985</div>
+        <div class="game-context">1985 Week 13</div>
+        <div class="game-significance">Dolphins thwart '85 Bears' bid for perfect season</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-epic">EPIC</span>
+        <div class="game-rank ">#30</div>
+        <h3 class="game-title">Harbaugh Bowl</h3>
+        <div class="game-matchup">BAL @ SFO</div>
+        <div class="game-date">February 2, 2013</div>
+        <div class="game-context">Super Bowl XLVII (2012)</div>
+        <div class="game-significance">Harbaugh Bowl</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#31</div>
+        <h3 class="game-title">Aaron Rodgers sends to OT, Larry Fitzgerald catches game-winner</h3>
+        <div class="game-matchup">GNB @ ARI</div>
+        <div class="game-date">January 15, 2016</div>
+        <div class="game-context">2015 NFC Divisional</div>
+        <div class="game-significance">Aaron Rodgers sends to OT, Larry Fitzgerald catches game-winner</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#32</div>
+        <h3 class="game-title">Browns win championship in first NFL season</h3>
+        <div class="game-matchup">RAM @ CLE</div>
+        <div class="game-date">December 23, 1950</div>
+        <div class="game-context">1950 NFL Championship</div>
+        <div class="game-significance">Browns win championship in first NFL season</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#33</div>
+        <h3 class="game-title">Both teams score 50 for first time in NFL history</h3>
+        <div class="game-matchup">KAN @ LAR</div>
+        <div class="game-date">November 18, 2018</div>
+        <div class="game-context">2018 Week 11</div>
+        <div class="game-significance">Both teams score 50 for first time in NFL history</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#34</div>
+        <h3 class="game-title">Gary Anderson misses potential game-sealer, Falcons win in OT</h3>
+        <div class="game-matchup">ATL @ MIN</div>
+        <div class="game-date">January 16, 1999</div>
+        <div class="game-context">1998 NFC Championship</div>
+        <div class="game-significance">Gary Anderson misses potential game-sealer, Falcons win in OT</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#35</div>
+        <h3 class="game-title">Cowboys' 15-point 4th quarter comeback</h3>
+        <div class="game-matchup">DAL @ SFO</div>
+        <div class="game-date">December 22, 1972</div>
+        <div class="game-context">1972 NFC Divisional</div>
+        <div class="game-significance">Cowboys' 15-point 4th quarter comeback</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#36</div>
+        <h3 class="game-title">Patriots/Chiefs shootout</h3>
+        <div class="game-matchup">NWE @ KAN</div>
+        <div class="game-date">January 19, 2019</div>
+        <div class="game-context">2018 AFC Championship</div>
+        <div class="game-significance">Patriots/Chiefs shootout</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#37</div>
+        <h3 class="game-title">Patriots' second Super Bowl win</h3>
+        <div class="game-matchup">CAR @ NWE</div>
+        <div class="game-date">January 31, 2004</div>
+        <div class="game-context">Super Bowl XXXVIII (2003)</div>
+        <div class="game-significance">Patriots' second Super Bowl win</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#38</div>
+        <h3 class="game-title">Packers earn right to represent NFL in Super Bowl I</h3>
+        <div class="game-matchup">GNB @ DAL</div>
+        <div class="game-date">December 31, 1966</div>
+        <div class="game-context">1966 NFL Championship</div>
+        <div class="game-significance">Packers earn right to represent NFL in Super Bowl I</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#39</div>
+        <h3 class="game-title">49ers' 24-point comeback, Trey Junkin's bad snap</h3>
+        <div class="game-matchup">NYG @ SFO</div>
+        <div class="game-date">January 4, 2003</div>
+        <div class="game-context">2002 NFC Wild Card</div>
+        <div class="game-significance">49ers' 24-point comeback, Trey Junkin's bad snap</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#40</div>
+        <h3 class="game-title">Mile High Miracle</h3>
+        <div class="game-matchup">BAL @ DEN</div>
+        <div class="game-date">January 11, 2013</div>
+        <div class="game-context">2012 AFC Divisional</div>
+        <div class="game-significance">Mile High Miracle</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#41</div>
+        <h3 class="game-title">Heidi Game</h3>
+        <div class="game-matchup">NYJ @ OAK</div>
+        <div class="game-date">November 16, 1968</div>
+        <div class="game-context">1968 Week 11</div>
+        <div class="game-significance">Heidi Game</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#42</div>
+        <h3 class="game-title">Saints earn first Super Bowl berth, Brett Favre's final playoff game</h3>
+        <div class="game-matchup">MIN @ NOR</div>
+        <div class="game-date">January 23, 2010</div>
+        <div class="game-context">2009 NFC Championship</div>
+        <div class="game-significance">Saints earn first Super Bowl berth, Brett Favre's final playoff game</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#43</div>
+        <h3 class="game-title">Monday Night Miracle</h3>
+        <div class="game-matchup">MIA @ NYJ</div>
+        <div class="game-date">October 22, 2000</div>
+        <div class="game-context">2000 Week 8</div>
+        <div class="game-significance">Monday Night Miracle</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#44</div>
+        <h3 class="game-title">Seahawks' 16-point 2nd half comeback</h3>
+        <div class="game-matchup">GNB @ SEA</div>
+        <div class="game-date">January 17, 2015</div>
+        <div class="game-context">2014 NFC Championship</div>
+        <div class="game-significance">Seahawks' 16-point 2nd half comeback</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#45</div>
+        <h3 class="game-title">Steelers successfully defend their title</h3>
+        <div class="game-matchup">DAL @ PIT</div>
+        <div class="game-date">January 17, 1976</div>
+        <div class="game-context">Super Bowl X (1975)</div>
+        <div class="game-significance">Steelers successfully defend their title</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#46</div>
+        <h3 class="game-title">The Catch II</h3>
+        <div class="game-matchup">GNB @ SFO</div>
+        <div class="game-date">January 2, 1999</div>
+        <div class="game-context">1998 NFC Wild Card</div>
+        <div class="game-significance">The Catch II</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#47</div>
+        <h3 class="game-title">Highest scoring game in playoff history</h3>
+        <div class="game-matchup">GNB @ ARI</div>
+        <div class="game-date">January 9, 2010</div>
+        <div class="game-context">2009 NFC Wild Card</div>
+        <div class="game-significance">Highest scoring game in playoff history</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#48</div>
+        <h3 class="game-title">Miracle at the Meadowlands</h3>
+        <div class="game-matchup">PHI @ NYG</div>
+        <div class="game-date">November 18, 1978</div>
+        <div class="game-context">1978 Week 12</div>
+        <div class="game-significance">Miracle at the Meadowlands</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#49</div>
+        <h3 class="game-title">Joe Namath/Johnny Unitas shootout</h3>
+        <div class="game-matchup">NYJ @ BAL</div>
+        <div class="game-date">September 23, 1972</div>
+        <div class="game-context">1972 Week 2</div>
+        <div class="game-significance">Joe Namath/Johnny Unitas shootout</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#50</div>
+        <h3 class="game-title">The Fog Bowl</h3>
+        <div class="game-matchup">PHI @ CHI</div>
+        <div class="game-date">December 30, 1988</div>
+        <div class="game-context">1988 NFC Divisional</div>
+        <div class="game-significance">The Fog Bowl</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#51</div>
+        <h3 class="game-title">First scheduled NFL championship game</h3>
+        <div class="game-matchup">NYG @ CHI</div>
+        <div class="game-date">December 16, 1933</div>
+        <div class="game-context">1933 NFL Championship</div>
+        <div class="game-significance">First scheduled NFL championship game</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#52</div>
+        <h3 class="game-title">Brett Favre on MNF honors deceased father</h3>
+        <div class="game-matchup">GNB @ OAK</div>
+        <div class="game-date">December 21, 2003</div>
+        <div class="game-context">2003 Week 16</div>
+        <div class="game-significance">Brett Favre on MNF honors deceased father</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#53</div>
+        <h3 class="game-title">The first Super Bowl</h3>
+        <div class="game-matchup">GNB @ KAN</div>
+        <div class="game-date">January 14, 1967</div>
+        <div class="game-context">Super Bowl I (1966)</div>
+        <div class="game-significance">The first Super Bowl</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#54</div>
+        <h3 class="game-title">Giants advance to Super Bowl in below-zero weather</h3>
+        <div class="game-matchup">NYG @ GNB</div>
+        <div class="game-date">January 19, 2008</div>
+        <div class="game-context">2007 NFC Championship</div>
+        <div class="game-significance">Giants advance to Super Bowl in below-zero weather</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#55</div>
+        <h3 class="game-title">Joe Montana's final duel with John Elway</h3>
+        <div class="game-matchup">KAN @ DEN</div>
+        <div class="game-date">October 16, 1994</div>
+        <div class="game-context">1994 Week 7</div>
+        <div class="game-significance">Joe Montana's final duel with John Elway</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#56</div>
+        <h3 class="game-title">Holy Roller</h3>
+        <div class="game-matchup">OAK @ SDG</div>
+        <div class="game-date">September 9, 1978</div>
+        <div class="game-context">1978 Week 2</div>
+        <div class="game-significance">Holy Roller</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#57</div>
+        <h3 class="game-title">Controversial no call, Rams win in OT</h3>
+        <div class="game-matchup">LAR @ NOR</div>
+        <div class="game-date">January 19, 2019</div>
+        <div class="game-context">2018 NFC Championship</div>
+        <div class="game-significance">Controversial no call, Rams win in OT</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#58</div>
+        <h3 class="game-title">Joe Montana takes down Eagles defense</h3>
+        <div class="game-matchup">SFO @ PHI</div>
+        <div class="game-date">September 23, 1989</div>
+        <div class="game-context">1989 Week 3</div>
+        <div class="game-significance">Joe Montana takes down Eagles defense</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#59</div>
+        <h3 class="game-title">Saints return to New Orleans after Hurricane Katrina, Steve Gleason's block</h3>
+        <div class="game-matchup">ATL @ NOR</div>
+        <div class="game-date">September 24, 2006</div>
+        <div class="game-context">2006 Week 3</div>
+        <div class="game-significance">Saints return to New Orleans after Hurricane Katrina, Steve Gleason's block</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-memorable">MEMORABLE</span>
+        <div class="game-rank ">#60</div>
+        <h3 class="game-title">Cowboys advance to first Super Bowl of 90s dynasty</h3>
+        <div class="game-matchup">DAL @ SFO</div>
+        <div class="game-date">January 16, 1993</div>
+        <div class="game-context">1992 NFC Championship</div>
+        <div class="game-significance">Cowboys advance to first Super Bowl of 90s dynasty</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#61</div>
+        <h3 class="game-title">Colts' 28-point comeback</h3>
+        <div class="game-matchup">KAN @ IND</div>
+        <div class="game-date">January 3, 2014</div>
+        <div class="game-context">2013 AFC Wild Card</div>
+        <div class="game-significance">Colts' 28-point comeback</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#62</div>
+        <h3 class="game-title">The Sneakers Game</h3>
+        <div class="game-matchup">CHI @ NYG</div>
+        <div class="game-date">December 8, 1934</div>
+        <div class="game-context">1934 NFL Championship</div>
+        <div class="game-significance">The Sneakers Game</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#63</div>
+        <h3 class="game-title">49ers come back from 21-point deficit but lose in final minute</h3>
+        <div class="game-matchup">SFO @ WAS</div>
+        <div class="game-date">January 7, 1984</div>
+        <div class="game-context">1983 NFC Championship</div>
+        <div class="game-significance">49ers come back from 21-point deficit but lose in final minute</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#64</div>
+        <h3 class="game-title">Alex Smith/Drew Brees shootout</h3>
+        <div class="game-matchup">NOR @ SFO</div>
+        <div class="game-date">January 13, 2012</div>
+        <div class="game-context">2011 NFC Divisional</div>
+        <div class="game-significance">Alex Smith/Drew Brees shootout</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#65</div>
+        <h3 class="game-title">Peyton Manning leads 21-point 4th quarter comeback</h3>
+        <div class="game-matchup">IND @ TAM</div>
+        <div class="game-date">October 5, 2003</div>
+        <div class="game-context">2003 Week 5</div>
+        <div class="game-significance">Peyton Manning leads 21-point 4th quarter comeback</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#66</div>
+        <h3 class="game-title">Broncos' 15-point comeback</h3>
+        <div class="game-matchup">HOU @ DEN</div>
+        <div class="game-date">January 3, 1992</div>
+        <div class="game-context">1991 AFC Divisional</div>
+        <div class="game-significance">Broncos' 15-point comeback</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#67</div>
+        <h3 class="game-title">The Freezer Bowl</h3>
+        <div class="game-matchup">SDG @ CIN</div>
+        <div class="game-date">January 9, 1982</div>
+        <div class="game-context">1981 AFC Championship</div>
+        <div class="game-significance">The Freezer Bowl</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#68</div>
+        <h3 class="game-title">Richard Sherman vs. Michael Crabtree</h3>
+        <div class="game-matchup">SFO @ SEA</div>
+        <div class="game-date">January 18, 2014</div>
+        <div class="game-context">2013 NFC Championship</div>
+        <div class="game-significance">Richard Sherman vs. Michael Crabtree</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#69</div>
+        <h3 class="game-title">4th and 26</h3>
+        <div class="game-matchup">GNB @ PHI</div>
+        <div class="game-date">January 10, 2004</div>
+        <div class="game-context">2003 NFC Divisional</div>
+        <div class="game-significance">4th and 26</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#70</div>
+        <h3 class="game-title">Injured Emmitt Smith helps Cowboys clinch top seed</h3>
+        <div class="game-matchup">DAL @ NYG</div>
+        <div class="game-date">January 1, 1994</div>
+        <div class="game-context">1993 Week 18</div>
+        <div class="game-significance">Injured Emmitt Smith helps Cowboys clinch top seed</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#71</div>
+        <h3 class="game-title">Red Right 88</h3>
+        <div class="game-matchup">OAK @ CLE</div>
+        <div class="game-date">January 3, 1981</div>
+        <div class="game-context">1980 AFC Divisional</div>
+        <div class="game-significance">Red Right 88</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#72</div>
+        <h3 class="game-title">"We want the ball and we're gonna score"</h3>
+        <div class="game-matchup">SEA @ GNB</div>
+        <div class="game-date">January 3, 2004</div>
+        <div class="game-context">2003 NFC Wild Card</div>
+        <div class="game-significance">"We want the ball and we're gonna score"</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#73</div>
+        <h3 class="game-title">John Riggins runs over Miami</h3>
+        <div class="game-matchup">MIA @ WAS</div>
+        <div class="game-date">January 29, 1983</div>
+        <div class="game-context">Super Bowl XVII (1982)</div>
+        <div class="game-significance">John Riggins runs over Miami</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#74</div>
+        <h3 class="game-title">Duel in Dixie</h3>
+        <div class="game-matchup">DAL @ ATL</div>
+        <div class="game-date">January 3, 1981</div>
+        <div class="game-context">1980 NFC Divisional</div>
+        <div class="game-significance">Duel in Dixie</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#75</div>
+        <h3 class="game-title">Lynn Dickey/Joe Theismann MNF shootout</h3>
+        <div class="game-matchup">WAS @ GNB</div>
+        <div class="game-date">October 16, 1983</div>
+        <div class="game-context">1983 Week 7</div>
+        <div class="game-significance">Lynn Dickey/Joe Theismann MNF shootout</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#76</div>
+        <h3 class="game-title">Lions' 20-point comeback</h3>
+        <div class="game-matchup">DET @ SFO</div>
+        <div class="game-date">December 21, 1957</div>
+        <div class="game-context">1957 Western Conference Championship</div>
+        <div class="game-significance">Lions' 20-point comeback</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#77</div>
+        <h3 class="game-title">Sammy Baugh hits the goalpost</h3>
+        <div class="game-matchup">WAS @ RAM</div>
+        <div class="game-date">December 15, 1945</div>
+        <div class="game-context">1945 NFL Championship</div>
+        <div class="game-significance">Sammy Baugh hits the goalpost</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#78</div>
+        <h3 class="game-title">Expansion Jaguars shock the Broncos</h3>
+        <div class="game-matchup">JAX @ DEN</div>
+        <div class="game-date">January 3, 1997</div>
+        <div class="game-context">1996 AFC Divisional</div>
+        <div class="game-significance">Expansion Jaguars shock the Broncos</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#79</div>
+        <h3 class="game-title">Dolphins' 18-point comeback</h3>
+        <div class="game-matchup">CLE @ MIA</div>
+        <div class="game-date">January 3, 1986</div>
+        <div class="game-context">1985 AFC Divisional</div>
+        <div class="game-significance">Dolphins' 18-point comeback</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#80</div>
+        <h3 class="game-title">Marathon by the Lake</h3>
+        <div class="game-matchup">NYJ @ CLE</div>
+        <div class="game-date">January 2, 1987</div>
+        <div class="game-context">1986 AFC Divisional</div>
+        <div class="game-significance">Marathon by the Lake</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#81</div>
+        <h3 class="game-title">Red Grange's NFL debut</h3>
+        <div class="game-matchup">CRD @ CHI</div>
+        <div class="game-date">November 25, 1925</div>
+        <div class="game-context">1925 Week 11</div>
+        <div class="game-significance">Red Grange's NFL debut</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#82</div>
+        <h3 class="game-title">NFL's first indoor game, first playoff game</h3>
+        <div class="game-matchup">PRT @ CHI</div>
+        <div class="game-date">December 17, 1932</div>
+        <div class="game-context">1932 Week 14</div>
+        <div class="game-significance">NFL's first indoor game, first playoff game</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#83</div>
+        <h3 class="game-title">Fake Spike Game</h3>
+        <div class="game-matchup">MIA @ NYJ</div>
+        <div class="game-date">November 26, 1994</div>
+        <div class="game-context">1994 Week 13</div>
+        <div class="game-significance">Fake Spike Game</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#84</div>
+        <h3 class="game-title">Tony Romo muffs the hold</h3>
+        <div class="game-matchup">DAL @ SEA</div>
+        <div class="game-date">January 5, 2007</div>
+        <div class="game-context">2006 NFC Wild Card</div>
+        <div class="game-significance">Tony Romo muffs the hold</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#85</div>
+        <h3 class="game-title">Washington's 35-point 2nd quarter</h3>
+        <div class="game-matchup">DEN @ WAS</div>
+        <div class="game-date">January 30, 1988</div>
+        <div class="game-context">Super Bowl XXII (1987)</div>
+        <div class="game-significance">Washington's 35-point 2nd quarter</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#86</div>
+        <h3 class="game-title">Panthers win in 2OT</h3>
+        <div class="game-matchup">CAR @ STL</div>
+        <div class="game-date">January 9, 2004</div>
+        <div class="game-context">2003 NFC Divisional</div>
+        <div class="game-significance">Panthers win in 2OT</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#87</div>
+        <h3 class="game-title">Steelers survive Colts' upset bid</h3>
+        <div class="game-matchup">IND @ PIT</div>
+        <div class="game-date">January 13, 1996</div>
+        <div class="game-context">1995 AFC Championship</div>
+        <div class="game-significance">Steelers survive Colts' upset bid</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#88</div>
+        <h3 class="game-title">Miracle at the New Meadowlands</h3>
+        <div class="game-matchup">PHI @ NYG</div>
+        <div class="game-date">December 18, 2010</div>
+        <div class="game-context">2010 Week 15</div>
+        <div class="game-significance">Miracle at the New Meadowlands</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#89</div>
+        <h3 class="game-title">Steelers become first 6-seed to defeat a 1-seed</h3>
+        <div class="game-matchup">PIT @ IND</div>
+        <div class="game-date">January 14, 2006</div>
+        <div class="game-context">2005 AFC Divisional</div>
+        <div class="game-significance">Steelers become first 6-seed to defeat a 1-seed</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#90</div>
+        <h3 class="game-title">49ers prevent Cowboys from reaching 3rd Super Bowl in a row</h3>
+        <div class="game-matchup">DAL @ SFO</div>
+        <div class="game-date">January 14, 1995</div>
+        <div class="game-context">1994 NFC Championship</div>
+        <div class="game-significance">49ers prevent Cowboys from reaching 3rd Super Bowl in a row</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#91</div>
+        <h3 class="game-title">Ken O'Brien/Dan Marino shootout</h3>
+        <div class="game-matchup">MIA @ NYJ</div>
+        <div class="game-date">September 20, 1986</div>
+        <div class="game-context">1986 Week 3</div>
+        <div class="game-significance">Ken O'Brien/Dan Marino shootout</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#92</div>
+        <h3 class="game-title">Steelers win 4th Super Bowl</h3>
+        <div class="game-matchup">PIT @ RAM</div>
+        <div class="game-date">January 19, 1980</div>
+        <div class="game-context">Super Bowl XIV (1979)</div>
+        <div class="game-significance">Steelers win 4th Super Bowl</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#93</div>
+        <h3 class="game-title">Eagles win in a blizzard</h3>
+        <div class="game-matchup">CRD @ PHI</div>
+        <div class="game-date">December 18, 1948</div>
+        <div class="game-context">1948 NFL Championship</div>
+        <div class="game-significance">Eagles win in a blizzard</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#94</div>
+        <h3 class="game-title">The Snowplow Game</h3>
+        <div class="game-matchup">MIA @ NWE</div>
+        <div class="game-date">December 11, 1982</div>
+        <div class="game-context">1982 Week 14</div>
+        <div class="game-significance">The Snowplow Game</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#95</div>
+        <h3 class="game-title">Bears D/ST engineers 20-point MNF comeback</h3>
+        <div class="game-matchup">CHI @ ARI</div>
+        <div class="game-date">October 15, 2006</div>
+        <div class="game-context">2006 Week 6</div>
+        <div class="game-significance">Bears D/ST engineers 20-point MNF comeback</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#96</div>
+        <h3 class="game-title">Miracle at the Met</h3>
+        <div class="game-matchup">CLE @ MIN</div>
+        <div class="game-date">December 13, 1980</div>
+        <div class="game-context">1980 Week 15</div>
+        <div class="game-significance">Miracle at the Met</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#97</div>
+        <h3 class="game-title">Saints win first Super Bowl</h3>
+        <div class="game-matchup">IND @ NOR</div>
+        <div class="game-date">February 6, 2010</div>
+        <div class="game-context">Super Bowl XLIV (2009)</div>
+        <div class="game-significance">Saints win first Super Bowl</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#98</div>
+        <h3 class="game-title">Steelers survive defensive battle</h3>
+        <div class="game-matchup">BAL @ PIT</div>
+        <div class="game-date">January 17, 2009</div>
+        <div class="game-context">2008 AFC Championship</div>
+        <div class="game-significance">Steelers survive defensive battle</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#99</div>
+        <h3 class="game-title">Greatest Show on Turf squeaks by Bucs defense</h3>
+        <div class="game-matchup">TAM @ STL</div>
+        <div class="game-date">January 22, 2000</div>
+        <div class="game-context">1999 NFC Championship</div>
+        <div class="game-significance">Greatest Show on Turf squeaks by Bucs defense</div>
+      </div>
+      <div class="game-card">
+        <span class="tier-badge tier-classic">CLASSIC</span>
+        <div class="game-rank ">#100</div>
+        <h3 class="game-title">The Mud Bowl</h3>
+        <div class="game-matchup">NYJ @ MIA</div>
+        <div class="game-date">January 22, 1983</div>
+        <div class="game-context">1982 AFC Championship</div>
+        <div class="game-significance">The Mud Bowl</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>Next Down Metrics © 2025 • Data from Pro-Football-Reference.com</p>
+    <p style="margin-top: 8px; font-size: 14px;">
+      Rankings based on NFL's official "NFL 100 Greatest Games" list from 2019
+    </p>
+  </footer>
+</body>
+</html>

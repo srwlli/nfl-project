@@ -1,8 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node scripts/scrapers/game-stats-scraper.js --game=401772941)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nEnhance demo game page with venue extraction and team-separated player stats\n\nMajor Updates:\n1. Added venue/stadium extraction to game-stats-scraper\n   - Extract venue info from ESPN gameInfo.venue\n   - Upsert to stadiums table (stadium_name, city, state, capacity, surface_type, roof_type)\n   - Update games.stadium_id with foreign key reference\n   - Venue now displays: \"Paycor Stadium\" (Cincinnati, OH)\n\n2. Reorganized player statistics with team-level tabs\n   - Top-level tabs: Pittsburgh Steelers | Cincinnati Bengals\n   - Nested stat tabs within each team: Passing | Rushing | Receiving | Defense\n   - Players now properly separated by team (no more mixed listings)\n   - Removed team_abbr badges since stats are team-specific\n   - Cleaner, more intuitive navigation\n\n3. Fixed quarter grid responsive layout\n   - Removed min-width constraint and horizontal scroll\n   - Changed to pure flexbox with natural wrapping\n   - Mobile-friendly without scroll needed\n\nBug Fixes:\n- Fixed stadiums table column name: surface_type (not surface)\n- Fixed JavaScript template literal syntax in showStatTab function\n- Weather displays \"N/A\" when ESPN doesn''t provide data (expected for some games)\n\nDatabase Changes:\n- Stadiums table now populates automatically via game-stats-scraper\n- Games table stadium_id foreign key properly links to stadiums\n\nDemo Page Stats:\n- ✅ Venue: Paycor Stadium\n- ✅ 65 player stats separated by team\n- ✅ 2-level tab navigation (team → stat category)\n- ✅ Mobile responsive quarter grid\n- ✅ Next Down Metrics theme intact\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "WebSearch",
+      "Bash(node scripts/scrapers/historical-betting-scraper.js:*)",
+      "Bash(node -e:*)",
+      "Bash(node scripts/scrapers/elo-ratings-scraper.js:*)",
+      "Bash(npm run scrape:elo-ratings:*)",
+      "Bash(timeout 60 npm run scrape:elo-ratings:*)"
     ],
     "deny": [],
     "ask": []

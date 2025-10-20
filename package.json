@@ -17,6 +17,9 @@
     "scrape:standings": "node scripts/scrapers/standings-scraper.js",
     "scrape:betting": "node scripts/scrapers/betting-scraper.js",
     "scrape:analytics": "node scripts/scrapers/advanced-analytics-scraper.js",
+    "scrape:top-100-games": "node scripts/scrapers/nfl-top-100-games-scraper.js",
+    "scrape:historical-betting": "node scripts/scrapers/historical-betting-scraper.js",
+    "scrape:elo-ratings": "node scripts/scrapers/elo-ratings-scraper.js",
     "scheduler": "node scripts/scheduler.js",
     "test:db": "node scripts/utils/test-connection.js"
   },
@@ -33,11 +36,12 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.39.7",
     "axios": "^1.6.7",
+    "cheerio": "^1.1.2",
+    "csv-parse": "^6.1.0",
     "dotenv": "^16.4.1",
     "node-cron": "^3.0.3",
     "winston": "^3.11.0"
   },
-  "devDependencies": {},
   "engines": {
     "node": ">=20.0.0"
   }

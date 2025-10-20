@@ -1,0 +1,468 @@
+{
+  "feature": "Additional Data Sources for Greatest Games Algorithm",
+  "created": "2025-10-18",
+  "priority": "P0 - Critical for Algorithm Validation",
+  "estimated_effort": "12-16 hours",
+  "dependencies": [
+    "greatest-games-algo.md",
+    "Master-Data-Sources.json (updated with 46 sources)"
+  ],
+
+  "overview": {
+    "description": "Integrate high-priority data sources to enhance and validate the Greatest NFL Games Algorithm. Focus on historical betting data, official rankings, and Elo ratings for team strength context.",
+    "goals": [
+      "Add NFL's 100 Greatest Games as validation dataset",
+      "Investigate and integrate historical betting odds (1958-present)",
+      "Add Elo ratings for enhanced upset detection",
+      "Validate algorithm accuracy against official rankings",
+      "Build foundation for automated greatest games ranking"
+    ]
+  },
+
+  "current_state": {
+    "existing_sources": [
+      {
+        "name": "ESPN API",
+        "status": "✅ Active",
+        "coverage": "Current season live data, play-by-play, scores, rosters"
+      },
+      {
+        "name": "nflverse (nflfastR)",
+        "status": "✅ Active",
+        "coverage": "Play-by-play with EPA/WPA, 1999-present"
+      },
+      {
+        "name": "The Odds API",
+        "status": "✅ Active",
+        "coverage": "Current betting lines (spreads, moneyline, O/U)"
+      }
+    ],
+    "gaps": [
+      "No historical betting odds (pre-2025)",
+      "No team strength/Elo ratings",
+      "No official greatest games benchmark for validation",
+      "No cultural impact/viewership metrics"
+    ]
+  },
+
+  "implementation_plan": {
+    "phase_1": {
+      "name": "NFL's 100 Greatest Games Scraper (HIGH PRIORITY)",
+      "priority": "⭐⭐⭐ P0",
+      "effort": "2-3 hours",
+      "tasks": [
+        {
+          "task": "Create nfl-top-100-games-scraper.js",
+          "description": "Scrape NFL.com/100/originals/100-greatest for official rankings",
+          "file": "scripts/scrapers/nfl-top-100-games-scraper.js",
+          "approach": "Web scraping with cheerio or playwright",
+          "data_to_extract": [
+            "Game rank (1-100)",
+            "Game title/description",
+            "Teams involved",
+            "Date played",
+            "Final score",
+            "Key moments summary",
+            "Historical significance notes"
+          ]
+        },
+        {
+          "task": "Create database table for validation",
+          "file": "supabase/migrations/20250101000016_create_greatest_games_validation_table.sql",
+          "schema": {
+            "table": "greatest_games_official_ranking",
+            "columns": [
+              "rank INTEGER PRIMARY KEY",
+              "game_title TEXT",
+              "game_date DATE",
+              "home_team_id TEXT",
+              "away_team_id TEXT",
+              "home_score INTEGER",
+              "away_score INTEGER",
+              "summary TEXT",
+              "significance_notes TEXT",
+              "url TEXT",
+              "scraped_at TIMESTAMP"
+            ]
+          }
+        },
+        {
+          "task": "Run scraper and populate validation dataset",
+          "command": "npm run scrape:top-100-games",
+          "expected_result": "100 games ranked and stored"
+        }
+      ],
+      "deliverables": [
+        "nfl-top-100-games-scraper.js (300-400 lines)",
+        "greatest_games_official_ranking table populated",
+        "Validation dataset for algorithm testing"
+      ]
+    },
+
+    "phase_2": {
+      "name": "Historical Betting Odds Investigation & Integration",
+      "priority": "⭐⭐⭐ P0",
+      "effort": "4-6 hours",
+      "tasks": [
+        {
+          "task": "Investigate SportsOddsHistory.com API/scraping feasibility",
+          "description": "Determine if API exists or web scraping is required",
+          "research_questions": [
+            "Is there a public API?",
+            "What is the rate limit/cost?",
+            "Can we scrape without violating TOS?",
+            "How far back does historical data go?"
+          ]
+        },
+        {
+          "task": "Create historical-betting-scraper.js (if feasible)",
+          "file": "scripts/scrapers/historical-betting-scraper.js",
+          "description": "Backfill historical spreads for pre-2025 games",
+          "data_to_extract": [
+            "Game date",
+            "Teams",
+            "Point spread (opening/closing)",
+            "Totals (over/under)",
+            "Moneyline odds",
+            "Favorite/underdog designation"
+          ]
+        },
+        {
+          "task": "Enhance betting tables to support historical data",
+          "file": "supabase/migrations/20250101000017_enhance_betting_for_historical.sql",
+          "changes": [
+            "Add is_historical BOOLEAN column to game_betting_lines",
+            "Add data_source TEXT column (e.g., 'SportsOddsHistory', 'The Odds API')",
+            "Create index on game_id for fast lookups"
+          ]
+        },
+        {
+          "task": "Backfill historical odds for top 100 games",
+          "description": "Cross-reference top 100 games with historical betting data",
+          "command": "npm run scrape:historical-betting -- --top-100-only"
+        }
+      ],
+      "deliverables": [
+        "Feasibility report on SportsOddsHistory.com",
+        "historical-betting-scraper.js (if feasible)",
+        "Historical betting data for top 100 games (if available)"
+      ],
+      "contingency": "If SportsOddsHistory.com isn't accessible, try EV Analytics as alternative source"
+    },
+
+    "phase_3": {
+      "name": "Elo Ratings Integration",
+      "priority": "⭐⭐ P1 (Medium Priority)",
+      "effort": "3-4 hours",
+      "tasks": [
+        {
+          "task": "Create elo-ratings-scraper.js",
+          "file": "scripts/scrapers/elo-ratings-scraper.js",
+          "description": "Fetch historical Elo ratings from nfelo app or Neil Paine's data",
+          "data_sources": [
+            "nfeloapp.com (current + historical)",
+            "Neil Paine's Substack (historical data)"
+          ],
+          "data_to_extract": [
+            "Team ID",
+            "Season/week",
+            "Elo rating",
+            "Opponent Elo rating",
+            "Elo differential",
+            "Win probability"
+          ]
+        },
+        {
+          "task": "Create team_elo_ratings table",
+          "file": "supabase/migrations/20250101000018_create_elo_ratings_table.sql",
+          "schema": {
+            "table": "team_elo_ratings",
+            "columns": [
+              "team_id TEXT",
+              "season INTEGER",
+              "week INTEGER",
+              "elo_rating DECIMAL(10,2)",
+              "elo_pre_game DECIMAL(10,2)",
+              "elo_post_game DECIMAL(10,2)",
+              "elo_probability DECIMAL(5,4)",
+              "created_at TIMESTAMP",
+              "PRIMARY KEY (team_id, season, week)"
+            ]
+          }
+        },
+        {
+          "task": "Enhance greatest games algorithm to use Elo",
+          "file": "greatest-games-algo.md (update)",
+          "changes": [
+            "Update Stakes Multiplier to include Elo differential",
+            "Add upset bonus based on Elo win probability",
+            "Example: Team with 20% Elo win prob that wins gets +20 points"
+          ]
+        }
+      ],
+      "deliverables": [
+        "elo-ratings-scraper.js (250-350 lines)",
+        "team_elo_ratings table populated",
+        "Enhanced algorithm with Elo-based upset detection"
+      ]
+    },
+
+    "phase_4": {
+      "name": "Algorithm Validation & Testing",
+      "priority": "⭐⭐⭐ P0",
+      "effort": "3-4 hours",
+      "tasks": [
+        {
+          "task": "Create validate-greatest-games-algo.js script",
+          "file": "scripts/validation/validate-greatest-games-algo.js",
+          "description": "Score all 100 official greatest games using our algorithm",
+          "process": [
+            "Load top 100 games from validation table",
+            "Calculate greatness score for each game",
+            "Rank games 1-100 by our algorithm",
+            "Compare our ranking to NFL's official ranking",
+            "Calculate correlation coefficient (Spearman's rho)",
+            "Identify outliers (games we rank much higher/lower)"
+          ]
+        },
+        {
+          "task": "Generate validation report",
+          "file": "coderef/validation/greatest-games-algo-validation-report.md",
+          "metrics": [
+            "Correlation with official rankings (target: >0.7)",
+            "Games in top 10 that match official top 10",
+            "Average rank difference",
+            "Outlier analysis (why did we rank differently?)"
+          ]
+        },
+        {
+          "task": "Tune algorithm weights based on results",
+          "description": "Adjust scoring weights to improve correlation with official rankings",
+          "weights_to_tune": [
+            "Drama Score components",
+            "Stakes Multiplier values",
+            "Historical Significance threshold",
+            "Contextual Factor bonuses"
+          ]
+        }
+      ],
+      "deliverables": [
+        "validate-greatest-games-algo.js (400-500 lines)",
+        "Validation report with correlation analysis",
+        "Tuned algorithm weights for better accuracy"
+      ]
+    },
+
+    "phase_5": {
+      "name": "Optional: Cultural Impact Metrics",
+      "priority": "⏸️ P2 (Low Priority - Future Enhancement)",
+      "effort": "2-3 hours",
+      "tasks": [
+        {
+          "task": "Load FiveThirtyEight fan engagement dataset",
+          "description": "One-time load from Kaggle to get market size proxies",
+          "file": "scripts/seed/05-fan-engagement.js",
+          "data_to_load": [
+            "Team fanbase size",
+            "Market reach",
+            "Engagement metrics"
+          ]
+        },
+        {
+          "task": "Create team_fandom_metrics table",
+          "schema": {
+            "table": "team_fandom_metrics",
+            "columns": [
+              "team_id TEXT PRIMARY KEY",
+              "fanbase_size INTEGER",
+              "market_rank INTEGER",
+              "engagement_score DECIMAL(5,2)",
+              "data_source TEXT",
+              "created_at TIMESTAMP"
+            ]
+          }
+        },
+        {
+          "task": "Add viewership bonus to algorithm",
+          "description": "Games involving large-market teams get small cultural impact bonus",
+          "formula": "contextual_bonus += (team1_fanbase_rank + team2_fanbase_rank) / 64 * 5"
+        }
+      ],
+      "deliverables": [
+        "05-fan-engagement.js seed script",
+        "team_fandom_metrics table",
+        "Cultural impact weight in algorithm"
+      ],
+      "notes": "This is optional and can be skipped for MVP. Only add if validation shows we need better cultural context."
+    }
+  },
+
+  "testing_strategy": {
+    "unit_tests": [
+      "Test top 100 scraper extracts all 100 games",
+      "Test historical betting scraper handles missing data",
+      "Test Elo ratings scraper parses correctly"
+    ],
+    "integration_tests": [
+      "Validate scrapers populate database correctly",
+      "Test algorithm runs on top 100 games without errors",
+      "Verify validation script calculates correlation correctly"
+    ],
+    "validation_tests": [
+      "Correlation with official rankings >= 0.7",
+      "At least 7/10 top 10 games match official list",
+      "Algorithm identifies known classics (Super Bowl LI, 1958 Championship, etc.)"
+    ]
+  },
+
+  "success_criteria": {
+    "must_have": [
+      "✅ NFL's top 100 games scraped and stored",
+      "✅ Algorithm validation script runs successfully",
+      "✅ Correlation with official rankings calculated",
+      "✅ Historical betting data investigated (feasibility determined)"
+    ],
+    "should_have": [
+      "✅ Historical betting odds integrated (if feasible)",
+      "✅ Elo ratings integrated for upset detection",
+      "✅ Correlation with official rankings >= 0.7",
+      "✅ Algorithm weights tuned based on validation"
+    ],
+    "nice_to_have": [
+      "⏸️ Cultural impact metrics (fan engagement data)",
+      "⏸️ Automated weekly ranking of current season games",
+      "⏸️ API endpoint to query greatest games"
+    ]
+  },
+
+  "database_migrations": [
+    {
+      "file": "20250101000016_create_greatest_games_validation_table.sql",
+      "purpose": "Store NFL's official top 100 games for validation"
+    },
+    {
+      "file": "20250101000017_enhance_betting_for_historical.sql",
+      "purpose": "Support historical betting data integration"
+    },
+    {
+      "file": "20250101000018_create_elo_ratings_table.sql",
+      "purpose": "Store team Elo ratings by season/week"
+    }
+  ],
+
+  "new_scripts": [
+    {
+      "file": "scripts/scrapers/nfl-top-100-games-scraper.js",
+      "lines": "300-400",
+      "purpose": "Scrape NFL's official 100 greatest games"
+    },
+    {
+      "file": "scripts/scrapers/historical-betting-scraper.js",
+      "lines": "350-450",
+      "purpose": "Backfill historical betting odds (if feasible)"
+    },
+    {
+      "file": "scripts/scrapers/elo-ratings-scraper.js",
+      "lines": "250-350",
+      "purpose": "Fetch team Elo ratings"
+    },
+    {
+      "file": "scripts/validation/validate-greatest-games-algo.js",
+      "lines": "400-500",
+      "purpose": "Validate algorithm against official rankings"
+    },
+    {
+      "file": "scripts/seed/05-fan-engagement.js",
+      "lines": "150-200",
+      "purpose": "Optional: Load fan engagement data"
+    }
+  ],
+
+  "npm_scripts": {
+    "scrape:top-100-games": "node scripts/scrapers/nfl-top-100-games-scraper.js",
+    "scrape:historical-betting": "node scripts/scrapers/historical-betting-scraper.js",
+    "scrape:elo-ratings": "node scripts/scrapers/elo-ratings-scraper.js",
+    "validate:greatest-games": "node scripts/validation/validate-greatest-games-algo.js",
+    "seed:fan-engagement": "node scripts/seed/05-fan-engagement.js"
+  },
+
+  "timeline": {
+    "day_1": {
+      "tasks": [
+        "Phase 1: Build and run top 100 games scraper",
+        "Create validation table",
+        "Populate 100 games"
+      ],
+      "effort": "2-3 hours"
+    },
+    "day_2": {
+      "tasks": [
+        "Phase 2: Investigate historical betting sources",
+        "Build historical betting scraper (if feasible)",
+        "Backfill top 100 games betting data"
+      ],
+      "effort": "4-6 hours"
+    },
+    "day_3": {
+      "tasks": [
+        "Phase 3: Build Elo ratings scraper",
+        "Integrate Elo into algorithm",
+        "Test enhanced algorithm"
+      ],
+      "effort": "3-4 hours"
+    },
+    "day_4": {
+      "tasks": [
+        "Phase 4: Build validation script",
+        "Run validation analysis",
+        "Tune algorithm weights",
+        "Generate validation report"
+      ],
+      "effort": "3-4 hours"
+    }
+  },
+
+  "risks_and_mitigation": {
+    "risks": [
+      {
+        "risk": "SportsOddsHistory.com may not have API or allow scraping",
+        "probability": "Medium",
+        "mitigation": "Use EV Analytics as backup source, or skip historical odds for MVP"
+      },
+      {
+        "risk": "NFL's top 100 page structure may be complex to scrape",
+        "probability": "Low",
+        "mitigation": "Use playwright for JavaScript rendering if needed"
+      },
+      {
+        "risk": "Algorithm may correlate poorly with official rankings",
+        "probability": "Medium",
+        "mitigation": "Iterate on weights, add more contextual factors, accept that our algo measures different aspects"
+      },
+      {
+        "risk": "Elo data may be incomplete for historical games",
+        "probability": "Low",
+        "mitigation": "FiveThirtyEight Elo goes back to 1970, covers most important games"
+      }
+    ]
+  },
+
+  "future_enhancements": {
+    "after_mvp": [
+      "Real-time greatest games ranking during live games",
+      "User voting/sentiment to adjust rankings",
+      "Machine learning to optimize algorithm weights",
+      "API endpoint for frontend integration",
+      "Automated weekly rankings blog post generation",
+      "Social media sharing of greatest games moments"
+    ]
+  },
+
+  "notes": [
+    "Start with Phase 1 (top 100 scraper) - highest value, lowest risk",
+    "Phase 2 (historical betting) requires investigation first",
+    "Phase 3 (Elo) is independent and can run parallel to Phase 2",
+    "Phase 4 (validation) must wait for Phases 1-3 to complete",
+    "Phase 5 (cultural metrics) is optional, skip if time-constrained"
+  ]
+}

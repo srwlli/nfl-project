@@ -1,8 +1,8 @@
 {
   "metadata": {
     "project": "Next-Scraper NFL Data Platform",
-    "last_updated": "2025-10-17",
-    "total_sources": 33
+    "last_updated": "2025-10-18",
+    "total_sources": 46
   },
   "data_scope_legend": {
     "both": "📊 Both Historical + 2025",
@@ -689,25 +689,317 @@
         "4th down decision analysis",
         "Statistical articles and research"
       ]
+    },
+    {
+      "id": "5.1",
+      "name": "SportsOddsHistory.com",
+      "category": "Historical/Greatest Games Data",
+      "type": "Historical Betting Archive",
+      "cost": "Free (web access)",
+      "authentication": "None",
+      "status": "⚠️ Need to Investigate",
+      "github": null,
+      "pypi": null,
+      "url": "https://www.sportsoddshistory.com/nfl-game-odds/",
+      "coverage": "1958-present",
+      "data_scope": "both",
+      "update_frequency": "Historical archive",
+      "data_provided": [
+        "Historical NFL game odds (1958-present)",
+        "Point spreads (opening and closing)",
+        "Totals (over/under)",
+        "Moneyline odds",
+        "Historical betting results",
+        "Underdog/favorite analysis"
+      ],
+      "use_case": "Backfill historical spread data for greatest games algorithm"
+    },
+    {
+      "id": "5.2",
+      "name": "NFL's 100 Greatest Games",
+      "category": "Historical/Greatest Games Data",
+      "type": "Official NFL Curated List",
+      "cost": "Free",
+      "authentication": "None",
+      "status": "⭐ HIGH PRIORITY - Need to Add",
+      "github": null,
+      "pypi": null,
+      "url": "https://www.nfl.com/100/originals/100-greatest/",
+      "coverage": "1920-2019 (NFL 100 anniversary)",
+      "data_scope": "historical",
+      "update_frequency": "Static (curated list)",
+      "data_provided": [
+        "Official NFL's 100 greatest games rankings",
+        "Game summaries and narratives",
+        "Historical significance notes",
+        "Key plays and moments",
+        "Video highlights"
+      ],
+      "use_case": "Validation dataset for greatest games algorithm"
+    },
+    {
+      "id": "5.3",
+      "name": "NFL's Greatest Games Database (Fandom)",
+      "category": "Historical/Greatest Games Data",
+      "type": "Community Wiki",
+      "cost": "Free",
+      "authentication": "None",
+      "status": "📋 Available",
+      "github": null,
+      "pypi": null,
+      "url": "https://americanfootballdatabase.fandom.com/wiki/NFL's_Greatest_Games",
+      "coverage": "All-time",
+      "data_scope": "historical",
+      "update_frequency": "Community-maintained",
+      "data_provided": [
+        "Detailed write-ups of classic games",
+        "Historical context",
+        "Game statistics",
+        "Narrative descriptions",
+        "Cultural significance"
+      ],
+      "use_case": "Supplementary historical context for greatest games"
+    },
+    {
+      "id": "5.4",
+      "name": "nfelo App",
+      "category": "Historical/Greatest Games Data",
+      "type": "Free Website",
+      "cost": "Free",
+      "authentication": "None",
+      "status": "⭐ MEDIUM PRIORITY - Should Add",
+      "github": null,
+      "pypi": null,
+      "url": "https://www.nfeloapp.com/nfl-power-ratings/",
+      "coverage": "Historical Elo ratings",
+      "data_scope": "both",
+      "update_frequency": "Weekly during season",
+      "data_provided": [
+        "Historical and live Elo-based power ratings",
+        "EPA metrics",
+        "Game-level impact scores",
+        "Team strength rankings",
+        "Upset probability calculations"
+      ],
+      "use_case": "Enhanced stakes multiplier based on team strength differential"
+    },
+    {
+      "id": "5.5",
+      "name": "Neil Paine's NFL Elo Ratings",
+      "category": "Historical/Greatest Games Data",
+      "type": "Free Substack Publication",
+      "cost": "Free",
+      "authentication": "None",
+      "status": "📋 Available",
+      "github": null,
+      "pypi": null,
+      "url": "https://neilpaine.substack.com/p/2024-nfl-elo-ratings-and-projections",
+      "coverage": "Historical Elo data",
+      "data_scope": "both",
+      "update_frequency": "Seasonal",
+      "data_provided": [
+        "Custom Elo projections",
+        "Historical Elo values for every team and season",
+        "Playoff probability calculations",
+        "Strength of schedule metrics"
+      ],
+      "use_case": "Alternative Elo source for team strength analysis"
+    },
+    {
+      "id": "5.6",
+      "name": "NFL Big Data Bowl",
+      "category": "Historical/Greatest Games Data",
+      "type": "Annual Competition (Official NFL)",
+      "cost": "Free (public datasets)",
+      "authentication": "None",
+      "status": "📋 Reference",
+      "github": null,
+      "pypi": null,
+      "url": "https://operations.nfl.com/gameday/analytics/big-data-bowl/",
+      "coverage": "Player tracking data",
+      "data_scope": "historical",
+      "update_frequency": "Annual competition",
+      "data_provided": [
+        "Player-tracking data",
+        "Analytics code and innovations",
+        "Tracking data (speed, acceleration, positioning)",
+        "Competition datasets"
+      ],
+      "use_case": "Research and modeling for excitement metrics"
+    },
+    {
+      "id": "5.7",
+      "name": "Next Gen Stats Highlights (GitHub)",
+      "category": "Historical/Greatest Games Data",
+      "type": "Open Source Dataset",
+      "cost": "Free",
+      "authentication": "None",
+      "status": "📋 Available",
+      "github": "https://github.com/asonty/ngs_highlights",
+      "pypi": null,
+      "url": null,
+      "coverage": "Next Gen Stats highlight plays",
+      "data_scope": "historical",
+      "update_frequency": "Archived project",
+      "data_provided": [
+        "Player-tracking highlights dataset",
+        "Visualizations",
+        "Animation utilities",
+        "NGS metrics on key plays"
+      ],
+      "use_case": "Highlight reel analysis and iconic play detection"
+    },
+    {
+      "id": "5.8",
+      "name": "FiveThirtyEight NFL Fandom Dataset",
+      "category": "Historical/Greatest Games Data",
+      "type": "Free Dataset (Kaggle)",
+      "cost": "Free",
+      "authentication": "None (Kaggle account)",
+      "status": "⏸️ LOW PRIORITY",
+      "github": null,
+      "pypi": null,
+      "url": "https://www.kaggle.com/datasets/fivethirtyeight/fivethirtyeight-nfl-fandom-dataset",
+      "coverage": "Fan behavior data",
+      "data_scope": "historical",
+      "update_frequency": "Static dataset",
+      "data_provided": [
+        "Fan behavior by team markets",
+        "Political lean by fanbase",
+        "Engagement metrics",
+        "Market size proxies"
+      ],
+      "use_case": "Cultural impact weighting for viewership proxy"
+    },
+    {
+      "id": "5.9",
+      "name": "Twitter Sentiment Analysis (Academic)",
+      "category": "Historical/Greatest Games Data",
+      "type": "Research Paper / Academic Resource",
+      "cost": "Free (academic access)",
+      "authentication": "None",
+      "status": "📋 Reference",
+      "github": null,
+      "pypi": null,
+      "url": "https://www.sciencedirect.com/science/article/abs/pii/S0167923617300775",
+      "coverage": "Research methodology",
+      "data_scope": "historical",
+      "update_frequency": "Published research",
+      "data_provided": [
+        "Research on correlating NFL fan tweets to game outcomes",
+        "Public sentiment analysis methodology",
+        "Social media engagement patterns"
+      ],
+      "use_case": "Future: Real-time sentiment analysis for cultural impact"
+    },
+    {
+      "id": "5.10",
+      "name": "Action Network - Moodiest NFL Fans Report",
+      "category": "Historical/Greatest Games Data",
+      "type": "Free Report",
+      "cost": "Free",
+      "authentication": "None",
+      "status": "📋 Available",
+      "github": null,
+      "pypi": null,
+      "url": "https://www.actionnetwork.com/nfl/moodiest-nfl-fans-2024-25",
+      "coverage": "2024-25 season",
+      "data_scope": "current",
+      "update_frequency": "Seasonal report",
+      "data_provided": [
+        "Aggregated social sentiment scores by fanbase",
+        "Fan mood analysis",
+        "Engagement metrics across season"
+      ],
+      "use_case": "Current season cultural impact metrics"
+    },
+    {
+      "id": "5.11",
+      "name": "Kaggle - NFL Game Scores Dataset",
+      "category": "Historical/Greatest Games Data",
+      "type": "Free Dataset (Kaggle)",
+      "cost": "Free",
+      "authentication": "None (Kaggle account)",
+      "status": "📋 Available (Supplementary)",
+      "github": null,
+      "pypi": null,
+      "url": "https://www.kaggle.com/datasets/keonim/nfl-game-scores-dataset-2017-2023",
+      "coverage": "2017-2025",
+      "data_scope": "historical",
+      "update_frequency": "Periodic updates",
+      "data_provided": [
+        "CSV dataset with scores",
+        "Drives data",
+        "Key events",
+        "Play summaries"
+      ],
+      "use_case": "Historical backfill if needed (already covered by nflverse)"
+    },
+    {
+      "id": "5.12",
+      "name": "Gracenote Sports Metadata",
+      "category": "Historical/Greatest Games Data",
+      "type": "Enterprise Service",
+      "cost": "Enterprise pricing",
+      "authentication": "API Key",
+      "status": "📋 Researched (Not needed)",
+      "github": null,
+      "pypi": null,
+      "url": "https://gracenote.com/insights/metadata-is-the-key-to-compelling-fan-experiences-as-sports-migrate-to-streaming",
+      "coverage": "Broadcast metadata",
+      "data_scope": "both",
+      "update_frequency": "Real-time",
+      "data_provided": [
+        "Broadcast-level metadata for sporting events",
+        "Viewership data",
+        "Engagement metrics",
+        "Streaming analytics"
+      ],
+      "use_case": "Would provide viewership data but enterprise pricing prohibitive"
+    },
+    {
+      "id": "5.13",
+      "name": "EV Analytics NFL ATS Data",
+      "category": "Historical/Greatest Games Data",
+      "type": "Free Website",
+      "cost": "Free",
+      "authentication": "None",
+      "status": "📋 Available",
+      "github": null,
+      "pypi": null,
+      "url": "https://evanalytics.com/nfl/stats/1h-spread",
+      "coverage": "Historical betting trends",
+      "data_scope": "both",
+      "update_frequency": "Weekly during season",
+      "data_provided": [
+        "Historical spread data",
+        "Total (over/under) data",
+        "Line movement tracking",
+        "ATS (Against The Spread) trends"
+      ],
+      "use_case": "Alternative source for historical betting lines"
     }
   ],
   "summary": {
     "by_status": {
       "active": 4,
-      "need_to_add": 1,
+      "need_to_add": 2,
       "optional": 2,
-      "researched": 26
+      "need_to_investigate": 1,
+      "researched": 37
     },
     "by_data_scope": {
-      "both": 24,
-      "current": 8,
-      "historical": 1
+      "both": 29,
+      "current": 10,
+      "historical": 7
     },
     "by_category": {
       "core_apis": 6,
       "premium_enterprise": 12,
       "free_low_cost": 8,
-      "premium_stats_sites": 7
-    }
+      "premium_stats_sites": 7,
+      "historical_greatest_games": 13
+    },
+    "total_sources": 46
   }
 }

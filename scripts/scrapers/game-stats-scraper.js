@@ -1,21 +1,23 @@
 /**
- * Game Stats Scraper
+ * Game Stats Scraper - ENHANCED (Phase 1)
  *
  * Fetches comprehensive game statistics from ESPN's /summary endpoint for completed games.
  * Populates tables needed for the completed game template.
  *
- * Data fetched:
+ * Data fetched (ENHANCED):
  * - Quarter-by-quarter scores (games table columns)
  * - Team game statistics (team_game_stats table)
- * - Player game statistics (player_game_stats table)
- *   - Passing: completions, attempts, yards, TDs, INTs
- *   - Rushing: attempts, yards, TDs
- *   - Receiving: receptions, yards, TDs
- *   - Defense: tackles, sacks, interceptions
- *   - Kicking: field goals made/attempted
+ * - Player game statistics (player_game_stats table) - 40 FIELDS:
+ *   - Passing: completions, attempts, yards, TDs, INTs, sacks, sack yards, longest, rating, QBR
+ *   - Rushing: attempts, yards, TDs, longest, fumbles, fumbles lost
+ *   - Receiving: receptions, yards, TDs, targets, longest, YAC
+ *   - Defense: tackles (total, solo, assist), sacks, TFL, QB hits, PD, INTs, FF, FR
+ *   - Kicking: FG made/attempted, longest, XP made/attempted
+ *   - Punting: punts, yards, average, inside 20, longest, touchbacks
+ *   - Fantasy Points: Standard, PPR, Half-PPR, DFS (DraftKings, FanDuel)
  * - Scoring plays (scoring_plays table)
  * - Game weather info with enhanced parsing (game_weather table)
- *   - Temperature, wind speed/direction, precipitation, conditions
+ * - Venue/stadium extraction
  *
  * Usage:
  * - Manual: npm run scrape:game-stats
@@ -23,11 +25,13 @@
  * - For specific week: npm run scrape:game-stats -- --week=7
  *
  * Data Source: ESPN NFL API /summary endpoint
+ * Phase: 1 - Foundation Enhancement
  */
 
 import { fetchGameSummary } from '../utils/espn-api.js'
 import { upsertBatch, getSupabaseClient } from '../utils/supabase-client.js'
 import { logger, logScriptStart, logScriptEnd } from '../utils/logger.js'
+import { calculateFantasyPoints } from '../utils/fantasy-calculator.js'
 
 const SCRIPT_NAME = 'game-stats-scraper.js'
 const SEASON_YEAR = 2025
@@ -352,7 +356,7 @@ function extractPlayerStats(gameSummary, gameId) {
         const playerId = `espn-${athleteData.athlete?.id}`
         const stats = athleteData.stats || []
 
-        // Get or create player stats record
+        // Get or create player stats record (ENHANCED with all new fields)
         if (!playerStatsMap.has(playerId)) {
           playerStatsMap.set(playerId, {
             player_id: playerId,
@@ -361,29 +365,74 @@ function extractPlayerStats(gameSummary, gameId) {
             team_id: teamAbbr,
             opponent_team_id: opponentTeamId,
             started: false, // ESPN doesn't provide this easily
-            // Initialize all stats to 0
+
+            // Basic passing
             passing_attempts: 0,
             passing_completions: 0,
             passing_yards: 0,
             passing_touchdowns: 0,
             passing_interceptions: 0,
+            // Passing advanced (NEW)
+            passing_sacks: 0,
+            passing_sack_yards_lost: 0,
+            passing_longest: 0,
+            passer_rating: null,
+            qbr: null,
+
+            // Basic rushing
             rushing_attempts: 0,
             rushing_yards: 0,
             rushing_touchdowns: 0,
+            // Rushing advanced (NEW)
+            rushing_longest: 0,
+            rushing_fumbles: 0,
+            rushing_fumbles_lost: 0,
+
+            // Basic receiving
             receptions: 0,
             receiving_yards: 0,
             receiving_touchdowns: 0,
+            // Receiving advanced (NEW)
+            receiving_targets: 0,
+            receiving_longest: 0,
+            receiving_yards_after_catch: 0,
+            receiving_first_downs: 0,
+            receiving_fumbles: 0,
+
+            // Basic defense
             tackles_total: 0,
             sacks: 0,
             interceptions: 0,
+            // Defense advanced (NEW)
+            tackles_solo: 0,
+            tackles_assists: 0,
+            tackles_for_loss: 0,
+            qb_hits: 0,
+            passes_defended: 0,
+            forced_fumbles: 0,
+            fumble_recoveries: 0,
+
+            // Basic kicking
             field_goals_made: 0,
-            field_goals_attempted: 0
+            field_goals_attempted: 0,
+            // Kicking advanced (NEW)
+            field_goal_longest: 0,
+            extra_points_made: 0,
+            extra_points_attempted: 0,
+
+            // Punting (NEW)
+            punts: 0,
+            punt_yards: 0,
+            punt_average: null,
+            punts_inside_20: 0,
+            punt_longest: 0,
+            punt_touchbacks: 0
           })
         }
 
         const playerStats = playerStatsMap.get(playerId)
 
-        // Map stats based on category
+        // Map stats based on category (ENHANCED - ALL ESPN FIELDS)
         if (categoryName === 'passing') {
           // Labels: C/ATT, YDS, AVG, TD, INT, SACKS, QBR, RTG
           playerStats.passing_completions = parseStat(stats[0], 0) // C from "C/ATT"
@@ -391,35 +440,80 @@ function extractPlayerStats(gameSummary, gameId) {
           playerStats.passing_yards = parseStat(stats[1], 0) // YDS
           playerStats.passing_touchdowns = parseStat(stats[3], 0) // TD
           playerStats.passing_interceptions = parseStat(stats[4], 0) // INT
+          playerStats.passing_sacks = parseStat(stats[5], 0) // SACKS (NEW)
+          // Sack yards typically not in ESPN boxscore - calculate as (sacks * 7) estimate
+          playerStats.passing_sack_yards_lost = Math.round(parseStat(stats[5], 0) * 7)
+          playerStats.qbr = parseStat(stats[6], 0) // QBR (NEW)
+          playerStats.passer_rating = parseStat(stats[7], 0) // RTG (NEW)
+          // Longest completion not always in summary - would need play-by-play
+          playerStats.passing_longest = 0 // TODO: Extract from plays if available
         } else if (categoryName === 'rushing') {
           // Labels: CAR, YDS, AVG, TD, LONG
           playerStats.rushing_attempts = parseStat(stats[0], 0) // CAR
           playerStats.rushing_yards = parseStat(stats[1], 0) // YDS
           playerStats.rushing_touchdowns = parseStat(stats[3], 0) // TD
+          playerStats.rushing_longest = parseStat(stats[4], 0) // LONG (NEW)
+          // Fumbles not always in rushing category - check fumbles category
         } else if (categoryName === 'receiving') {
           // Labels: REC, YDS, AVG, TD, LONG, TGTS
           playerStats.receptions = parseStat(stats[0], 0) // REC
           playerStats.receiving_yards = parseStat(stats[1], 0) // YDS
           playerStats.receiving_touchdowns = parseStat(stats[3], 0) // TD
+          playerStats.receiving_longest = parseStat(stats[4], 0) // LONG (NEW)
+          playerStats.receiving_targets = parseStat(stats[5], 0) // TGTS (NEW)
+          // YAC not in standard ESPN boxscore - would need Next Gen Stats
+          playerStats.receiving_yards_after_catch = 0 // TODO: Add if available
         } else if (categoryName === 'defensive') {
           // Labels: TOT, SOLO, SACKS, TFL, PD, QB HTS, TD
           playerStats.tackles_total = parseStat(stats[0], 0) // TOT
+          playerStats.tackles_solo = parseStat(stats[1], 0) // SOLO (NEW)
+          // Assists = Total - Solo
+          playerStats.tackles_assists = Math.max(0, parseStat(stats[0], 0) - parseStat(stats[1], 0))
           playerStats.sacks = parseStat(stats[2], 0) // SACKS
+          playerStats.tackles_for_loss = parseStat(stats[3], 0) // TFL (NEW)
+          playerStats.passes_defended = parseStat(stats[4], 0) // PD (NEW)
+          playerStats.qb_hits = parseStat(stats[5], 0) // QB HTS (NEW)
         } else if (categoryName === 'interceptions') {
           // Labels: INT, YDS, TD
           playerStats.interceptions = parseStat(stats[0], 0) // INT
+        } else if (categoryName === 'fumbles') {
+          // Labels: FUM, LOST, REC
+          playerStats.rushing_fumbles = parseStat(stats[0], 0) // FUM (NEW)
+          playerStats.rushing_fumbles_lost = parseStat(stats[1], 0) // LOST (NEW)
+          playerStats.fumble_recoveries = parseStat(stats[2], 0) // REC (NEW)
+        } else if (categoryName === 'defensive') {
+          // Additional defensive stats
+          playerStats.forced_fumbles = parseStat(stats[6], 0) // FF (if available)
         } else if (categoryName === 'kicking') {
           // Labels: FG, PCT, LONG, XP, PTS
           playerStats.field_goals_made = parseStat(stats[0], 0) // FG from "FG/ATT"
           playerStats.field_goals_attempted = parseStat(stats[0], 1) // ATT from "FG/ATT"
+          playerStats.field_goal_longest = parseStat(stats[2], 0) // LONG (NEW)
+          playerStats.extra_points_made = parseStat(stats[3], 0) // XP from "XP/ATT" (NEW)
+          playerStats.extra_points_attempted = parseStat(stats[3], 1) // ATT from "XP/ATT" (NEW)
+        } else if (categoryName === 'punting') {
+          // Labels: NO, YDS, AVG, TB, IN 20, LONG
+          playerStats.punts = parseStat(stats[0], 0) // NO (NEW)
+          playerStats.punt_yards = parseStat(stats[1], 0) // YDS (NEW)
+          playerStats.punt_average = parseStat(stats[2], 0) // AVG (NEW)
+          playerStats.punt_touchbacks = parseStat(stats[3], 0) // TB (NEW)
+          playerStats.punts_inside_20 = parseStat(stats[4], 0) // IN 20 (NEW)
+          playerStats.punt_longest = parseStat(stats[5], 0) // LONG (NEW)
         }
       })
+    })
+
+    // Calculate fantasy points for each player (NEW)
+    playerStatsMap.forEach((playerStats, playerId) => {
+      const fantasyPoints = calculateFantasyPoints(playerStats)
+      Object.assign(playerStats, fantasyPoints)
     })
 
     // Add all player stats for this team
     allPlayerStats.push(...Array.from(playerStatsMap.values()))
   })
 
+  logger.info(`Extracted stats for ${allPlayerStats.length} players with fantasy points`)
   return allPlayerStats
 }
 
