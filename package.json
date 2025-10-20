@@ -20,6 +20,7 @@
     "scrape:top-100-games": "node scripts/scrapers/nfl-top-100-games-scraper.js",
     "scrape:historical-betting": "node scripts/scrapers/historical-betting-scraper.js",
     "scrape:elo-ratings": "node scripts/scrapers/elo-ratings-scraper.js",
+    "aggregate:weekly": "node scripts/aggregators/weekly-aggregation.js",
     "scheduler": "node scripts/scheduler.js",
     "test:db": "node scripts/utils/test-connection.js"
   },
