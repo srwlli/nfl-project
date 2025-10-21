@@ -81,8 +81,6 @@ function getOpponent(game, teamId) {
 async function calculateOpponentFactor(opponentId, statCategory, season, beforeWeek) {
   try {
     // Get opponent's defensive stats for the season (before current week)
-    // NOTE: team_game_stats has total_yards_allowed but not passing/rushing breakdown
-    // So we use total_yards_allowed as a general defensive efficiency metric
     const { data: opponentGames } = await supabase
       .from('team_game_stats')
       .select('game_id, total_yards_allowed')
@@ -144,12 +142,22 @@ async function calculateOpponentFactor(opponentId, statCategory, season, beforeW
       return 1.0
     }
 
-    // Calculate factor: opponent_avg / league_avg
+    // Calculate raw factor: opponent_avg / league_avg
     // Higher yards allowed = easier matchup (weaker defense) = factor > 1
     const rawFactor = opponentAvg / leagueAvg
 
+    // Phase 2.1 (V2): Bayesian shrinkage for small samples
+    // Regress toward league average (1.0) when sample size < 4 games
+    const minSampleSize = 4
+    let adjustedFactor = rawFactor
+
+    if (filteredGames.length < minSampleSize) {
+      const weight = filteredGames.length / minSampleSize
+      adjustedFactor = (rawFactor * weight) + (1.0 * (1 - weight))
+    }
+
     // Cap factor between 0.7 (tough defense) and 1.3 (weak defense)
-    const cappedFactor = Math.min(1.3, Math.max(0.7, rawFactor))
+    const cappedFactor = Math.min(1.3, Math.max(0.7, adjustedFactor))
 
     return Math.round(cappedFactor * 100) / 100
   } catch (error) {
@@ -205,13 +213,15 @@ async function calculateEnvironmentModifier(gameId, season) {
     }
 
     // Get weather data (if available)
-    const { data: weather } = await supabase
+    // NOTE: game_weather table may not exist - this is expected
+    const { data: weather, error: weatherError } = await supabase
       .from('game_weather')
       .select('temperature, wind_speed, conditions')
       .eq('game_id', gameId)
       .single()
 
-    if (weather) {
+    // Skip weather modifiers if table doesn't exist
+    if (weather && !weatherError) {
       // High wind penalty
       if (weather.wind_speed && weather.wind_speed > 15) {
         weatherModifier *= CONFIG.weather_penalties.high_wind
@@ -448,6 +458,7 @@ async function calculateTeamFloors(players, teamId, opponentId, week, season, en
       .eq('status', 'final'), // Phase 1.2: Only use completed games
 
     // Phase 3.4: Fetch injury status for current week
+    // NOTE: player_injury_status table may be empty or not exist - this is expected
     supabase
       .from('player_injury_status')
       .select('player_id, injury_status, injury_type')
@@ -458,7 +469,8 @@ async function calculateTeamFloors(players, teamId, opponentId, week, season, en
 
   const allStats = statsResult.data || []
   const allGames = gamesResult.data || []
-  const injuries = injuryResult.data || []
+  // If injury table doesn't exist or is empty, default to empty array (all players healthy)
+  const injuries = (injuryResult.data && !injuryResult.error) ? injuryResult.data : []
 
   // Create lookup maps
   const weekMap = new Map(allGames.map(g => [g.game_id, g.week]))
