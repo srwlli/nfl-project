@@ -1,0 +1,459 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2025-10-20T02:40:03.616Z",
+  "source": "Live database query via generate-schema-map.js",
+  "database": "fuzouuxhxluqjmiyabal",
+  "purpose": "Universal schema reference for all scripts - always verify column names here first",
+  "last_verified": "2025-10-20",
+  "total_tables": 18,
+  "total_columns": 248,
+
+  "critical_warnings": {
+    "receptions": "Column is 'receptions' NOT 'receiving_receptions' in player_game_stats",
+    "primary_position": "Column is 'primary_position' NOT 'position' in players table",
+    "team_abbr": "Column is 'team_abbr' NOT 'abbreviation' in teams table"
+  },
+
+  "tables": {
+    "teams": {
+      "description": "NFL team information",
+      "row_count": "33 (includes WSH/WAS alias)",
+      "primary_key": "team_id",
+      "columns": {
+        "team_id": { "type": "string", "example": "ARI", "nullable": false },
+        "team_name": { "type": "string", "example": "Arizona Cardinals", "nullable": false },
+        "team_abbr": { "type": "string", "example": "ARI", "nullable": false, "warning": "NOT 'abbreviation'" },
+        "city": { "type": "string", "example": "Arizona", "nullable": false },
+        "conference": { "type": "string", "example": "NFC", "nullable": false },
+        "division": { "type": "string", "example": "West", "nullable": false },
+        "founded_year": { "type": "number", "example": 1920, "nullable": false },
+        "stadium_id": { "type": "string", "example": "state-farm-stadium", "nullable": true },
+        "primary_color": { "type": "string", "example": "#97233F", "nullable": false },
+        "secondary_color": { "type": "string", "example": "#000000", "nullable": false },
+        "logo_url": { "type": "string", "example": "https://a.espncdn.com/i/teamlogos/nfl/500/ari.png", "nullable": false },
+        "franchise_history": { "type": "string", "example": null, "nullable": true },
+        "is_active": { "type": "boolean", "example": true, "nullable": false },
+        "created_at": { "type": "timestamp", "nullable": false },
+        "updated_at": { "type": "timestamp", "nullable": false },
+        "deleted_at": { "type": "timestamp", "nullable": true }
+      },
+      "common_queries": [
+        ".select('team_id, team_name, team_abbr')",
+        ".select('team_id, conference, division')"
+      ]
+    },
+
+    "players": {
+      "description": "NFL player profiles and information",
+      "row_count": "2,540+ active players",
+      "primary_key": "player_id",
+      "columns": {
+        "player_id": { "type": "string", "example": "espn-5084939", "nullable": false },
+        "first_name": { "type": "string", "example": "Isaiah", "nullable": false },
+        "last_name": { "type": "string", "example": "Adams", "nullable": false },
+        "full_name": { "type": "string", "example": "Isaiah Adams", "nullable": false },
+        "primary_position": { "type": "string", "example": "QB", "nullable": false, "warning": "NOT 'position'" },
+        "secondary_positions": { "type": "array", "example": null, "nullable": true },
+        "jersey_number": { "type": "number", "example": 74, "nullable": true },
+        "height_inches": { "type": "number", "example": 76, "nullable": true },
+        "weight_lbs": { "type": "number", "example": 315, "nullable": true },
+        "birth_date": { "type": "date", "example": "2000-07-21", "nullable": true },
+        "birth_city": { "type": "string", "example": null, "nullable": true },
+        "birth_state": { "type": "string", "example": null, "nullable": true },
+        "birth_country": { "type": "string", "example": null, "nullable": true },
+        "college": { "type": "string", "example": "Illinois", "nullable": true },
+        "high_school": { "type": "string", "example": null, "nullable": true },
+        "draft_year": { "type": "number", "example": null, "nullable": true },
+        "draft_round": { "type": "number", "example": null, "nullable": true },
+        "draft_pick": { "type": "number", "example": null, "nullable": true },
+        "draft_team_id": { "type": "string", "example": null, "nullable": true },
+        "undrafted": { "type": "boolean", "example": false, "nullable": false },
+        "rookie_year": { "type": "number", "example": null, "nullable": true },
+        "final_year": { "type": "number", "example": null, "nullable": true },
+        "hof_inducted": { "type": "boolean", "example": false, "nullable": false },
+        "hof_induction_year": { "type": "number", "example": null, "nullable": true },
+        "status": { "type": "string", "example": "active", "nullable": false },
+        "headshot_url": { "type": "string", "nullable": true },
+        "profile_url": { "type": "string", "nullable": true },
+        "metadata": { "type": "jsonb", "nullable": true },
+        "created_at": { "type": "timestamp", "nullable": false },
+        "updated_at": { "type": "timestamp", "nullable": false },
+        "deleted_at": { "type": "timestamp", "nullable": true }
+      },
+      "common_queries": [
+        ".select('player_id, full_name, primary_position')",
+        ".in('primary_position', ['QB', 'RB', 'WR', 'TE'])"
+      ]
+    },
+
+    "games": {
+      "description": "NFL game schedule and results with quarter scores",
+      "row_count": "272 (full 2025 season)",
+      "primary_key": ["game_id", "season"],
+      "columns": {
+        "game_id": { "type": "string", "example": "espn-401772941", "nullable": false },
+        "season": { "type": "number", "example": 2025, "nullable": false },
+        "week": { "type": "number", "example": 7, "nullable": false },
+        "game_type": { "type": "string", "example": "regular", "nullable": false },
+        "game_date": { "type": "date", "example": "2025-10-17", "nullable": false },
+        "game_time": { "type": "time", "example": "00:15:00", "nullable": false },
+        "home_team_id": { "type": "string", "example": "CIN", "nullable": false },
+        "away_team_id": { "type": "string", "example": "PIT", "nullable": false },
+        "home_score": { "type": "number", "example": 33, "nullable": true },
+        "away_score": { "type": "number", "example": 31, "nullable": true },
+        "status": { "type": "string", "example": "final", "nullable": false },
+        "stadium_id": { "type": "string", "example": "espn-3874", "nullable": true },
+        "attendance": { "type": "number", "example": 66569, "nullable": true },
+        "duration_minutes": { "type": "number", "example": null, "nullable": true },
+        "overtime": { "type": "boolean", "example": false, "nullable": false },
+        "playoff_round": { "type": "string", "example": null, "nullable": true },
+        "weather_id": { "type": "string", "example": null, "nullable": true },
+        "broadcast_network": { "type": "string", "example": "Prime Video", "nullable": true },
+        "home_q1_score": { "type": "number", "example": 0, "nullable": true },
+        "home_q2_score": { "type": "number", "example": 0, "nullable": true },
+        "home_q3_score": { "type": "number", "example": 0, "nullable": true },
+        "home_q4_score": { "type": "number", "example": 0, "nullable": true },
+        "home_ot_score": { "type": "number", "example": 0, "nullable": true },
+        "away_q1_score": { "type": "number", "example": 0, "nullable": true },
+        "away_q2_score": { "type": "number", "example": 0, "nullable": true },
+        "away_q3_score": { "type": "number", "example": 0, "nullable": true },
+        "away_q4_score": { "type": "number", "example": 0, "nullable": true },
+        "away_ot_score": { "type": "number", "example": 0, "nullable": true },
+        "created_at": { "type": "timestamp", "nullable": false },
+        "updated_at": { "type": "timestamp", "nullable": false },
+        "deleted_at": { "type": "timestamp", "nullable": true }
+      },
+      "common_queries": [
+        ".select('game_id, week, home_team_id, away_team_id, status')",
+        ".eq('season', 2025).eq('week', 7).eq('status', 'scheduled')"
+      ]
+    },
+
+    "player_game_stats": {
+      "description": "Player performance statistics per game - MOST COMPLEX TABLE",
+      "row_count": "3,817+ (69 per game average)",
+      "primary_key": ["player_game_id"],
+      "composite_key": ["player_id", "game_id", "season"],
+      "used_by_scripts": [
+        "calculate-performance-floors.js",
+        "calculate-performance-floors-props.js",
+        "game-stats-scraper.js",
+        "weekly-aggregation.js"
+      ],
+      "columns": {
+        "player_game_id": { "type": "number", "example": 70, "nullable": false, "note": "Auto-increment primary key" },
+        "player_id": { "type": "string", "example": "espn-8439", "nullable": false },
+        "game_id": { "type": "string", "example": "espn-401772941", "nullable": false },
+        "season": { "type": "number", "example": 2025, "nullable": false },
+        "team_id": { "type": "string", "example": "PIT", "nullable": false },
+        "opponent_team_id": { "type": "string", "example": "CIN", "nullable": false },
+        "started": { "type": "boolean", "example": false, "nullable": false },
+
+        "passing_attempts": { "type": "number", "example": 34, "nullable": true },
+        "passing_completions": { "type": "number", "example": 23, "nullable": true },
+        "passing_yards": { "type": "number", "example": 249, "nullable": true },
+        "passing_touchdowns": { "type": "number", "example": 4, "nullable": true },
+        "passing_interceptions": { "type": "number", "example": 2, "nullable": true },
+        "passing_sacks": { "type": "number", "example": 0, "nullable": true },
+        "passing_sack_yards_lost": { "type": "number", "example": 0, "nullable": true },
+        "passing_longest": { "type": "number", "example": 0, "nullable": true },
+        "passer_rating": { "type": "number", "example": 103.7, "nullable": true },
+        "qbr": { "type": "number", "example": 76, "nullable": true },
+
+        "rushing_attempts": { "type": "number", "example": 1, "nullable": true },
+        "rushing_yards": { "type": "number", "example": 6, "nullable": true },
+        "rushing_touchdowns": { "type": "number", "example": 0, "nullable": true },
+        "rushing_longest": { "type": "number", "example": 6, "nullable": true },
+        "rushing_fumbles": { "type": "number", "example": 0, "nullable": true },
+        "rushing_fumbles_lost": { "type": "number", "example": 0, "nullable": true },
+        "rushing_yards_after_contact": { "type": "number", "example": 0, "nullable": true },
+
+        "receiving_targets": { "type": "number", "example": 0, "nullable": true },
+        "receptions": { "type": "number", "example": 0, "nullable": true, "warning": "NOT 'receiving_receptions'" },
+        "receiving_yards": { "type": "number", "example": 0, "nullable": true },
+        "receiving_touchdowns": { "type": "number", "example": 0, "nullable": true },
+        "receiving_longest": { "type": "number", "example": 0, "nullable": true },
+        "receiving_yards_after_catch": { "type": "number", "example": 0, "nullable": true },
+        "receiving_first_downs": { "type": "number", "example": 0, "nullable": true },
+        "receiving_fumbles": { "type": "number", "example": 0, "nullable": true },
+
+        "tackles_total": { "type": "number", "example": 0, "nullable": true },
+        "tackles_solo": { "type": "number", "example": 0, "nullable": true },
+        "tackles_assists": { "type": "number", "example": 0, "nullable": true },
+        "tackles_for_loss": { "type": "number", "example": 0, "nullable": true },
+        "sacks": { "type": "number", "example": 0, "nullable": true },
+        "qb_hits": { "type": "number", "example": 0, "nullable": true },
+        "interceptions": { "type": "number", "example": 0, "nullable": true },
+        "passes_defended": { "type": "number", "example": 0, "nullable": true },
+        "forced_fumbles": { "type": "number", "example": 0, "nullable": true },
+        "fumble_recoveries": { "type": "number", "example": 0, "nullable": true },
+
+        "field_goals_made": { "type": "number", "example": 0, "nullable": true },
+        "field_goals_attempted": { "type": "number", "example": 0, "nullable": true },
+        "field_goal_longest": { "type": "number", "example": 0, "nullable": true },
+        "extra_points_made": { "type": "number", "example": 0, "nullable": true },
+        "extra_points_attempted": { "type": "number", "example": 0, "nullable": true },
+
+        "punts": { "type": "number", "example": 0, "nullable": true },
+        "punt_yards": { "type": "number", "example": 0, "nullable": true },
+        "punt_average": { "type": "number", "example": null, "nullable": true },
+        "punts_inside_20": { "type": "number", "example": 0, "nullable": true },
+        "punt_longest": { "type": "number", "example": 0, "nullable": true },
+        "punt_touchbacks": { "type": "number", "example": 0, "nullable": true },
+
+        "fantasy_points_standard": { "type": "number", "example": 22.56, "nullable": true },
+        "fantasy_points_ppr": { "type": "number", "example": 22.56, "nullable": true },
+        "fantasy_points_half_ppr": { "type": "number", "example": 22.56, "nullable": true },
+        "fantasy_points_dfs_dk": { "type": "number", "example": 24.56, "nullable": true },
+        "fantasy_points_dfs_fd": { "type": "number", "example": 24.56, "nullable": true },
+
+        "epa_total": { "type": "number", "example": null, "nullable": true },
+        "epa_pass": { "type": "number", "example": null, "nullable": true },
+        "epa_rush": { "type": "number", "example": null, "nullable": true },
+        "epa_receive": { "type": "number", "example": null, "nullable": true },
+        "success_rate": { "type": "number", "example": null, "nullable": true },
+        "cpoe": { "type": "number", "example": null, "nullable": true },
+
+        "snaps_played": { "type": "number", "example": 0, "nullable": true },
+        "snaps_total": { "type": "number", "example": 0, "nullable": true },
+        "snap_percentage": { "type": "number", "example": null, "nullable": true },
+        "routes_run": { "type": "number", "example": 0, "nullable": true },
+        "route_participation_pct": { "type": "number", "example": null, "nullable": true },
+        "red_zone_touches": { "type": "number", "example": 0, "nullable": true },
+        "red_zone_targets": { "type": "number", "example": 0, "nullable": true },
+        "end_zone_targets": { "type": "number", "example": 0, "nullable": true },
+
+        "created_at": { "type": "timestamp", "nullable": false },
+        "updated_at": { "type": "timestamp", "nullable": false },
+        "deleted_at": { "type": "timestamp", "nullable": true }
+      },
+      "stat_categories": {
+        "passing": ["passing_attempts", "passing_completions", "passing_yards", "passing_touchdowns", "passing_interceptions", "passing_sacks", "passing_sack_yards_lost", "passing_longest", "passer_rating", "qbr"],
+        "rushing": ["rushing_attempts", "rushing_yards", "rushing_touchdowns", "rushing_longest", "rushing_fumbles", "rushing_fumbles_lost", "rushing_yards_after_contact"],
+        "receiving": ["receiving_targets", "receptions", "receiving_yards", "receiving_touchdowns", "receiving_longest", "receiving_yards_after_catch", "receiving_first_downs", "receiving_fumbles"],
+        "defense": ["tackles_total", "tackles_solo", "tackles_assists", "tackles_for_loss", "sacks", "qb_hits", "interceptions", "passes_defended", "forced_fumbles", "fumble_recoveries"],
+        "kicking": ["field_goals_made", "field_goals_attempted", "field_goal_longest", "extra_points_made", "extra_points_attempted"],
+        "punting": ["punts", "punt_yards", "punt_average", "punts_inside_20", "punt_longest", "punt_touchbacks"],
+        "fantasy": ["fantasy_points_standard", "fantasy_points_ppr", "fantasy_points_half_ppr", "fantasy_points_dfs_dk", "fantasy_points_dfs_fd"],
+        "advanced": ["epa_total", "epa_pass", "epa_rush", "epa_receive", "success_rate", "cpoe", "snaps_played", "snaps_total", "snap_percentage", "routes_run", "route_participation_pct", "red_zone_touches", "red_zone_targets", "end_zone_targets"]
+      },
+      "common_queries": [
+        ".select('player_id, game_id, passing_yards, rushing_yards, receiving_yards, receptions')",
+        ".eq('player_id', playerId).eq('season', 2025)",
+        ".eq('team_id', teamId).eq('season', season)"
+      ]
+    },
+
+    "stadiums": {
+      "description": "NFL stadium information",
+      "row_count": "30 stadiums",
+      "primary_key": "stadium_id",
+      "columns": {
+        "stadium_id": { "type": "string", "example": "state-farm-stadium", "nullable": false },
+        "stadium_name": { "type": "string", "example": "State Farm Stadium", "nullable": false },
+        "city": { "type": "string", "example": "Glendale", "nullable": false },
+        "state": { "type": "string", "example": "AZ", "nullable": false },
+        "country": { "type": "string", "example": "USA", "nullable": false },
+        "capacity": { "type": "number", "example": 63400, "nullable": false },
+        "surface_type": { "type": "string", "example": "Grass", "nullable": false },
+        "roof_type": { "type": "string", "example": "Retractable", "nullable": false },
+        "opened_year": { "type": "number", "example": 2006, "nullable": false },
+        "closed_year": { "type": "number", "example": null, "nullable": true },
+        "latitude": { "type": "number", "example": 33.5276, "nullable": true },
+        "longitude": { "type": "number", "example": -112.2626, "nullable": true },
+        "elevation_feet": { "type": "number", "example": null, "nullable": true },
+        "is_active": { "type": "boolean", "example": true, "nullable": false },
+        "created_at": { "type": "timestamp", "nullable": false },
+        "updated_at": { "type": "timestamp", "nullable": false },
+        "deleted_at": { "type": "timestamp", "nullable": true }
+      }
+    },
+
+    "team_game_stats": {
+      "description": "Team-level statistics per game",
+      "row_count": "188 (2 per completed game)",
+      "primary_key": "team_game_stat_id",
+      "columns": {
+        "team_game_stat_id": { "type": "number", "nullable": false },
+        "team_id": { "type": "string", "nullable": false },
+        "game_id": { "type": "string", "nullable": false },
+        "season": { "type": "number", "nullable": false },
+        "is_home": { "type": "boolean", "nullable": false },
+        "points_scored": { "type": "number", "nullable": true },
+        "points_allowed": { "type": "number", "nullable": true },
+        "total_yards": { "type": "number", "nullable": true },
+        "total_yards_allowed": { "type": "number", "nullable": true },
+        "turnovers": { "type": "number", "nullable": true },
+        "turnovers_forced": { "type": "number", "nullable": true },
+        "time_of_possession_seconds": { "type": "number", "nullable": true },
+        "created_at": { "type": "timestamp", "nullable": false },
+        "updated_at": { "type": "timestamp", "nullable": false },
+        "deleted_at": { "type": "timestamp", "nullable": true }
+      }
+    },
+
+    "roster_transactions": {
+      "description": "Player roster moves (signings, releases)",
+      "row_count": "160 tracked transactions",
+      "primary_key": "transaction_id",
+      "columns": {
+        "transaction_id": { "type": "number", "nullable": false },
+        "player_id": { "type": "string", "nullable": false },
+        "team_id": { "type": "string", "nullable": false },
+        "transaction_type": { "type": "string", "example": "signed", "nullable": false },
+        "transaction_date": { "type": "date", "nullable": false },
+        "details": { "type": "string", "nullable": true },
+        "created_at": { "type": "timestamp", "nullable": false },
+        "updated_at": { "type": "timestamp", "nullable": false },
+        "deleted_at": { "type": "timestamp", "nullable": true }
+      }
+    },
+
+    "player_teams": {
+      "description": "Player-team relationships over time",
+      "row_count": "Active relationships tracked",
+      "primary_key": "player_team_id",
+      "columns": {
+        "player_team_id": { "type": "number", "nullable": false },
+        "player_id": { "type": "string", "nullable": false },
+        "team_id": { "type": "string", "nullable": false },
+        "start_season": { "type": "number", "nullable": false },
+        "end_season": { "type": "number", "nullable": true },
+        "jersey_number": { "type": "number", "nullable": true },
+        "created_at": { "type": "timestamp", "nullable": false },
+        "updated_at": { "type": "timestamp", "nullable": false },
+        "deleted_at": { "type": "timestamp", "nullable": true }
+      }
+    },
+
+    "scoring_plays": {
+      "description": "Play-by-play scoring events",
+      "row_count": "139 scoring plays tracked",
+      "primary_key": "scoring_play_id",
+      "columns": {
+        "scoring_play_id": { "type": "number", "nullable": false },
+        "game_id": { "type": "string", "nullable": false },
+        "play_id": { "type": "number", "nullable": false },
+        "season": { "type": "number", "nullable": false },
+        "team_id": { "type": "string", "nullable": false },
+        "quarter": { "type": "number", "nullable": false },
+        "time_remaining_seconds": { "type": "number", "nullable": false },
+        "scoring_type": { "type": "string", "example": "Field Goal Good", "nullable": false },
+        "points": { "type": "number", "nullable": false },
+        "description": { "type": "string", "nullable": false },
+        "created_at": { "type": "timestamp", "nullable": false },
+        "updated_at": { "type": "timestamp", "nullable": false },
+        "deleted_at": { "type": "timestamp", "nullable": true }
+      }
+    },
+
+    "team_season_stats": {
+      "description": "Team season-long statistics and standings",
+      "row_count": "32 teams per season",
+      "primary_key": "team_season_stat_id",
+      "columns": {
+        "team_season_stat_id": { "type": "number", "nullable": false },
+        "team_id": { "type": "string", "nullable": false },
+        "season": { "type": "number", "nullable": false },
+        "games_played": { "type": "number", "nullable": false },
+        "wins": { "type": "number", "nullable": false },
+        "losses": { "type": "number", "nullable": false },
+        "ties": { "type": "number", "nullable": false },
+        "win_percentage": { "type": "number", "nullable": false },
+        "points_for": { "type": "number", "nullable": false },
+        "points_against": { "type": "number", "nullable": false },
+        "point_differential": { "type": "number", "nullable": false },
+        "division_rank": { "type": "number", "nullable": false },
+        "conference_rank": { "type": "number", "nullable": false },
+        "created_at": { "type": "timestamp", "nullable": false },
+        "updated_at": { "type": "timestamp", "nullable": false },
+        "deleted_at": { "type": "timestamp", "nullable": true }
+      }
+    },
+
+    "game_betting_lines": {
+      "description": "Betting lines and odds",
+      "row_count": "Historical data available",
+      "primary_key": "betting_line_id",
+      "columns": {
+        "betting_line_id": { "type": "number", "nullable": false },
+        "game_id": { "type": "string", "nullable": false },
+        "season": { "type": "number", "nullable": false },
+        "bookmaker": { "type": "string", "example": "consensus", "nullable": false },
+        "market_type": { "type": "string", "example": "spread", "nullable": false },
+        "last_update": { "type": "timestamp", "nullable": false },
+        "data_source": { "type": "string", "example": "nflverse", "nullable": false },
+        "is_historical": { "type": "boolean", "nullable": false },
+        "spread_line": { "type": "number", "example": 1.5, "nullable": true },
+        "favorite_team_id": { "type": "string", "nullable": true },
+        "underdog_team_id": { "type": "string", "nullable": true },
+        "total_line": { "type": "number", "example": 34.5, "nullable": true },
+        "scraped_at": { "type": "timestamp", "nullable": false },
+        "created_at": { "type": "timestamp", "nullable": false },
+        "updated_at": { "type": "timestamp", "nullable": false },
+        "deleted_at": { "type": "timestamp", "nullable": true }
+      }
+    }
+  },
+
+  "empty_tables": {
+    "note": "These tables exist but have no data yet",
+    "tables": [
+      "play_by_play",
+      "game_weather",
+      "player_season_stats",
+      "spread_lines",
+      "moneyline_odds",
+      "over_under_lines",
+      "betting_results"
+    ]
+  },
+
+  "missing_tables": {
+    "note": "These tables don't exist in current schema",
+    "tables": [
+      "player_injury_status",
+      "weekly_leaders",
+      "season_cumulative_stats",
+      "hot_players"
+    ],
+    "reason": "May be views or different table names - verify with Supabase dashboard"
+  },
+
+  "usage_examples": {
+    "performance_floors": {
+      "script": "calculate-performance-floors.js",
+      "query_pattern": ".select('player_id, game_id, passing_yards, rushing_yards, receiving_yards, receptions, fantasy_points_ppr').eq('player_id', playerId).eq('season', season)"
+    },
+    "player_props": {
+      "script": "calculate-performance-floors-props.js",
+      "query_pattern": ".select('game_id, passing_yards, passing_touchdowns, rushing_yards, rushing_touchdowns, receiving_yards, receptions, receiving_touchdowns').eq('player_id', player.player_id).eq('season', season)"
+    },
+    "game_stats_scraper": {
+      "script": "game-stats-scraper.js",
+      "insert_pattern": "upsert to player_game_stats with all 75 columns"
+    }
+  },
+
+  "verification_queries": {
+    "get_all_columns": {
+      "description": "Get column names from any table",
+      "code": "const { data } = await supabase.from('TABLE_NAME').select('*').limit(1); console.log(Object.keys(data[0]));"
+    },
+    "count_records": {
+      "description": "Count total records in table",
+      "code": "const { count } = await supabase.from('TABLE_NAME').select('*', { count: 'exact', head: true });"
+    },
+    "sample_data": {
+      "description": "Get sample row with all fields",
+      "code": "const { data } = await supabase.from('TABLE_NAME').select('*').limit(1);"
+    }
+  },
+
+  "maintenance": {
+    "update_schema": "npm run schema:map",
+    "verify_migrations": "node scripts/check-migrations-applied.js",
+    "last_schema_update": "2025-10-20",
+    "update_frequency": "Weekly or after migrations"
+  }
+}

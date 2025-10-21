@@ -21,6 +21,9 @@
     "scrape:historical-betting": "node scripts/scrapers/historical-betting-scraper.js",
     "scrape:elo-ratings": "node scripts/scrapers/elo-ratings-scraper.js",
     "aggregate:weekly": "node scripts/aggregators/weekly-aggregation.js",
+    "floors": "node scripts/calculate-performance-floors.js",
+    "floors:props": "node scripts/calculate-performance-floors-props.js",
+    "schema:map": "node scripts/generate-schema-map.js",
     "scheduler": "node scripts/scheduler.js",
     "test:db": "node scripts/utils/test-connection.js"
   },
@@ -45,5 +48,8 @@
   },
   "engines": {
     "node": ">=20.0.0"
+  },
+  "devDependencies": {
+    "pg": "^8.16.3"
   }
 }

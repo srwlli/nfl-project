@@ -1,0 +1,254 @@
+{
+  "feature": "performance-floors-enhancements",
+  "created": "2025-10-21",
+  "status": "planning",
+  "purpose": "Comprehensive review-driven enhancements to calculate-performance-floors.js for improved accuracy and reliability",
+
+  "source_material": {
+    "review_file": "scripts/floor-improvements.md",
+    "review_type": "comprehensive_code_review",
+    "review_length": "500+ lines",
+    "current_implementation": "scripts/calculate-performance-floors.js",
+    "data_inventory": "AVAILABLE-DATA-INVENTORY.md"
+  },
+
+  "current_state": {
+    "script_status": "functional_but_limited",
+    "formula": "Expected = (season_avg * 0.4) + (recent_avg * 0.6)",
+    "floor_calculation": "Floor = Expected - (std_dev × volatility_factor)",
+    "limitations": [
+      "No opponent defensive efficiency modifier (O)",
+      "No game environment modifier (G)",
+      "Fixed 3-week rolling window",
+      "Static volatility_factor = 0.75",
+      "Missing advanced metrics (EPA, success_rate, QBR)",
+      "Sequential database queries (inefficient)",
+      "Simplistic confidence calculation",
+      "No data validation or completeness checks"
+    ]
+  },
+
+  "improvement_categories": [
+    {
+      "category": "Data Model Accuracy",
+      "priority": "high",
+      "improvements": [
+        "Use Phase 1 fields: passing_rating, qbr, epa_total, success_rate, red_zone_touches",
+        "Extend getStatCategories() for advanced metrics",
+        "Integrate EPA and success rate for confidence calibration"
+      ]
+    },
+    {
+      "category": "Formula Accuracy",
+      "priority": "critical",
+      "improvements": [
+        "Implement Opponent Defensive Efficiency (O) modifier",
+        "Implement Game Environment Modifier (G)",
+        "Use opportunity-based projections (attempts/targets → yards)",
+        "Add weighted recency with exponential decay",
+        "Apply Bayesian shrinkage for small samples"
+      ]
+    },
+    {
+      "category": "Statistical Robustness",
+      "priority": "high",
+      "improvements": [
+        "Dynamic volatility_factor by position (QB: 0.6, RB: 0.8, WR: 0.9, TE: 0.75)",
+        "Percentile-based floors (15th percentile) vs linear subtraction",
+        "Adaptive rolling window (QB: 4-5 weeks, RB: 2-3 weeks, WR/TE: 4 weeks)",
+        "Clamp floors to position-specific minimums",
+        "Outlier detection using modified Z-scores (>3.5)"
+      ]
+    },
+    {
+      "category": "Data Integration",
+      "priority": "high",
+      "improvements": [
+        "Query team_game_stats for opponent defensive metrics",
+        "Query stadiums for venue modifiers (turf vs grass, dome vs outdoor)",
+        "Query weather data for game environment",
+        "Use weekly_stat_leaders for normalization",
+        "Cross-validate with player_season_cumulative_stats"
+      ]
+    },
+    {
+      "category": "Query Efficiency",
+      "priority": "medium",
+      "improvements": [
+        "Batch Supabase requests with Promise.all()",
+        "Single joined query vs multiple roundtrips",
+        "Cache opponent defensive metrics",
+        "Add games.status = 'final' filter",
+        "Parallelize team calculations"
+      ]
+    },
+    {
+      "category": "Data Validation",
+      "priority": "medium",
+      "improvements": [
+        "Pre-calculation data completeness checks",
+        "Schema validation against AVAILABLE-DATA-INVENTORY.md",
+        "Cross-table integrity checks (team_game_stats vs player_game_stats)",
+        "Handle missing players with positional medians",
+        "Validate fantasy_points_ppr consistency"
+      ]
+    },
+    {
+      "category": "Edge Cases",
+      "priority": "medium",
+      "improvements": [
+        "Skip injured players (status = 'INJURED')",
+        "Handle bye weeks and postponed games",
+        "Null checks for division-by-zero",
+        "Handle returning injured players",
+        "Handle rookies with sparse data"
+      ]
+    },
+    {
+      "category": "Code Quality",
+      "priority": "low",
+      "improvements": [
+        "Convert to module pattern (export functions)",
+        "Add unit tests for calculateConfidence() and calculateStatFloor()",
+        "Split display concerns (CLI/UI agnostic)",
+        "Move CONFIG to separate file",
+        "Add structured JSON logging",
+        "Document formulas in detail"
+      ]
+    }
+  ],
+
+  "implementation_priority": {
+    "phase_1_critical": [
+      "Implement Opponent Defensive Efficiency (O)",
+      "Add games.status = 'final' filter",
+      "Batch database queries with Promise.all()",
+      "Dynamic volatility_factor by position"
+    ],
+    "phase_2_high_impact": [
+      "Implement Game Environment Modifier (G)",
+      "Opportunity-based projections",
+      "Adaptive rolling window",
+      "Percentile-based floors"
+    ],
+    "phase_3_refinement": [
+      "Integrate advanced metrics (EPA, QBR)",
+      "Bayesian shrinkage for small samples",
+      "Venue and weather modifiers",
+      "Data validation and completeness checks"
+    ],
+    "phase_4_polish": [
+      "Unit tests",
+      "Module pattern refactor",
+      "Structured logging",
+      "Documentation"
+    ]
+  },
+
+  "formula_enhancements": {
+    "current_formula": {
+      "expected": "(seasonAvg * 0.4) + (recentAvg * 0.6)",
+      "floor": "expected - (stdDev * volatility_factor)"
+    },
+    "proposed_formula": {
+      "opponent_factor": "opponent_avg_allowed / league_avg_allowed",
+      "venue_modifier": "1.03 for turf, 1.00 for grass (example)",
+      "expected": "((seasonAvg * season_weight) + (recentAvg * recent_weight)) × opponent_factor × venue_modifier",
+      "floor": "MAX(position_min, percentile_15(historical_outcomes))",
+      "alternative_floor": "expected - (weighted_stdDev * dynamic_volatility_factor)"
+    },
+    "opportunity_based": {
+      "step_1": "Project opportunity (attempts/targets)",
+      "step_2": "Calculate efficiency (yards_per_attempt)",
+      "step_3": "Final projection = projected_opportunity × efficiency"
+    }
+  },
+
+  "data_requirements": {
+    "new_queries": [
+      {
+        "purpose": "Opponent defensive efficiency",
+        "table": "team_game_stats",
+        "aggregation": "AVG(yards_allowed) grouped by team_id, stat_category"
+      },
+      {
+        "purpose": "League averages",
+        "table": "team_game_stats",
+        "aggregation": "AVG(yards_allowed) across all teams"
+      },
+      {
+        "purpose": "Venue modifiers",
+        "tables": ["games", "stadiums"],
+        "fields": ["surface_type", "roof_type", "home_team_id"]
+      },
+      {
+        "purpose": "Weather context",
+        "table": "game_weather",
+        "fields": ["temperature", "wind_speed", "precipitation"]
+      },
+      {
+        "purpose": "Position benchmarks",
+        "table": "weekly_stat_leaders",
+        "usage": "Normalize player performance against top performers"
+      }
+    ]
+  },
+
+  "testing_strategy": {
+    "validation_approach": "Compare floor predictions against actual Week 7 outcomes",
+    "accuracy_metrics": [
+      "floor_accuracy_rate: % of players who exceeded floor (target: 80-90%)",
+      "floor_conservatism: AVG((actual - floor) / std_dev) (target: 0.5-1.0 σ)",
+      "expected_accuracy: AVG(ABS(actual - expected) / actual) (target: <15%)"
+    ],
+    "test_cases": [
+      "High-variance WRs vs low-variance QBs",
+      "Favorable matchups (weak defense) vs tough matchups",
+      "Home vs away games",
+      "Dome vs outdoor venues",
+      "Players with 2-3 games vs 6+ games"
+    ]
+  },
+
+  "configuration_improvements": {
+    "move_to_config": {
+      "season_weight": 0.4,
+      "recent_weight": 0.6,
+      "rolling_window_weeks": "position_dependent",
+      "position_volatility": {
+        "QB": 0.6,
+        "RB": 0.8,
+        "WR": 0.9,
+        "TE": 0.75
+      },
+      "position_minimums": {
+        "QB_fantasy": 5.0,
+        "RB_rushing_yards": 5.0,
+        "WR_receiving_yards": 10.0,
+        "TE_receiving_yards": 5.0
+      },
+      "venue_modifiers": {
+        "turf": 1.03,
+        "grass": 1.00,
+        "dome": 1.02,
+        "outdoor": 1.00
+      }
+    }
+  },
+
+  "next_steps": [
+    "Create plan.json with detailed task breakdown",
+    "Implement Phase 1 critical improvements",
+    "Test against Week 7 actual results",
+    "Iterate based on accuracy metrics",
+    "Backfill Weeks 1-2 player stats (prerequisite)",
+    "Document new formula and configuration"
+  ],
+
+  "notes": {
+    "data_dependency": "Requires complete player_game_stats data for all weeks - currently missing Week 1-2 for 9 teams",
+    "backfill_needed": "CHI, DEN, DET, HOU, IND, KC, LAC, MIN, TB need Weeks 1-2 player stats",
+    "foreign_key_issues": "Some players in ESPN data not in players table - need roster update script",
+    "review_source": "Comprehensive review combines 8 separate improvement analyses"
+  }
+}

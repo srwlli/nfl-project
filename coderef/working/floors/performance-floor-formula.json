@@ -1,0 +1,516 @@
+{
+  "project": "nfl-performance-floor-estimation",
+  "version": "1.0.0",
+  "created": "2025-10-20",
+  "purpose": "Data science model to estimate conservative baseline (floor) for player performance using historical stats, opponent tendencies, and situational context",
+  "status": "design_phase",
+
+  "goal": {
+    "description": "Estimate a lower-bound projection (floor) for a given player's per-game stat (yards, receptions, carries, etc.) based on recent performance, opponent tendencies, and situational context",
+    "output_type": "conservative_baseline_projection",
+    "use_case": "analytical_forecast_only"
+  },
+
+  "model": {
+    "name": "Expected Performance with Floor Estimation",
+    "formula": {
+      "expected_performance": "(U × O × G × A) × (1 + F)",
+      "floor_estimate": "Expected Performance - (σ_player × Volatility Factor)",
+      "description": "Calculate expected performance using usage, opponent, game context, and trend adjustments, then apply volatility-based floor"
+    },
+
+    "variables": {
+      "U": {
+        "name": "Player Usage Baseline",
+        "description": "Player opportunity rate (attempts, targets, carries)",
+        "source": "player_game_stats",
+        "fields": ["passing_attempts", "rushing_attempts", "receiving_targets"]
+      },
+      "O": {
+        "name": "Opponent Defensive Efficiency Modifier",
+        "description": "How well the opponent defends against this position/stat",
+        "source": "team_game_stats (filtered by opponent)",
+        "fields": ["passing_yards_allowed", "rushing_yards_allowed", "yards_per_play_allowed"]
+      },
+      "G": {
+        "name": "Game Environment Modifier",
+        "description": "Pace, plays per game, possession time",
+        "source": "team_game_stats & games",
+        "fields": ["total_plays", "possession_time", "pace_factor"]
+      },
+      "A": {
+        "name": "Recent Trend Adjustment",
+        "description": "3-game rolling form (recent performance trend)",
+        "source": "player_game_stats (last 3 games rolling mean)",
+        "fields": ["rolling_avg_yards", "rolling_avg_targets"]
+      },
+      "F": {
+        "name": "Fatigue/Morale/Travel Factor",
+        "description": "Optional adjustment for player condition",
+        "source": "estimated constant (or derived from consecutive games played)",
+        "default": 0,
+        "optional": true
+      },
+      "σ_player": {
+        "name": "Player Standard Deviation",
+        "description": "Per-game variance for the target stat",
+        "source": "derived from player_game_stats",
+        "calculation": "STDDEV(stat_value) over season"
+      },
+      "volatility_factor": {
+        "name": "Volatility Factor",
+        "description": "Tuning constant for floor conservatism (lower = more conservative)",
+        "default": 0.75,
+        "range": [0.5, 1.0],
+        "configurable": true
+      }
+    }
+  },
+
+  "data_requirements": {
+    "tables_needed": [
+      "player_game_stats",
+      "team_game_stats",
+      "games",
+      "players",
+      "teams"
+    ],
+
+    "data_elements": [
+      {
+        "category": "player_historical_data",
+        "fields": [
+          "player_id",
+          "passing_yards",
+          "rushing_yards",
+          "receiving_yards",
+          "receiving_targets",
+          "rushing_attempts",
+          "passing_attempts",
+          "fantasy_points_ppr"
+        ],
+        "table": "player_game_stats"
+      },
+      {
+        "category": "recent_trend_window",
+        "fields": "same as player_historical_data for last 3 games",
+        "table": "player_game_stats",
+        "filter": "last 3 weeks rolling window"
+      },
+      {
+        "category": "opponent_defensive_data",
+        "fields": [
+          "opponent_team_id",
+          "passing_yards_allowed",
+          "rushing_yards_allowed",
+          "yards_per_play_allowed"
+        ],
+        "table": "team_game_stats (derived)",
+        "note": "Calculate from opponent's defensive stats"
+      },
+      {
+        "category": "game_context",
+        "fields": [
+          "week",
+          "venue",
+          "home_team_id",
+          "away_team_id",
+          "pace_factor",
+          "possession_time",
+          "total_plays"
+        ],
+        "tables": ["games", "team_game_stats"],
+        "calculations": {
+          "pace_factor": "total_plays / game_length",
+          "total_plays": "offensive_plays + defensive_plays"
+        }
+      },
+      {
+        "category": "player_season_variance",
+        "fields": [
+          "mean_stat_value",
+          "stddev_stat_value"
+        ],
+        "table": "player_game_stats (aggregated)",
+        "calculation": "AVG() and STDDEV() over season"
+      },
+      {
+        "category": "adjustment_factors_optional",
+        "fields": [
+          "fatigue_proxy",
+          "morale_proxy"
+        ],
+        "calculations": {
+          "fatigue_proxy": "games_played_last_5 / 5",
+          "morale_proxy": "fantasy_points_last_game / avg_fantasy_points"
+        },
+        "optional": true
+      },
+      {
+        "category": "output_variables",
+        "fields": [
+          "baseline_expected",
+          "floor_estimate",
+          "ceiling_estimate"
+        ],
+        "calculated": true
+      }
+    ]
+  },
+
+  "sql_structure": {
+    "description": "Multi-CTE approach for modular calculation",
+    "ctes": {
+      "player_baseline": {
+        "purpose": "Calculate season-long averages and variance",
+        "aggregates": ["AVG(stat)", "STDDEV(stat)", "AVG(targets/attempts)"],
+        "group_by": ["player_id", "position"]
+      },
+      "recent_form": {
+        "purpose": "Calculate 3-game rolling average",
+        "window": "last 3 weeks",
+        "aggregates": ["AVG(stat)"],
+        "group_by": ["player_id"]
+      },
+      "opponent_defense": {
+        "purpose": "Calculate opponent's defensive efficiency",
+        "aggregates": ["AVG(yards_allowed)", "AVG(points_allowed)"],
+        "group_by": ["team_id"],
+        "note": "Need to flip perspective (what defense allows, not what offense produces)"
+      },
+      "combined": {
+        "purpose": "Join all CTEs and calculate expected + floor",
+        "calculations": [
+          "expected = ((recent_avg + season_avg) / 2) × (opponent_modifier)",
+          "floor = expected - (stddev × volatility_factor)"
+        ]
+      }
+    },
+
+    "pseudo_query": "WITH player_baseline AS (...), recent_form AS (...), opponent_defense AS (...), combined AS (...) SELECT * FROM combined ORDER BY expected DESC"
+  },
+
+  "configuration": {
+    "parameters": [
+      {
+        "name": "rolling_window_weeks",
+        "description": "Number of weeks for recent form calculation",
+        "default": 3,
+        "range": [2, 5],
+        "type": "integer"
+      },
+      {
+        "name": "volatility_factor",
+        "description": "Controls floor conservatism (lower = more conservative floor)",
+        "default": 0.75,
+        "range": [0.5, 1.0],
+        "type": "float"
+      },
+      {
+        "name": "league_avg_pass_allowed",
+        "description": "Global mean passing yards allowed (computed dynamically)",
+        "computed": true,
+        "source": "AVG(passing_yards) FROM team_game_stats"
+      },
+      {
+        "name": "league_avg_rush_allowed",
+        "description": "Global mean rushing yards allowed (computed dynamically)",
+        "computed": true,
+        "source": "AVG(rushing_yards) FROM team_game_stats"
+      },
+      {
+        "name": "pace_normalization_factor",
+        "description": "Scale to league average plays per game",
+        "optional": true,
+        "computed": true
+      },
+      {
+        "name": "fatigue_weight",
+        "description": "Optional adjustment for consecutive games played",
+        "default": 0.1,
+        "range": [0, 0.3],
+        "type": "float",
+        "optional": true
+      }
+    ],
+
+    "stat_categories": [
+      {
+        "stat": "passing_yards",
+        "positions": ["QB"],
+        "opponent_metric": "passing_yards_allowed"
+      },
+      {
+        "stat": "rushing_yards",
+        "positions": ["RB", "QB"],
+        "opponent_metric": "rushing_yards_allowed"
+      },
+      {
+        "stat": "receiving_yards",
+        "positions": ["WR", "TE", "RB"],
+        "opponent_metric": "passing_yards_allowed"
+      },
+      {
+        "stat": "receiving_receptions",
+        "positions": ["WR", "TE", "RB"],
+        "opponent_metric": "receptions_allowed"
+      },
+      {
+        "stat": "fantasy_points_ppr",
+        "positions": ["QB", "RB", "WR", "TE"],
+        "opponent_metric": "fantasy_points_allowed"
+      }
+    ]
+  },
+
+  "output_schema": {
+    "columns": [
+      {
+        "name": "player_id",
+        "type": "string",
+        "description": "ESPN Player ID"
+      },
+      {
+        "name": "player_name",
+        "type": "string",
+        "description": "Player full name (from players table join)",
+        "optional": true
+      },
+      {
+        "name": "position",
+        "type": "string",
+        "description": "Player position (QB, RB, WR, TE, etc.)"
+      },
+      {
+        "name": "team_id",
+        "type": "string",
+        "description": "Player's team abbreviation"
+      },
+      {
+        "name": "opponent_team_id",
+        "type": "string",
+        "description": "Upcoming opponent team abbreviation"
+      },
+      {
+        "name": "week",
+        "type": "integer",
+        "description": "Week number for projection"
+      },
+      {
+        "name": "stat_category",
+        "type": "string",
+        "description": "Which stat is being projected (passing_yards, rushing_yards, etc.)"
+      },
+      {
+        "name": "games_played",
+        "type": "integer",
+        "description": "Number of games in sample (reliability context)"
+      },
+      {
+        "name": "avg_stat",
+        "type": "float",
+        "description": "Season-long average for this stat"
+      },
+      {
+        "name": "recent_avg_stat",
+        "type": "float",
+        "description": "Last 3 games average for this stat"
+      },
+      {
+        "name": "std_stat",
+        "type": "float",
+        "description": "Season standard deviation (variance measure)"
+      },
+      {
+        "name": "opponent_avg_allowed",
+        "type": "float",
+        "description": "Opponent's average allowed for this stat category"
+      },
+      {
+        "name": "league_avg_allowed",
+        "type": "float",
+        "description": "League average allowed for this stat category"
+      },
+      {
+        "name": "opponent_modifier",
+        "type": "float",
+        "description": "opponent_avg_allowed / league_avg_allowed (defensive strength ratio)"
+      },
+      {
+        "name": "expected_stat",
+        "type": "float",
+        "description": "Modeled mean expectation (baseline projection)"
+      },
+      {
+        "name": "floor_stat",
+        "type": "float",
+        "description": "Conservative lower bound (expected - σ × volatility_factor)"
+      },
+      {
+        "name": "ceiling_stat",
+        "type": "float",
+        "description": "Optimistic upper bound (expected + σ × volatility_factor)",
+        "optional": true
+      },
+      {
+        "name": "confidence_score",
+        "type": "float",
+        "description": "Reliability metric (0-1) based on sample size and variance",
+        "optional": true
+      }
+    ]
+  },
+
+  "implementation_plan": {
+    "phases": [
+      {
+        "phase": 1,
+        "name": "SQL Query Template Development",
+        "tasks": [
+          "Create parameterized SQL query with dynamic stat selection",
+          "Implement league average calculations",
+          "Build opponent defense metric derivation",
+          "Add rolling window logic for recent form"
+        ]
+      },
+      {
+        "phase": 2,
+        "name": "Script Development",
+        "tasks": [
+          "Create Node.js script to execute floor calculations",
+          "Add position/stat filtering",
+          "Implement configurable parameters",
+          "Add validation and error handling"
+        ]
+      },
+      {
+        "phase": 3,
+        "name": "Testing & Calibration",
+        "tasks": [
+          "Test against Week 7 data",
+          "Validate floor accuracy (compare actual vs floor)",
+          "Tune volatility_factor for optimal conservatism",
+          "Test across multiple positions and stat categories"
+        ]
+      },
+      {
+        "phase": 4,
+        "name": "Storage & API",
+        "tasks": [
+          "Create performance_floors table in Supabase",
+          "Store weekly floor projections",
+          "Create aggregation scripts",
+          "Add to weekly workflow"
+        ]
+      }
+    ]
+  },
+
+  "database_schema": {
+    "new_tables": [
+      {
+        "name": "performance_floors",
+        "description": "Store weekly floor projections for all players",
+        "columns": [
+          "id SERIAL PRIMARY KEY",
+          "player_id TEXT NOT NULL",
+          "season INTEGER NOT NULL",
+          "week INTEGER NOT NULL",
+          "stat_category TEXT NOT NULL",
+          "opponent_team_id TEXT",
+          "games_played INTEGER",
+          "avg_stat DECIMAL(10,2)",
+          "recent_avg_stat DECIMAL(10,2)",
+          "std_stat DECIMAL(10,2)",
+          "expected_stat DECIMAL(10,2)",
+          "floor_stat DECIMAL(10,2)",
+          "ceiling_stat DECIMAL(10,2)",
+          "confidence_score DECIMAL(3,2)",
+          "created_at TIMESTAMP DEFAULT NOW()",
+          "UNIQUE(player_id, season, week, stat_category)"
+        ],
+        "indexes": [
+          "CREATE INDEX idx_floors_player_week ON performance_floors(player_id, week)",
+          "CREATE INDEX idx_floors_stat_category ON performance_floors(stat_category)",
+          "CREATE INDEX idx_floors_season_week ON performance_floors(season, week)"
+        ]
+      }
+    ]
+  },
+
+  "example_use_cases": [
+    {
+      "use_case": "Week 8 WR Floor Projections",
+      "description": "Calculate receiving yards floor for all WRs in Week 8",
+      "parameters": {
+        "week": 8,
+        "position": "WR",
+        "stat_category": "receiving_yards",
+        "rolling_window_weeks": 3,
+        "volatility_factor": 0.75
+      },
+      "expected_output": "List of all WRs with expected_yards and floor_yards for Week 8"
+    },
+    {
+      "use_case": "RB Floor Comparison",
+      "description": "Compare floor vs actual for all RBs in Week 7 (validation)",
+      "parameters": {
+        "week": 7,
+        "position": "RB",
+        "stat_category": "rushing_yards",
+        "include_actual": true
+      },
+      "validation": "Calculate accuracy rate (% of players who exceeded their floor)"
+    },
+    {
+      "use_case": "Multi-Stat Player Profile",
+      "description": "Get floors for all relevant stats for a specific player",
+      "parameters": {
+        "player_id": "espn-4428718",
+        "week": 8,
+        "stat_categories": ["receiving_yards", "receiving_receptions", "fantasy_points_ppr"]
+      },
+      "expected_output": "Single player with floors across multiple stat categories"
+    }
+  ],
+
+  "validation_metrics": {
+    "accuracy_tests": [
+      {
+        "metric": "floor_accuracy_rate",
+        "description": "% of players who exceeded their floor projection",
+        "target": "80-90%",
+        "calculation": "COUNT(actual >= floor) / COUNT(*)"
+      },
+      {
+        "metric": "floor_conservatism",
+        "description": "Average distance between floor and actual (in std devs)",
+        "target": "0.5-1.0 σ",
+        "calculation": "AVG((actual - floor) / std_stat)"
+      },
+      {
+        "metric": "expected_accuracy",
+        "description": "Mean absolute error for expected projections",
+        "target": "< 15% of stat mean",
+        "calculation": "AVG(ABS(actual - expected) / actual)"
+      }
+    ]
+  },
+
+  "next_steps": [
+    "Review and approve JSON design specification",
+    "Create SQL query template with parameterization",
+    "Develop Node.js calculation script",
+    "Create performance_floors table migration",
+    "Test with Week 7 data for validation",
+    "Integrate into weekly workflow",
+    "Document usage in CLAUDE.md"
+  ],
+
+  "notes": {
+    "analytical_only": "This is purely a data science forecast model for performance estimation. No gambling context intended.",
+    "extensibility": "Formula can be extended with additional factors (weather, home/away splits, injury history, etc.)",
+    "dynamic_stats": "Stat category should be parameterized to work with any stat field (yards, TDs, receptions, fantasy points, etc.)",
+    "league_context": "All opponent modifiers are relative to league average for proper scaling"
+  }
+}

@@ -227,10 +227,10 @@ SELECT
     p.full_name,
     p.primary_position,
     t.team_name,
-    t.team_abbreviation
+    t.team_abbr as team_abbreviation
 FROM weekly_stat_leaders wsl
 INNER JOIN players p ON wsl.player_id = p.player_id
-LEFT JOIN player_teams pt ON p.player_id = pt.player_id AND pt.season = wsl.season
+LEFT JOIN player_teams pt ON p.player_id = pt.player_id AND wsl.season BETWEEN pt.start_season AND COALESCE(pt.end_season, wsl.season)
 LEFT JOIN teams t ON pt.team_id = t.team_id
 WHERE wsl.rank <= 10
 ORDER BY wsl.season DESC, wsl.week DESC, wsl.category, wsl.rank;
@@ -244,10 +244,10 @@ SELECT
     p.full_name,
     p.primary_position,
     t.team_name,
-    t.team_abbreviation
+    t.team_abbr as team_abbreviation
 FROM player_season_cumulative_stats psc
 INNER JOIN players p ON psc.player_id = p.player_id
-LEFT JOIN player_teams pt ON p.player_id = pt.player_id AND pt.season = psc.season
+LEFT JOIN player_teams pt ON p.player_id = pt.player_id AND psc.season BETWEEN pt.start_season AND COALESCE(pt.end_season, psc.season)
 LEFT JOIN teams t ON pt.team_id = t.team_id
 WHERE psc.season = EXTRACT(YEAR FROM CURRENT_DATE)
   AND psc.games_played >= 4 -- Minimum qualifier
@@ -262,10 +262,10 @@ SELECT
     p.full_name,
     p.primary_position,
     t.team_name,
-    t.team_abbreviation
+    t.team_abbr as team_abbreviation
 FROM player_trending_analytics pta
 INNER JOIN players p ON pta.player_id = p.player_id
-LEFT JOIN player_teams pt ON p.player_id = pt.player_id AND pt.season = pta.season
+LEFT JOIN player_teams pt ON p.player_id = pt.player_id AND pta.season BETWEEN pt.start_season AND COALESCE(pt.end_season, pta.season)
 LEFT JOIN teams t ON pt.team_id = t.team_id
 WHERE pta.hot_streak_weeks >= 3
   AND pta.season = EXTRACT(YEAR FROM CURRENT_DATE)

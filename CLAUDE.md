@@ -1,10 +1,19 @@
 # NFL Stats Platform - Development Log (Claude Code)
 
+> 📍 **NEW AGENT?** Read [PROJECT-MAP.md](PROJECT-MAP.md) first for complete navigation guide!
+
 ## Project Overview
 **Backend data infrastructure** for 2025-26 NFL Stats Platform
 **Tech Stack**: Node.js, Supabase (PostgreSQL), ESPN API, The Odds API, nflverse
 **Created**: October 18, 2025
 **Status**: ✅ Production Ready - Enhanced
+
+**Quick Links**:
+- [Project Map](PROJECT-MAP.md) - Navigation guide for all files
+- [Data Inventory](AVAILABLE-DATA-INVENTORY.md) - 🎯 Complete 2025 season data catalog
+- [Database Access Guide](DATABASE-ACCESS-GUIDE.md) - How to connect & query database
+- [Session 4 Details](SESSION-PHASE-1-DEPLOYMENT.md) - Phase 1 deployment technical details
+- [Session Changelog](communication.json) - Session-by-session changes
 
 ---
 
@@ -220,6 +229,39 @@ next-scraper/
 
 ---
 
+## 📍 For Future Agents: Start Here
+
+**IMPORTANT**: If you're a new agent working on this project, follow these steps:
+
+1. **Read PROJECT-MAP.md first** - Complete navigation guide showing where everything is located
+   - File: `C:\Users\willh\Desktop\projects - current-location\next-scraper\PROJECT-MAP.md`
+   - Contains: Project structure tree, absolute file paths, task-based navigation
+
+2. **Read this file (CLAUDE.md)** - You are here! Full project history and overview
+
+3. **Read communication.json** - Session-by-session changelog of what each agent did
+   - File: `C:\Users\willh\Desktop\projects - current-location\next-scraper\communication.json`
+
+4. **Connect to database** - Follow DATABASE-ACCESS-GUIDE.md
+   - File: `C:\Users\willh\Desktop\projects - current-location\next-scraper\DATABASE-ACCESS-GUIDE.md`
+   - Quick start:
+   ```bash
+   supabase link --project-ref fuzouuxhxluqjmiyabal
+   node scripts/check-migrations-applied.js
+   node scripts/validate-data-completeness.js
+   ```
+
+5. **Review Phase 1 deployment** - Read SESSION-PHASE-1-DEPLOYMENT.md for latest technical details
+   - File: `C:\Users\willh\Desktop\projects - current-location\next-scraper\SESSION-PHASE-1-DEPLOYMENT.md`
+
+**Critical Project Info**:
+- **Supabase Project ID**: `fuzouuxhxluqjmiyabal` (found in `supabase/.temp/project-ref`)
+- **Database Credentials**: `.env.local` (gitignored - ask user if missing)
+- **Current Phase**: Phase 1 COMPLETE (303/674 fields, 100% game coverage)
+- **Next Phase**: Phase 2 (Betting + Snaps + Trending)
+
+---
+
 ## 🎮 How to Use
 
 ### Initial Setup (One-time)
@@ -370,12 +412,35 @@ node scripts/generate-comprehensive-index.js
 
 ## 📄 Documentation Files
 
+### For New Agents (Read These First):
+- **`PROJECT-MAP.md`** - **🎯 START HERE** - Complete project navigation guide with file locations
+- **`CLAUDE.md`** - This file (development log with full project history)
+- **`AVAILABLE-DATA-INVENTORY.md`** - **🎯 DATA CATALOG** - Complete 2025 season data (2,000+ lines)
+- **`DATABASE-SCHEMA-REFERENCE.md`** - **⚠️ CRITICAL** - Exact column names (prevents 15-30 min debugging) **NEW**
+- **`communication.json`** - Session-by-session changelog
+- **`DATABASE-ACCESS-GUIDE.md`** - Complete database access instructions (600+ lines)
+- **`SESSION-PHASE-1-DEPLOYMENT.md`** - Phase 1 deployment technical details (350+ lines)
+- **`SESSION-5-SUMMARY.md`** - Performance floors & schema documentation session **NEW**
+
+### For Schema/Database (Critical for Development):
+- **`coderef/schema-reference.json`** - Programmatic schema reference with script usage notes (500 lines) **NEW**
+- **`coderef/training/database-schema-map.json`** - Auto-generated live DB schema dump (910 lines) **NEW**
+- **`MCP-AGENT-SCHEMA-INSTRUCTIONS.md`** - Agent training implementation guide (400+ lines) **NEW**
+- Generate fresh schema: `npm run schema:map`
+
+### For Operations:
 - `README.md` - Project overview
 - `SCHEDULER.md` - Scheduler usage and deployment
 - `DEPLOYMENT.md` - Production deployment guide
-- `CLAUDE.md` - This file (development log)
+
+### For Planning:
 - `coderef/working/create-scripts/plan.json` - Initial scraper implementation plan
 - `coderef/working/player-news/plan.json` - Player news feature plan (645 lines)
+- `coderef/working/performance-floors-enhancements/` - Performance floor improvements **NEW**
+
+### Historical Reference:
+- **`PHASE-1-COMPLETE.md`** - Phase 1 completion summary
+- **`APPLY-PHASE-1-MIGRATIONS.md`** - Migration instructions with SQL
 
 ---
 
@@ -508,26 +573,144 @@ node scripts/generate-comprehensive-index.js
   - Automation strategy for real-time calculation
   - UI/UX recommendations
 
-### Total Scripts Created: 20
+### Session 4 (October 20, 2025 - Phase 1 Deployment):
+- ✅ **Applied Phase 1 database migrations to production**
+  - Fixed migration 20250101000021 schema issues (player_teams.season, teams.team_abbreviation)
+  - Applied via Supabase CLI: `supabase db push`
+  - Migration 20250101000020: 44 columns added to player_game_stats
+  - Migration 20250101000021: 3 tables + 3 views created
+- ✅ **Tested enhanced game-stats-scraper.js**
+  - Single game test passed (Game 401772510)
+  - Verified 45 fields populate (40 ESPN + 5 fantasy formats)
+  - Performance: 1,094ms per game (within expected range)
+- ✅ **Backfilled 76 missing games (Weeks 2-7)**
+  - Ran scraper for weeks 2-7: `npm run scrape:game-stats -- --week=X`
+  - 100% game coverage achieved (94/94 completed games have stats)
+  - 3,817 player game stats with fantasy points
+- ✅ **Ran weekly aggregation for Week 7**
+  - 110 weekly leader records (12 categories × 10 leaders)
+  - 811 season cumulative player records
+  - Pace projections and rankings calculated
+- ✅ **Validated data completeness**
+  - 100% game coverage (all 94 final games)
+  - 3,817 player stats, 188 team stats, 820 scoring plays
+  - Zero data gaps - production ready
+- ✅ **Created comprehensive documentation**
+  - DATABASE-ACCESS-GUIDE.md: Step-by-step instructions for agents
+  - SESSION-PHASE-1-DEPLOYMENT.md: Complete session log
+  - Documented Supabase connection pattern and troubleshooting
+
+### Session 5 (October 20, 2025 - Performance Floors & Schema Documentation):
+- ✅ **Created Performance Floor Calculator (Phase 1 Enhanced)**
+  - calculate-performance-floors.js: Statistical projections for player performance (580 lines)
+  - **Enhanced Formula:** Floor = Expected - (StdDev × position_volatility)
+  - **Phase 1 Enhancements:** (All complete ✅)
+    - **Opponent Defensive Efficiency Factor**: Adjusts projections based on opponent strength (0.7-1.3 range)
+    - **Completed Games Filter**: Only uses games with status='final' for accuracy
+    - **Batch Query Optimization**: 90% faster execution (800ms vs 8,000ms per game)
+    - **Position-Specific Volatility**: QB (0.6), RB (0.8), WR (0.9), TE (0.75)
+  - **Phase 2 Enhancements:** (All complete ✅)
+    - **Environment Modifiers** ✅: Venue (turf/dome) and weather (wind/rain/cold) adjustments
+      - Turf: +3%, Dome: +2%, High wind: -5%, Precipitation: -8%, Extreme cold: -6%
+      - Auto-detects from stadiums and game_weather tables
+    - **Opportunity-Based Projections** ✅: Two-step model (opportunities × efficiency)
+      - More accurate for volume-dependent stats (passing/rushing/receiving yards)
+      - Captures target/attempt volume changes better than simple averages
+    - **Adaptive Rolling Window** ✅: Position-specific lookback periods
+      - QB: 5 games, RB: 3 games, WR: 4 games, TE: 4 games
+      - Balances stability vs responsiveness by position
+    - **Percentile-Based Floors** ✅: 15th percentile of actual outcomes
+      - More realistic than linear σ-based floors
+      - Example: Sam Darnold floor 150 yds (actual) vs ~188 yds (linear)
+  - **Phase 3 Enhancements:** (2 of 4 complete)
+    - **Data Validation Suite** ✅: Pre-flight validation before processing
+      - Validates game data, teams, player counts, stat thresholds
+      - Warnings for incomplete data, errors prevent execution if critical
+    - **Injury Filter** ✅: Excludes OUT/DOUBTFUL, flags QUESTIONABLE
+      - Batch queries player_injury_status table
+      - Shows excluded players summary and injury warnings
+      - Ready for production when injury data populated
+  - **Script stats:** 780+ lines (was 449), ~800ms per game, 10 enhancements implemented
+  - Handles bye weeks, minimum games requirement, position-based stat categories
+  - Displays top fantasy starters (1 QB, 2 RB, 3 WR, 1 TE) with opponent matchup indicators
+  - Usage: `npm run floors -- --week=7` or `npm run floors -- --game=espn-401772816`
+- ✅ **Created Player Props Calculator**
+  - calculate-performance-floors-props.js: Betting props format (349 lines)
+  - Displays individual stat lines (Pass Yds, Rush Yds, Rec Yds, Receptions, TDs)
+  - Floor/Expected/Ceiling projections for each prop type
+  - Sorted by expected value within categories
+  - Usage: `npm run floors:props -- --week=7`
+- ✅ **Identified Schema Knowledge Gap**
+  - **ISSUE**: Column name mismatch (`receptions` vs `receiving_receptions`)
+  - Wasted 15-30 minutes debugging preventable schema errors
+  - Root cause: Schema knowledge not embedded in agent training/context
+- ✅ **Created Comprehensive Schema Documentation**
+  - **DATABASE-SCHEMA-REFERENCE.md** (600+ lines): Human-readable schema docs
+    - All 75 player_game_stats columns with exact names and types
+    - Common mistakes section with ❌ vs ✅ examples
+    - Schema verification queries
+    - Troubleshooting guide
+  - **coderef/schema-reference.json** (500 lines): Programmatic schema reference
+    - Notes which scripts use which tables
+    - Critical warnings highlighted (receptions, primary_position, team_abbr)
+    - Complete column definitions with types, examples, nullability
+    - Stat categories grouped (passing, rushing, receiving, defense, etc.)
+    - Common query patterns for each table
+    - Usage examples from actual scripts
+  - **coderef/training/database-schema-map.json** (910 lines): Auto-generated schema dump
+    - Generated from live database via `npm run schema:map`
+    - 248 columns across 18 tables documented
+    - Sample data from each table
+    - Update anytime schema changes
+  - **scripts/generate-schema-map.js** (100 lines): Auto-generate schema tool
+    - Queries live database for actual column names and types
+    - Outputs to coderef/training/database-schema-map.json
+    - Run weekly or after migrations
+- ✅ **Created MCP Agent Instructions**
+  - **MCP-AGENT-SCHEMA-INSTRUCTIONS.md** (400+ lines): Complete implementation guide
+  - 6 major components to fix schema knowledge at root:
+    1. Schema training document template (coderef/training/database-schema.json)
+    2. `verify_schema` tool specification
+    3. Agent prompt updates with schema verification
+    4. Auto-generated schema map script (implemented!)
+    5. Schema linting for code generation
+    6. Documentation index updates
+  - 10-item implementation checklist
+  - Test cases and success metrics
+  - Expected outcome: Zero schema-related errors in future code generation
+- ✅ **Enhanced Documentation & Discovery**
+  - Updated PROJECT-MAP.md with schema reference warnings
+  - Made DATABASE-SCHEMA-REFERENCE.md highly discoverable
+  - Added npm scripts: `floors:props` and `schema:map`
+  - Created SESSION-5-SUMMARY.md (complete session documentation)
+
+### Total Scripts Created: 29
 - 4 seed scripts
 - 8 scraper scripts (7 implemented, 1 planned)
+- 1 aggregator (weekly-aggregation.js)
+- 2 performance calculators (floors, props) **NEW**
+- 1 schema generator (generate-schema-map.js) **NEW**
 - 1 scheduler
-- 4 utility modules
+- 5 utility modules (fantasy-calculator.js, test scripts)
 - 2 index/demo page generators
+- 4 validation/verification scripts
 - 1 greatest games algorithm document
 
-### Total Lines of Code: ~9,500+
+### Total Lines of Code: ~14,500+
 - Scrapers: ~4,500 lines
+- Aggregators: ~500 lines
+- Performance calculators: ~900 lines **NEW**
 - Seeds: ~800 lines
-- Utils: ~500 lines
+- Utils: ~1,000 lines (fantasy-calculator.js + validators + schema-map)
 - Config: ~200 lines
 - Index/demo generators: ~3,500 lines
-- Documentation: ~355 lines (greatest-games-algo.md)
+- Documentation: ~4,100 lines (guides + session logs + schema docs) **NEW**
 
 ### Database Growth:
-- Tables: 41 → 46 (added 5 betting tables)
-- Columns: Added 10 quarter score columns to games table
+- Tables: 41 → 49 (added 5 betting tables + 3 aggregation tables)
+- Columns: Added 54 columns total (44 to player_game_stats + 10 quarter scores to games)
 - Enums: Added news_category_enum (planned)
+- Views: Added 3 convenience views (weekly leaders, season leaders, hot players)
 
 ---
 
@@ -538,6 +721,8 @@ All planned features have been implemented and tested. The backend now includes:
 - ✅ Advanced analytics (EPA, WPA)
 - ✅ Betting lines integration
 - ✅ Enhanced game statistics (quarter scores, weather)
+- ✅ Performance floor calculators (fantasy + props) **NEW**
+- ✅ Comprehensive schema documentation (3 formats) **NEW**
 - ✅ Comprehensive data showcase
 - ✅ Production deployment ready
 - ✅ Frontend integration ready (Next.js)
@@ -547,9 +732,12 @@ All planned features have been implemented and tested. The backend now includes:
 
 **Data Coverage**: 95%+ of completed game template requirements
 
+**Schema Documentation**: 248 columns across 18 tables fully documented **NEW**
+
 **Next Phase**:
 1. Implement player news scraper (plan complete)
-2. Frontend development (Next.js UI implementation)
+2. MCP agent implements schema verification (instructions ready)
+3. Frontend development (Next.js UI implementation)
 
 ---
 
@@ -586,9 +774,12 @@ The comprehensive data showcase displays:
 ## 👤 Author
 
 Built with **Claude Code** (Anthropic)
-October 18, 2025
+October 18-20, 2025
 
-Sessions: 3
-Total Development Time: ~16 hours
-Commits: 10+
-Lines of Code: 9,500+
+Sessions: 4
+Total Development Time: ~20 hours
+Commits: 15+
+Lines of Code: 12,000+
+Database Tables: 49
+Active Scrapers: 7 (+ 1 aggregator)
+Data Coverage: 303/674 fields (45% - Phase 1 Complete)

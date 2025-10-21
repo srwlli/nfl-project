@@ -6,7 +6,11 @@
       "Bash(node -e:*)",
       "Bash(node scripts/scrapers/elo-ratings-scraper.js:*)",
       "Bash(npm run scrape:elo-ratings:*)",
-      "Bash(timeout 60 npm run scrape:elo-ratings:*)"
+      "Bash(timeout 60 npm run scrape:elo-ratings:*)",
+      "Bash(node scripts/check-migrations-applied.js:*)",
+      "Bash(npm run scrape:game-stats:*)",
+      "Bash(npm run scrape:roster:*)",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": []
