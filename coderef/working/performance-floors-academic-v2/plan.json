@@ -1,0 +1,1250 @@
+{
+  "META_DOCUMENTATION": {
+    "feature_name": "performance-floors-academic-v2",
+    "version": "1.0.0",
+    "status": "complete",
+    "generated_by": "nfl-scraper-expert (Claude Code)",
+    "generated_at": "2025-10-21T04:45:00Z",
+    "has_context": true,
+    "has_analysis": true,
+    "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+    "academic_sources": 19,
+    "planning_framework": "feature-implementation-planning-standard.json v1.0"
+  },
+  "UNIVERSAL_PLANNING_STRUCTURE": {
+    "0_preparation": {
+      "foundation_docs": {
+        "available": [
+          "CLAUDE.md - Complete development history and architecture",
+          "PROJECT-MAP.md - File navigation and structure",
+          "DATABASE-SCHEMA-REFERENCE.md - Schema documentation",
+          "DATABASE-ACCESS-GUIDE.md - Database connection patterns",
+          "SESSION-5-SUMMARY.md - Performance floors Phase 1-3 implementation",
+          "coderef/schema-reference.json - Programmatic schema reference",
+          "coderef/training/database-schema-map.json - Auto-generated schema dump"
+        ],
+        "missing": [
+          "README.md",
+          "ARCHITECTURE.md",
+          "API.md"
+        ],
+        "notes": "Extensive session documentation available. Schema documentation comprehensive."
+      },
+      "coding_standards": {
+        "available": [
+          "Error handling: try-catch blocks in 25 files",
+          "Naming: camelCase for functions (188/188 consistency)",
+          "Database: Supabase client patterns in utils/supabase-client.js",
+          "Logging: Winston logger patterns in utils/logger.js"
+        ],
+        "missing": [
+          "No formal coding standards document",
+          "No linting configuration"
+        ],
+        "notes": "Implicit standards from existing codebase. Consistent patterns across scrapers."
+      },
+      "reference_components": {
+        "primary": "scripts/calculate-performance-floors.js (780 lines, Phase 1-3 complete)",
+        "secondary": [
+          "scripts/calculate-performance-floors-props.js (349 lines)",
+          "scripts/utils/supabase-client.js (database patterns)",
+          "scripts/utils/logger.js (logging patterns)",
+          "scripts/scrapers/game-stats-scraper.js (batch query patterns)"
+        ],
+        "notes": "Existing performance floors script has 10 enhancements implemented. Build on this foundation."
+      },
+      "key_patterns": {
+        "database_queries": "Batch fetching with .in() to reduce network calls",
+        "error_handling": "Try-catch with Winston logging at error/warn/info levels",
+        "configuration": "CONFIG objects at top of scripts for tunable parameters",
+        "CLI_interface": "yargs for --week and --game argument parsing",
+        "async_operations": "Promise.all for parallel processing of teams/players"
+      },
+      "technology_stack": {
+        "language": "JavaScript (Node.js 20+)",
+        "database": "PostgreSQL (Supabase)",
+        "logging": "Winston",
+        "CLI": "yargs",
+        "http_client": "Axios (for external APIs)",
+        "statistical_libs": "Native JavaScript (will add: simple-statistics, ml-random-forest)",
+        "testing": "None (will add Jest)"
+      },
+      "academic_foundation": {
+        "total_sources": 19,
+        "domains": [
+          "Predictive Modeling & Sports Analytics (Papers 1-6)",
+          "Variance & Confidence Estimation (Papers 7-10)",
+          "Player-Level Modeling (Papers 11-15)",
+          "Confidence & Psychological Factors (Papers 16-17)",
+          "Methodological Innovations (Papers 18-19)"
+        ],
+        "key_papers": {
+          "hierarchical_modeling": "Paper #3 - PMC10799012 (2024)",
+          "prediction_intervals": "Papers #8 (PMC5264560), #10 (sms.14603)",
+          "variance_estimation": "Paper #7 - Solent University (2023)",
+          "feature_importance": "Paper #12 - Ramapo College LASSO/RF (2023)",
+          "temporal_modeling": "Paper #18 - PMC12382096 LSTM/CNN (2025)"
+        }
+      }
+    },
+    "1_executive_summary": {
+      "overview": "Transform the current linear statistical performance floor calculator into a research-backed hierarchical Bayesian framework using findings from 19 peer-reviewed academic sources spanning predictive modeling, variance estimation, and sports analytics.",
+      "business_value": "Increase fantasy projection accuracy by 30% (from ~35 yard MAE to <25 yards for QBs), provide probabilistic confidence intervals instead of deterministic floors, and create a scientifically rigorous system that adapts to new data and self-calibrates weights based on actual NFL outcomes.",
+      "technical_approach": "Four-phase enhancement: (1) Fix schema errors blocking data retrieval, (2) Implement hierarchical mixed-effects variance decomposition with empirical Bayes shrinkage, (3) Replace point estimates with bootstrapped Bayesian prediction intervals, (4) Train Random Forest for feature importance and add exponential smoothing for temporal autocorrelation.",
+      "success_metrics": [
+        "Mean Absolute Error (MAE) for QB passing yards reduced from ~35 to <25 yards",
+        "Prediction interval coverage rate of 75-85% (for 80% confidence intervals)",
+        "Confidence quantification for all projections (floor/expected/ceiling)",
+        "Position volatility derived from meta-analytic variance (not hardcoded)",
+        "Opponent/environment weights learned via Random Forest (not static)",
+        "Backtesting validation against 2025 season actuals with >10% accuracy improvement"
+      ],
+      "timeline_estimate": "7.5 days total - Phase 1 (5 hours), Phase 2 (2 days), Phase 3 (2 days), Phase 4 (3.5 days)",
+      "resource_requirements": [
+        "Node.js packages: simple-statistics, ml-random-forest, mathjs",
+        "Dev dependencies: Jest for unit testing",
+        "Access to completed 2025 season games for backtesting validation",
+        "Computational: ~2 seconds per game target (acceptable for real-time)"
+      ]
+    },
+    "2_risk_assessment": {
+      "complexity_score": 8,
+      "complexity_justification": "High complexity due to advanced statistical methods (hierarchical modeling, bootstrapping, Random Forest), academic rigor requirements (formula citations, validation), and integration with existing 780-line script. Requires deep understanding of Bayesian statistics and NFL data characteristics.",
+      "risks": [
+        {
+          "category": "technical",
+          "description": "Bootstrap resampling too slow for real-time projections (1000 samples × 50 players × 10 games = 500k calculations)",
+          "likelihood": "medium",
+          "impact": "high",
+          "mitigation": "Reduce to 500 bootstrap samples, use parallel processing with Promise.all, cache results per game. Target <2s per game."
+        },
+        {
+          "category": "data",
+          "description": "Insufficient historical data for hierarchical model (requires min 20 games per player, rookies have 0-10)",
+          "likelihood": "low",
+          "impact": "high",
+          "mitigation": "Use empirical Bayes shrinkage to pull low-sample players toward position mean. Document minimum sample requirements. Gracefully degrade to simpler model for rookies."
+        },
+        {
+          "category": "integration",
+          "description": "Random Forest overfits to 2025 season data (learns noise instead of signal)",
+          "likelihood": "medium",
+          "impact": "medium",
+          "mitigation": "Use k-fold cross-validation (k=5), limit tree depth to 10, require min 100 training samples per feature, validate on hold-out Week 18 data."
+        },
+        {
+          "category": "schema",
+          "description": "Schema changes during development break queries (game_weather, player_injury_status tables still missing)",
+          "likelihood": "low",
+          "impact": "critical",
+          "mitigation": "Write integration tests for all queries, use schema validation before execution, gracefully fall back when tables don't exist, maintain TODO markers for future table additions."
+        },
+        {
+          "category": "performance",
+          "description": "Hierarchical variance calculation adds 10x computational overhead",
+          "likelihood": "medium",
+          "impact": "medium",
+          "mitigation": "Cache position-level statistics (calculate once per position per week), use batch queries for all players at position, profile with Node.js --prof flag."
+        }
+      ],
+      "dependencies": [
+        {
+          "type": "external_library",
+          "name": "simple-statistics",
+          "version": "^7.8.3",
+          "reason": "Provides percentile, variance, standardDeviation functions for bootstrap intervals"
+        },
+        {
+          "type": "external_library",
+          "name": "ml-random-forest",
+          "version": "^2.1.0",
+          "reason": "Random Forest regression for feature importance learning"
+        },
+        {
+          "type": "external_library",
+          "name": "mathjs",
+          "version": "^12.0.0",
+          "reason": "Matrix operations for hierarchical variance decomposition"
+        },
+        {
+          "type": "external_library",
+          "name": "jest",
+          "version": "^29.7.0",
+          "reason": "Unit testing framework for statistical functions"
+        },
+        {
+          "type": "data",
+          "name": "Completed 2025 season games",
+          "reason": "Required for backtesting validation and Random Forest training (currently 94 completed games)"
+        },
+        {
+          "type": "data",
+          "name": "player_game_stats with 75 columns",
+          "reason": "All statistical features must be populated for accurate projections"
+        }
+      ],
+      "assumptions": [
+        "Current script (calculate-performance-floors.js) runs without schema errors after Phase 1 fixes",
+        "Database has sufficient completed games (94+) for training and validation",
+        "NFL performance follows normal-ish distribution (Bayesian intervals assume this)",
+        "Position volatility is stable across seasons (can use 2025 data to estimate)",
+        "Opponent defensive efficiency is measurable from team_game_stats"
+      ]
+    },
+    "3_current_state_analysis": {
+      "existing_files": [
+        {
+          "path": "scripts/calculate-performance-floors.js",
+          "purpose": "Main performance floor calculator (780 lines, Phase 1-3 enhancements complete)",
+          "status": "modify_heavily",
+          "notes": "Has 10 enhancements implemented: opponent factor, environment modifiers, opportunity projections, adaptive rolling window, percentile floors, data validation, injury filter. Needs: schema fixes, hierarchical variance, bootstrap intervals, feature importance."
+        },
+        {
+          "path": "scripts/calculate-performance-floors-props.js",
+          "purpose": "Props betting format (349 lines)",
+          "status": "modify_lightly",
+          "notes": "Will inherit improvements from main script. Update to use new confidence intervals."
+        },
+        {
+          "path": "scripts/utils/supabase-client.js",
+          "purpose": "Database connection singleton",
+          "status": "reference_only",
+          "notes": "Use existing patterns for batch queries and error handling."
+        },
+        {
+          "path": "scripts/utils/logger.js",
+          "purpose": "Winston logging configuration",
+          "status": "reference_only",
+          "notes": "Use existing log levels (error/warn/info/debug) for new functions."
+        },
+        {
+          "path": "package.json",
+          "purpose": "Dependency management",
+          "status": "modify",
+          "notes": "Add: simple-statistics, ml-random-forest, mathjs, jest"
+        },
+        {
+          "path": "coderef/working/performance-floors-enhancements/more-reviews.md",
+          "purpose": "Comprehensive technical reviews (740 lines)",
+          "status": "reference",
+          "notes": "Contains all actionable feedback from multiple reviewers. Use as implementation checklist."
+        }
+      ],
+      "files_to_create": [
+        {
+          "path": "scripts/utils/hierarchical-stats.js",
+          "purpose": "Hierarchical variance decomposition and empirical Bayes shrinkage (Phase 2)",
+          "estimated_lines": 200
+        },
+        {
+          "path": "scripts/utils/bootstrap-intervals.js",
+          "purpose": "Bootstrap resampling for Bayesian prediction intervals (Phase 3)",
+          "estimated_lines": 150
+        },
+        {
+          "path": "scripts/utils/feature-importance.js",
+          "purpose": "Random Forest training and feature weight learning (Phase 4)",
+          "estimated_lines": 250
+        },
+        {
+          "path": "scripts/utils/temporal-smoothing.js",
+          "purpose": "Exponential weighted moving average and trend detection (Phase 4)",
+          "estimated_lines": 100
+        },
+        {
+          "path": "scripts/validate-floors.js",
+          "purpose": "Backtesting framework with MAE and coverage rate metrics",
+          "estimated_lines": 300
+        },
+        {
+          "path": "scripts/tests/hierarchical-stats.test.js",
+          "purpose": "Unit tests for hierarchical variance functions",
+          "estimated_lines": 150
+        },
+        {
+          "path": "scripts/tests/bootstrap-intervals.test.js",
+          "purpose": "Unit tests for bootstrap interval generation",
+          "estimated_lines": 150
+        },
+        {
+          "path": "scripts/tests/feature-importance.test.js",
+          "purpose": "Unit tests for Random Forest training",
+          "estimated_lines": 100
+        },
+        {
+          "path": "scripts/tests/validation.test.js",
+          "purpose": "Integration tests for end-to-end projection pipeline",
+          "estimated_lines": 200
+        },
+        {
+          "path": "coderef/working/performance-floors-academic-v2/ACADEMIC-REFERENCES.md",
+          "purpose": "BibTeX citations for all 19 academic sources",
+          "estimated_lines": 100
+        }
+      ],
+      "database_changes": {
+        "schema_modifications": "None - must use existing tables only (constraint)",
+        "new_tables": "None",
+        "new_columns": "None",
+        "notes": "All enhancements work with existing schema: games, teams, players, player_game_stats, team_game_stats"
+      }
+    },
+    "4_key_features": [
+      {
+        "id": "FEATURE-001",
+        "name": "Schema Error Corrections",
+        "description": "Fix all database query errors preventing accurate data retrieval: calculateOpponentFactor using non-existent total_yards_allowed, primary_position vs position mismatch, game_weather and player_injury_status table queries.",
+        "priority": "critical",
+        "acceptance_criteria": [
+          "All Supabase queries execute without 'column does not exist' errors",
+          "Opponent defensive efficiency calculated using actual passing_yards + rushing_yards from opponents' offensive stats",
+          "All references to primary_position changed to position",
+          "game_weather and player_injury_status queries commented out with TODO markers or gracefully fall back when tables missing",
+          "Script runs end-to-end for Week 7 data without undefined/null in calculations"
+        ]
+      },
+      {
+        "id": "FEATURE-002",
+        "name": "Hierarchical Mixed-Effects Variance Model",
+        "description": "Implement player-game-season nested variance structure using mixed-effects regression. Decompose total variance into within-player and between-player components. Apply empirical Bayes shrinkage to adjust individual estimates toward positional mean based on sample size.",
+        "priority": "high",
+        "academic_source": "Paper #3: Baughman et al (2024) - PMC10799012",
+        "acceptance_criteria": [
+          "calculateHierarchicalVariance() function implemented with within/between variance decomposition",
+          "Shrinkage factor calculated as: withinVar / (withinVar + betweenVar/n)",
+          "Shrunken estimate = (shrinkageFactor × positionMean) + ((1 - shrinkageFactor) × playerMean)",
+          "Players with <3 games pulled strongly toward position average (>70% shrinkage)",
+          "Players with >10 games trust their own history (<30% shrinkage)",
+          "Position-level statistics cached per week (calculate once, reuse for all players)"
+        ]
+      },
+      {
+        "id": "FEATURE-003",
+        "name": "Bayesian Prediction Intervals via Bootstrap",
+        "description": "Replace deterministic 15th percentile floor with probabilistic confidence bounds. Use empirical bootstrap resampling (500-1000 samples) to generate floor (10th percentile), expected (mean), and ceiling (90th percentile) for 80% prediction intervals.",
+        "priority": "high",
+        "academic_source": "Papers #8 (PMC5264560), #10 (sms.14603)",
+        "acceptance_criteria": [
+          "generateBootstrapSamples() creates 500 resampled datasets with replacement",
+          "calculatePredictionInterval() extracts 10th, 50th, 90th percentiles from bootstrap distribution",
+          "Output format includes: { floor, expected, ceiling, confidence_level }",
+          "Coverage rate validation: 75-85% of actual outcomes fall within [floor, ceiling]",
+          "Handles skewed distributions (e.g., WR receiving yards with long-tail outliers)",
+          "Performance: <2 seconds per game for 50 players"
+        ]
+      },
+      {
+        "id": "FEATURE-004",
+        "name": "Meta-Analytic Position Volatility Estimation",
+        "description": "Replace hardcoded position volatility factors (QB: 0.6, RB: 0.8, WR: 0.9, TE: 0.75) with data-driven estimates using meta-analytic variance across all players at each position from 2025 season.",
+        "priority": "medium",
+        "academic_source": "Paper #7: Solent University (2023)",
+        "acceptance_criteria": [
+          "calculatePositionVolatility() aggregates variance across all players at position",
+          "Uses coefficient of variation (CV) for scale-independent comparison",
+          "Updates CONFIG.position_volatility with calculated values instead of hardcoded",
+          "Validation: Calculated values within ±20% of hardcoded values (sanity check)",
+          "Can be re-run weekly to adapt to changing league patterns"
+        ]
+      },
+      {
+        "id": "FEATURE-005",
+        "name": "Random Forest Feature Importance Learning",
+        "description": "Train Random Forest regression model on completed games to learn optimal weights for opponent defensive efficiency, venue type, weather conditions, and home/away advantage. Replace static 0.7-1.3 caps and hardcoded environment modifiers.",
+        "priority": "medium",
+        "academic_source": "Paper #12: Ramapo College LASSO/RF (2023)",
+        "acceptance_criteria": [
+          "Training data preparation: features (opponent_defense, venue, temp, wind, is_home) → target (actual_stat)",
+          "Random Forest trained with 100 estimators, max_features=0.5, 5-fold cross-validation",
+          "Feature importances extracted and logged (e.g., 'opponent_defense: 0.45, venue: 0.12')",
+          "Learned weights replace hardcoded values in calculateOpponentFactor and calculateEnvironmentModifier",
+          "Validation R² > 0.6 on hold-out test set (Week 18 data)",
+          "Model retrained weekly as new games complete"
+        ]
+      },
+      {
+        "id": "FEATURE-006",
+        "name": "Exponential Weighted Moving Average (EWMA)",
+        "description": "Replace simple average of recent games with exponentially weighted moving average to give higher weight to most recent performances. Captures momentum and recent form changes better than equal weighting.",
+        "priority": "medium",
+        "academic_source": "Paper #18: PMC12382096 LSTM/CNN (2025)",
+        "acceptance_criteria": [
+          "calculateEWMA() implemented with smoothing factor alpha = 0.3 (configurable)",
+          "Recent games weighted exponentially: ewma = (alpha × current) + ((1 - alpha) × ewma_prev)",
+          "Replaces simple average in calculateStatFloor for recentAvg calculation",
+          "Validation: EWMA projections have lower MAE than simple average for players with 5+ games",
+          "Alpha parameter tunable via CONFIG.ewma_alpha"
+        ]
+      },
+      {
+        "id": "FEATURE-007",
+        "name": "Confidence Interval Visualization",
+        "description": "Enhance CLI output to display floor/expected/ceiling as visual ranges. Show confidence level (HIGH/MEDIUM/LOW) based on sample size and variance. Add position context to confidence scores.",
+        "priority": "low",
+        "acceptance_criteria": [
+          "Output format: 'QB Josh Allen: 185.3 ← 248.7 → 312.1 yards (80% CI, HIGH confidence)'",
+          "Confidence level: HIGH (n≥8, CV<0.3), MEDIUM (n≥5, CV<0.5), LOW (n<5 or CV≥0.5)",
+          "Position shown in parentheses: 'Confidence: 85% (QB)'",
+          "Injury warnings: '⚠️ QUESTIONABLE (Ankle)' or '✅ Healthy'",
+          "Color-coded in terminal (if supported): green=healthy, yellow=questionable, red=out"
+        ]
+      },
+      {
+        "id": "FEATURE-008",
+        "name": "Backtesting Validation Framework",
+        "description": "Create validation script to measure prediction accuracy against actual 2025 season outcomes. Calculate MAE, coverage rate, and calibration plots. Enable iterative model improvement.",
+        "priority": "high",
+        "acceptance_criteria": [
+          "validate-floors.js script created with backtestWeek(weekNumber) function",
+          "Fetches projections generated BEFORE week, actuals AFTER week completion",
+          "Calculates MAE = Σ|predicted - actual| / n for each stat category",
+          "Calculates coverage rate = % actuals within [floor, ceiling]",
+          "Generates calibration plot data: predicted vs actual for scatter plot",
+          "Target metrics: MAE <15% of mean, coverage 75-85%, R² >0.6",
+          "Outputs markdown report with metrics by position and stat type"
+        ]
+      },
+      {
+        "id": "FEATURE-009",
+        "name": "Unit Testing Suite",
+        "description": "Comprehensive Jest test suite for all statistical functions. Mock Supabase responses for integration tests. Ensure mathematical correctness and edge case handling.",
+        "priority": "medium",
+        "acceptance_criteria": [
+          "hierarchical-stats.test.js: Tests shrinkage calculation with known inputs/outputs",
+          "bootstrap-intervals.test.js: Tests percentile extraction and sample generation",
+          "feature-importance.test.js: Tests Random Forest training with synthetic data",
+          "validation.test.js: End-to-end integration test with mocked database",
+          "All tests pass with >90% code coverage",
+          "Edge cases tested: zero variance, single game, missing data"
+        ]
+      },
+      {
+        "id": "FEATURE-010",
+        "name": "Academic Source Documentation",
+        "description": "Document all academic sources with proper citations in code comments and separate reference file. Every statistical formula must cite the source paper. Create BibTeX bibliography.",
+        "priority": "low",
+        "acceptance_criteria": [
+          "Every statistical function has JSDoc comment with @citation tag",
+          "Citations follow format: 'Author et al. (Year). Title. Journal. DOI/URL'",
+          "ACADEMIC-REFERENCES.md created with all 19 sources in BibTeX format",
+          "README updated with 'Academic Foundation' section linking to references",
+          "Code comments explain WHY formula is used (not just WHAT it does)"
+        ]
+      }
+    ],
+    "5_task_id_system": {
+      "workorder": {
+        "id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+        "name": "Performance Floors Academic V2",
+        "feature_dir": "coderef/working/performance-floors-academic-v2"
+      },
+      "task_prefix": "PFAV2",
+      "tasks": [
+        {
+          "id": "PFAV2-SETUP-001",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Install new npm dependencies (simple-statistics, ml-random-forest, mathjs, jest)",
+          "feature_id": null,
+          "phase": 1,
+          "estimated_hours": 0.5
+        },
+        {
+          "id": "PFAV2-SETUP-002",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Create test directory structure and Jest configuration",
+          "feature_id": null,
+          "phase": 1,
+          "estimated_hours": 0.5
+        },
+        {
+          "id": "PFAV2-SCHEMA-001",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Fix calculateOpponentFactor to query actual defensive stats (passing_yards + rushing_yards allowed)",
+          "feature_id": "FEATURE-001",
+          "phase": 1,
+          "estimated_hours": 2
+        },
+        {
+          "id": "PFAV2-SCHEMA-002",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Replace all primary_position references with position in queries and logic",
+          "feature_id": "FEATURE-001",
+          "phase": 1,
+          "estimated_hours": 0.5
+        },
+        {
+          "id": "PFAV2-SCHEMA-003",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Remove or guard game_weather and player_injury_status table queries with fallbacks",
+          "feature_id": "FEATURE-001",
+          "phase": 1,
+          "estimated_hours": 1
+        },
+        {
+          "id": "PFAV2-SCHEMA-004",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Add comprehensive data validation suite (null checks, minimum games, missing stats)",
+          "feature_id": "FEATURE-001",
+          "phase": 1,
+          "estimated_hours": 1
+        },
+        {
+          "id": "PFAV2-HIER-001",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Create utils/hierarchical-stats.js with variance decomposition functions",
+          "feature_id": "FEATURE-002",
+          "phase": 2,
+          "estimated_hours": 4
+        },
+        {
+          "id": "PFAV2-HIER-002",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Implement calculateHierarchicalVariance with within/between variance calculation",
+          "feature_id": "FEATURE-002",
+          "phase": 2,
+          "estimated_hours": 4
+        },
+        {
+          "id": "PFAV2-HIER-003",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Implement empirical Bayes shrinkage estimator",
+          "feature_id": "FEATURE-002",
+          "phase": 2,
+          "estimated_hours": 3
+        },
+        {
+          "id": "PFAV2-HIER-004",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Add position-level statistics caching to avoid redundant calculations",
+          "feature_id": "FEATURE-002",
+          "phase": 2,
+          "estimated_hours": 2
+        },
+        {
+          "id": "PFAV2-HIER-005",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Integrate hierarchical variance into main calculateStatFloor function",
+          "feature_id": "FEATURE-002",
+          "phase": 2,
+          "estimated_hours": 3
+        },
+        {
+          "id": "PFAV2-BOOT-001",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Create utils/bootstrap-intervals.js with resampling logic",
+          "feature_id": "FEATURE-003",
+          "phase": 3,
+          "estimated_hours": 3
+        },
+        {
+          "id": "PFAV2-BOOT-002",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Implement generateBootstrapSamples with 500 resamples and replacement",
+          "feature_id": "FEATURE-003",
+          "phase": 3,
+          "estimated_hours": 2
+        },
+        {
+          "id": "PFAV2-BOOT-003",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Implement calculatePredictionInterval with percentile extraction (10th/50th/90th)",
+          "feature_id": "FEATURE-003",
+          "phase": 3,
+          "estimated_hours": 2
+        },
+        {
+          "id": "PFAV2-BOOT-004",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Update output format to include floor/expected/ceiling structure",
+          "feature_id": "FEATURE-003",
+          "phase": 3,
+          "estimated_hours": 2
+        },
+        {
+          "id": "PFAV2-BOOT-005",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Optimize bootstrap performance to meet <2s per game target",
+          "feature_id": "FEATURE-003",
+          "phase": 3,
+          "estimated_hours": 3
+        },
+        {
+          "id": "PFAV2-META-001",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Implement calculatePositionVolatility using meta-analytic variance",
+          "feature_id": "FEATURE-004",
+          "phase": 2,
+          "estimated_hours": 3
+        },
+        {
+          "id": "PFAV2-META-002",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Replace hardcoded position_volatility in CONFIG with calculated values",
+          "feature_id": "FEATURE-004",
+          "phase": 2,
+          "estimated_hours": 1
+        },
+        {
+          "id": "PFAV2-RF-001",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Create utils/feature-importance.js with Random Forest training logic",
+          "feature_id": "FEATURE-005",
+          "phase": 4,
+          "estimated_hours": 4
+        },
+        {
+          "id": "PFAV2-RF-002",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Prepare training data from completed games (features + targets)",
+          "feature_id": "FEATURE-005",
+          "phase": 4,
+          "estimated_hours": 3
+        },
+        {
+          "id": "PFAV2-RF-003",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Train Random Forest with 100 estimators and extract feature importances",
+          "feature_id": "FEATURE-005",
+          "phase": 4,
+          "estimated_hours": 4
+        },
+        {
+          "id": "PFAV2-RF-004",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Integrate learned weights into calculateOpponentFactor and calculateEnvironmentModifier",
+          "feature_id": "FEATURE-005",
+          "phase": 4,
+          "estimated_hours": 3
+        },
+        {
+          "id": "PFAV2-RF-005",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Implement 5-fold cross-validation and validation metrics (R²)",
+          "feature_id": "FEATURE-005",
+          "phase": 4,
+          "estimated_hours": 4
+        },
+        {
+          "id": "PFAV2-EWMA-001",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Create utils/temporal-smoothing.js with EWMA implementation",
+          "feature_id": "FEATURE-006",
+          "phase": 4,
+          "estimated_hours": 2
+        },
+        {
+          "id": "PFAV2-EWMA-002",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Replace simple average with calculateEWMA in calculateStatFloor",
+          "feature_id": "FEATURE-006",
+          "phase": 4,
+          "estimated_hours": 2
+        },
+        {
+          "id": "PFAV2-EWMA-003",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Add CONFIG.ewma_alpha parameter and tune optimal alpha value (0.2-0.5)",
+          "feature_id": "FEATURE-006",
+          "phase": 4,
+          "estimated_hours": 2
+        },
+        {
+          "id": "PFAV2-VIZ-001",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Update displayTeamFloors to show floor ← expected → ceiling format",
+          "feature_id": "FEATURE-007",
+          "phase": 3,
+          "estimated_hours": 2
+        },
+        {
+          "id": "PFAV2-VIZ-002",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Add confidence level calculation (HIGH/MEDIUM/LOW) based on n and CV",
+          "feature_id": "FEATURE-007",
+          "phase": 3,
+          "estimated_hours": 1
+        },
+        {
+          "id": "PFAV2-VIZ-003",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Add position context to confidence display (85% (QB))",
+          "feature_id": "FEATURE-007",
+          "phase": 3,
+          "estimated_hours": 1
+        },
+        {
+          "id": "PFAV2-VALID-001",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Create scripts/validate-floors.js with backtestWeek function",
+          "feature_id": "FEATURE-008",
+          "phase": 4,
+          "estimated_hours": 3
+        },
+        {
+          "id": "PFAV2-VALID-002",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Implement MAE calculation for all stat categories",
+          "feature_id": "FEATURE-008",
+          "phase": 4,
+          "estimated_hours": 2
+        },
+        {
+          "id": "PFAV2-VALID-003",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Implement coverage rate calculation (% actuals in [floor, ceiling])",
+          "feature_id": "FEATURE-008",
+          "phase": 4,
+          "estimated_hours": 2
+        },
+        {
+          "id": "PFAV2-VALID-004",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Generate calibration plot data (predicted vs actual scatter)",
+          "feature_id": "FEATURE-008",
+          "phase": 4,
+          "estimated_hours": 2
+        },
+        {
+          "id": "PFAV2-VALID-005",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Create markdown validation report with metrics by position and stat",
+          "feature_id": "FEATURE-008",
+          "phase": 4,
+          "estimated_hours": 2
+        },
+        {
+          "id": "PFAV2-TEST-001",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Create tests/hierarchical-stats.test.js with shrinkage test cases",
+          "feature_id": "FEATURE-009",
+          "phase": 2,
+          "estimated_hours": 2
+        },
+        {
+          "id": "PFAV2-TEST-002",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Create tests/bootstrap-intervals.test.js with percentile tests",
+          "feature_id": "FEATURE-009",
+          "phase": 3,
+          "estimated_hours": 2
+        },
+        {
+          "id": "PFAV2-TEST-003",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Create tests/feature-importance.test.js with RF training tests",
+          "feature_id": "FEATURE-009",
+          "phase": 4,
+          "estimated_hours": 2
+        },
+        {
+          "id": "PFAV2-TEST-004",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Create tests/validation.test.js with end-to-end integration test",
+          "feature_id": "FEATURE-009",
+          "phase": 4,
+          "estimated_hours": 3
+        },
+        {
+          "id": "PFAV2-TEST-005",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Add edge case tests (zero variance, single game, missing data)",
+          "feature_id": "FEATURE-009",
+          "phase": 4,
+          "estimated_hours": 2
+        },
+        {
+          "id": "PFAV2-DOC-001",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Add JSDoc @citation comments to all statistical functions",
+          "feature_id": "FEATURE-010",
+          "phase": 4,
+          "estimated_hours": 3
+        },
+        {
+          "id": "PFAV2-DOC-002",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Create ACADEMIC-REFERENCES.md with BibTeX bibliography",
+          "feature_id": "FEATURE-010",
+          "phase": 4,
+          "estimated_hours": 2
+        },
+        {
+          "id": "PFAV2-DOC-003",
+          "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+          "description": "Update README with Academic Foundation section and links",
+          "feature_id": "FEATURE-010",
+          "phase": 4,
+          "estimated_hours": 1
+        }
+      ],
+      "total_tasks": 43,
+      "total_estimated_hours": 94
+    },
+    "6_implementation_phases": [
+      {
+        "phase_number": 1,
+        "name": "Foundation Fixes & Schema Corrections",
+        "duration_estimate": "5 hours",
+        "objectives": [
+          "Fix all database schema errors preventing accurate data retrieval",
+          "Ensure script runs end-to-end without undefined/null errors",
+          "Establish baseline functionality before academic enhancements"
+        ],
+        "tasks": [
+          "PFAV2-SETUP-001",
+          "PFAV2-SETUP-002",
+          "PFAV2-SCHEMA-001",
+          "PFAV2-SCHEMA-002",
+          "PFAV2-SCHEMA-003",
+          "PFAV2-SCHEMA-004"
+        ],
+        "deliverables": [
+          "calculate-performance-floors.js runs without schema errors",
+          "All queries use correct column names (position, not primary_position)",
+          "Opponent factor calculates using actual defensive stats",
+          "Missing table queries gracefully fall back or are commented with TODOs",
+          "Data validation suite catches null/undefined before calculations"
+        ],
+        "success_criteria": [
+          "✅ Script completes for Week 7 with all 32 teams",
+          "✅ Zero 'column does not exist' errors in logs",
+          "✅ Opponent factor values in range 0.7-1.3 for all matchups",
+          "✅ No undefined or null in final output"
+        ]
+      },
+      {
+        "phase_number": 2,
+        "name": "Hierarchical Modeling & Meta-Analytic Variance",
+        "duration_estimate": "16 hours (2 days)",
+        "objectives": [
+          "Implement nested variance structure (player → game → season)",
+          "Add empirical Bayes shrinkage for low-sample players",
+          "Replace hardcoded position volatility with data-driven estimates"
+        ],
+        "tasks": [
+          "PFAV2-HIER-001",
+          "PFAV2-HIER-002",
+          "PFAV2-HIER-003",
+          "PFAV2-HIER-004",
+          "PFAV2-HIER-005",
+          "PFAV2-META-001",
+          "PFAV2-META-002",
+          "PFAV2-TEST-001"
+        ],
+        "deliverables": [
+          "utils/hierarchical-stats.js with variance decomposition functions",
+          "Shrinkage estimator working correctly (rookies pull toward position avg)",
+          "Position-level statistics cached for performance",
+          "Calculated position volatility replaces hardcoded CONFIG values",
+          "Unit tests validate shrinkage calculation"
+        ],
+        "success_criteria": [
+          "✅ Players with <3 games have >70% shrinkage toward position mean",
+          "✅ Players with >10 games have <30% shrinkage (trust own data)",
+          "✅ Calculated position volatility within ±20% of original hardcoded values",
+          "✅ Performance: position stats calculated once per week (cached)",
+          "✅ Unit tests pass for hierarchical variance functions"
+        ]
+      },
+      {
+        "phase_number": 3,
+        "name": "Bayesian Prediction Intervals & Visualization",
+        "duration_estimate": "16 hours (2 days)",
+        "objectives": [
+          "Replace deterministic floor with probabilistic confidence bounds",
+          "Implement bootstrap resampling for uncertainty quantification",
+          "Enhance CLI output with interval visualization"
+        ],
+        "tasks": [
+          "PFAV2-BOOT-001",
+          "PFAV2-BOOT-002",
+          "PFAV2-BOOT-003",
+          "PFAV2-BOOT-004",
+          "PFAV2-BOOT-005",
+          "PFAV2-VIZ-001",
+          "PFAV2-VIZ-002",
+          "PFAV2-VIZ-003",
+          "PFAV2-TEST-002"
+        ],
+        "deliverables": [
+          "utils/bootstrap-intervals.js with resampling and percentile extraction",
+          "Output includes floor (10th) / expected (mean) / ceiling (90th)",
+          "CLI displays: '185.3 ← 248.7 → 312.1 yards (80% CI, HIGH confidence)'",
+          "Confidence level (HIGH/MEDIUM/LOW) based on sample size and variance",
+          "Bootstrap performance optimized to <2s per game"
+        ],
+        "success_criteria": [
+          "✅ Bootstrap generates 500 samples with replacement",
+          "✅ Percentiles extracted correctly (10th/50th/90th)",
+          "✅ Output format readable and informative",
+          "✅ Performance: <2 seconds for 50 players",
+          "✅ Unit tests validate bootstrap distribution properties"
+        ]
+      },
+      {
+        "phase_number": 4,
+        "name": "Feature Importance, Temporal Modeling & Validation",
+        "duration_estimate": "28 hours (3.5 days)",
+        "objectives": [
+          "Learn optimal modifier weights via Random Forest",
+          "Add exponential smoothing for recency weighting",
+          "Create backtesting framework to validate accuracy",
+          "Complete testing and documentation"
+        ],
+        "tasks": [
+          "PFAV2-RF-001",
+          "PFAV2-RF-002",
+          "PFAV2-RF-003",
+          "PFAV2-RF-004",
+          "PFAV2-RF-005",
+          "PFAV2-EWMA-001",
+          "PFAV2-EWMA-002",
+          "PFAV2-EWMA-003",
+          "PFAV2-VALID-001",
+          "PFAV2-VALID-002",
+          "PFAV2-VALID-003",
+          "PFAV2-VALID-004",
+          "PFAV2-VALID-005",
+          "PFAV2-TEST-003",
+          "PFAV2-TEST-004",
+          "PFAV2-TEST-005",
+          "PFAV2-DOC-001",
+          "PFAV2-DOC-002",
+          "PFAV2-DOC-003"
+        ],
+        "deliverables": [
+          "utils/feature-importance.js with Random Forest training",
+          "Learned weights replace hardcoded opponent/environment modifiers",
+          "utils/temporal-smoothing.js with EWMA implementation",
+          "scripts/validate-floors.js with MAE, coverage rate, calibration plots",
+          "Complete test suite with >90% coverage",
+          "ACADEMIC-REFERENCES.md with BibTeX bibliography",
+          "All functions documented with @citation tags"
+        ],
+        "success_criteria": [
+          "✅ Random Forest achieves R² > 0.6 on hold-out test set",
+          "✅ Feature importances logged and interpretable",
+          "✅ EWMA improves MAE vs simple average for players with 5+ games",
+          "✅ Backtesting shows MAE < 25 yards for QB passing (vs ~35 baseline)",
+          "✅ Coverage rate 75-85% for 80% prediction intervals",
+          "✅ All unit and integration tests pass",
+          "✅ All 19 academic sources cited in code"
+        ]
+      }
+    ],
+    "7_testing_strategy": {
+      "unit_tests": [
+        {
+          "component": "hierarchical-stats.js",
+          "test_file": "tests/hierarchical-stats.test.js",
+          "test_cases": [
+            "Shrinkage factor calculated correctly for known inputs",
+            "Players with 1 game get >90% shrinkage",
+            "Players with 20 games get <20% shrinkage",
+            "Within-player variance calculation matches manual calculation",
+            "Between-player variance handles single-player case (variance = 0)",
+            "Position-level cache works (no redundant calculations)"
+          ]
+        },
+        {
+          "component": "bootstrap-intervals.js",
+          "test_file": "tests/bootstrap-intervals.test.js",
+          "test_cases": [
+            "Bootstrap generates correct number of samples (500)",
+            "Resampling with replacement (some values appear multiple times)",
+            "Percentile extraction (10th/50th/90th) matches sorted array positions",
+            "Handles skewed distributions (long-tail data)",
+            "Single-value input returns same floor/expected/ceiling",
+            "Empty input array throws error"
+          ]
+        },
+        {
+          "component": "feature-importance.js",
+          "test_file": "tests/feature-importance.test.js",
+          "test_cases": [
+            "Random Forest trains without errors on synthetic data",
+            "Feature importances sum to ~1.0",
+            "Predictions on training data have R² > 0.8 (should fit well)",
+            "Cross-validation produces 5 fold scores",
+            "Handles missing feature values (fills with mean)",
+            "Model serialization and deserialization works"
+          ]
+        },
+        {
+          "component": "temporal-smoothing.js",
+          "test_file": "tests/temporal-smoothing.test.js",
+          "test_cases": [
+            "EWMA with alpha=1.0 returns last value only (no smoothing)",
+            "EWMA with alpha=0.0 returns first value only (no updates)",
+            "EWMA with alpha=0.5 matches manual calculation",
+            "Single game input returns that game's value",
+            "Empty input throws error"
+          ]
+        },
+        {
+          "component": "End-to-end integration",
+          "test_file": "tests/validation.test.js",
+          "test_cases": [
+            "Full pipeline runs for single player with mocked database",
+            "Output format matches expected structure (floor/expected/ceiling)",
+            "Confidence level assignment correct for HIGH/MEDIUM/LOW",
+            "Handles missing opponent stats gracefully",
+            "Handles single-game player (uses shrinkage)",
+            "Performance benchmark: <2s for 50 players"
+          ]
+        }
+      ],
+      "integration_tests": [
+        {
+          "scenario": "Week 7 full run with real database",
+          "expected_outcome": "All 32 teams process without errors, projections for all active QBs/RBs/WRs/TEs",
+          "validation": "Check logs for completion, verify output file contains expected player count"
+        },
+        {
+          "scenario": "Backtesting Weeks 1-7",
+          "expected_outcome": "MAE < 25 yards for QBs, coverage rate 75-85%",
+          "validation": "Run validate-floors.js, check markdown report metrics"
+        },
+        {
+          "scenario": "Rookie player with 2 games",
+          "expected_outcome": "High shrinkage toward position mean, wide confidence intervals, LOW confidence",
+          "validation": "Manually inspect rookie QB projection, verify shrinkage >70%"
+        }
+      ],
+      "performance_tests": [
+        {
+          "metric": "Bootstrap time per player",
+          "target": "<40ms (2s / 50 players)",
+          "measurement": "console.time() around bootstrap function call"
+        },
+        {
+          "metric": "Full week processing time",
+          "target": "<60s for all teams",
+          "measurement": "Total script execution time in logs"
+        },
+        {
+          "metric": "Position-level cache hit rate",
+          "target": ">95% (calculate once, reuse for all players)",
+          "measurement": "Log cache hits vs misses"
+        }
+      ],
+      "validation_tests": [
+        {
+          "type": "Backtesting accuracy",
+          "method": "Compare projections vs actuals for Weeks 1-7",
+          "metrics": [
+            "MAE (Mean Absolute Error) < 15% of mean stat value",
+            "Coverage rate 75-85% for 80% prediction intervals",
+            "R² > 0.6 (correlation between predicted and actual)"
+          ]
+        },
+        {
+          "type": "Calibration plot",
+          "method": "Scatter plot of predicted vs actual for all projections",
+          "metrics": [
+            "Points cluster around y=x diagonal (well-calibrated)",
+            "No systematic over/under-prediction bias",
+            "Residuals randomly distributed (not patterned)"
+          ]
+        },
+        {
+          "type": "Feature importance validation",
+          "method": "Cross-validation on Random Forest model",
+          "metrics": [
+            "5-fold CV scores all within ±10% of mean",
+            "Feature importances stable across folds (±15%)",
+            "Opponent defense importance > venue importance (sanity check)"
+          ]
+        }
+      ]
+    },
+    "8_success_criteria": {
+      "functional_requirements": [
+        {
+          "requirement": "Schema errors eliminated",
+          "acceptance": "Script runs end-to-end for Week 7 without 'column does not exist' errors",
+          "validation_method": "Run script, check logs for error count = 0"
+        },
+        {
+          "requirement": "Hierarchical variance implemented",
+          "acceptance": "Shrinkage estimator adjusts low-sample players toward position mean",
+          "validation_method": "Compare rookie (2 games) vs veteran (15 games) shrinkage factors"
+        },
+        {
+          "requirement": "Bayesian prediction intervals",
+          "acceptance": "Output includes floor/expected/ceiling for all projections",
+          "validation_method": "Inspect output JSON, verify all projections have 3 values"
+        },
+        {
+          "requirement": "Feature importance learned",
+          "acceptance": "Random Forest weights replace hardcoded modifier values",
+          "validation_method": "Log feature importances, verify used in calculations"
+        },
+        {
+          "requirement": "Temporal smoothing",
+          "acceptance": "EWMA replaces simple average for recent games",
+          "validation_method": "Compare EWMA vs simple avg for player with 5 games, verify different"
+        },
+        {
+          "requirement": "Backtesting framework",
+          "acceptance": "validate-floors.js produces MAE and coverage metrics",
+          "validation_method": "Run backtesting script, verify markdown report generated"
+        }
+      ],
+      "performance_requirements": [
+        {
+          "metric": "Prediction accuracy (QB passing yards)",
+          "target": "MAE < 25 yards (vs baseline ~35 yards)",
+          "validation_method": "Backtesting Week 1-7 actual outcomes"
+        },
+        {
+          "metric": "Coverage rate",
+          "target": "75-85% of actuals within [floor, ceiling]",
+          "validation_method": "Coverage calculation in validate-floors.js"
+        },
+        {
+          "metric": "Processing time",
+          "target": "<2 seconds per game for 50 players",
+          "validation_method": "console.time() measurement in production run"
+        },
+        {
+          "metric": "Random Forest R²",
+          "target": ">0.6 on hold-out test set (Week 18)",
+          "validation_method": "Cross-validation metrics in feature-importance.js"
+        }
+      ],
+      "quality_requirements": [
+        {
+          "aspect": "Code coverage",
+          "target": ">90% for all new utility modules",
+          "validation_method": "Jest --coverage report"
+        },
+        {
+          "aspect": "Documentation",
+          "target": "All statistical functions have @citation JSDoc tags",
+          "validation_method": "Manual inspection of code comments"
+        },
+        {
+          "aspect": "Academic rigor",
+          "target": "All 19 sources cited in ACADEMIC-REFERENCES.md",
+          "validation_method": "Count citations in bibliography file"
+        },
+        {
+          "aspect": "Backward compatibility",
+          "target": "Existing CLI interface unchanged (--week, --game flags work)",
+          "validation_method": "Run existing commands, verify they still work"
+        }
+      ],
+      "user_acceptance_criteria": [
+        {
+          "criteria": "Projections more accurate than current model",
+          "evidence": "MAE reduced by >10% for all positions",
+          "stakeholder": "Fantasy football users"
+        },
+        {
+          "criteria": "Uncertainty quantified",
+          "evidence": "Confidence intervals displayed, confidence level (HIGH/MEDIUM/LOW) shown",
+          "stakeholder": "Data analysts"
+        },
+        {
+          "criteria": "Explainable predictions",
+          "evidence": "Feature importances logged, academic sources documented",
+          "stakeholder": "Researchers"
+        },
+        {
+          "criteria": "Production-ready reliability",
+          "evidence": "All tests pass, handles edge cases (missing data, rookies, injuries)",
+          "stakeholder": "DevOps/Operations"
+        }
+      ]
+    },
+    "9_implementation_checklist": {
+      "phase_1_checklist": [
+        "[ ] Install npm packages: simple-statistics, ml-random-forest, mathjs, jest",
+        "[ ] Create tests/ directory and jest.config.js",
+        "[ ] Fix calculateOpponentFactor to query passing_yards + rushing_yards allowed",
+        "[ ] Replace all primary_position with position in queries",
+        "[ ] Remove or guard game_weather table queries with fallback",
+        "[ ] Remove or guard player_injury_status table queries with fallback",
+        "[ ] Add data validation: null checks, minimum games warnings",
+        "[ ] Test: Run script for Week 7, verify no schema errors",
+        "[ ] Test: Verify opponent factor in range 0.7-1.3",
+        "[ ] Test: Verify no undefined/null in output"
+      ],
+      "phase_2_checklist": [
+        "[ ] Create utils/hierarchical-stats.js file",
+        "[ ] Implement calculateWithinPlayerVariance function",
+        "[ ] Implement calculateBetweenPlayerVariance function",
+        "[ ] Implement calculateShrinkageFactor function",
+        "[ ] Implement empirical Bayes shrinkage estimator",
+        "[ ] Add position-level statistics caching (Map or object)",
+        "[ ] Integrate hierarchical variance into calculateStatFloor",
+        "[ ] Implement calculatePositionVolatility using meta-analysis",
+        "[ ] Replace hardcoded CONFIG.position_volatility with calculated values",
+        "[ ] Create tests/hierarchical-stats.test.js",
+        "[ ] Test: Verify shrinkage >70% for players with <3 games",
+        "[ ] Test: Verify shrinkage <30% for players with >10 games",
+        "[ ] Test: Verify position volatility within ±20% of hardcoded values",
+        "[ ] Test: Verify position cache reduces redundant calculations"
+      ],
+      "phase_3_checklist": [
+        "[ ] Create utils/bootstrap-intervals.js file",
+        "[ ] Implement generateBootstrapSamples with 500 resamples",
+        "[ ] Implement calculatePredictionInterval with percentile extraction",
+        "[ ] Update output format to include floor/expected/ceiling object",
+        "[ ] Optimize bootstrap to <2s per game (parallel processing if needed)",
+        "[ ] Update displayTeamFloors to show interval format (185.3 ← 248.7 → 312.1)",
+        "[ ] Add calculateConfidenceLevel function (HIGH/MEDIUM/LOW)",
+        "[ ] Add position context to confidence display (85% (QB))",
+        "[ ] Create tests/bootstrap-intervals.test.js",
+        "[ ] Test: Verify bootstrap generates 500 samples",
+        "[ ] Test: Verify percentiles extracted correctly",
+        "[ ] Test: Verify output format readable",
+        "[ ] Test: Verify performance <2s for 50 players"
+      ],
+      "phase_4_checklist": [
+        "[ ] Create utils/feature-importance.js file",
+        "[ ] Implement prepareTrainingData from completed games",
+        "[ ] Train Random Forest with 100 estimators",
+        "[ ] Extract feature importances and log results",
+        "[ ] Integrate learned weights into calculateOpponentFactor",
+        "[ ] Integrate learned weights into calculateEnvironmentModifier",
+        "[ ] Implement 5-fold cross-validation",
+        "[ ] Calculate and log R² on hold-out test set",
+        "[ ] Create utils/temporal-smoothing.js file",
+        "[ ] Implement calculateEWMA function",
+        "[ ] Replace simple average with EWMA in calculateStatFloor",
+        "[ ] Add CONFIG.ewma_alpha parameter (default 0.3)",
+        "[ ] Create scripts/validate-floors.js file",
+        "[ ] Implement backtestWeek function",
+        "[ ] Implement calculateMAE for all stat categories",
+        "[ ] Implement calculateCoverageRate function",
+        "[ ] Generate calibration plot data (predicted vs actual)",
+        "[ ] Create markdown validation report",
+        "[ ] Create tests/feature-importance.test.js",
+        "[ ] Create tests/validation.test.js (end-to-end)",
+        "[ ] Add edge case tests (zero variance, single game, missing data)",
+        "[ ] Add JSDoc @citation comments to all functions",
+        "[ ] Create ACADEMIC-REFERENCES.md with BibTeX bibliography",
+        "[ ] Update README with Academic Foundation section",
+        "[ ] Test: Verify Random Forest R² > 0.6",
+        "[ ] Test: Verify EWMA improves MAE vs simple average",
+        "[ ] Test: Verify backtesting MAE < 25 yards for QBs",
+        "[ ] Test: Verify coverage rate 75-85%",
+        "[ ] Test: All unit and integration tests pass"
+      ],
+      "final_validation": [
+        "[ ] Run full backtesting for Weeks 1-7",
+        "[ ] Verify MAE improved >10% vs baseline",
+        "[ ] Verify coverage rate within target range (75-85%)",
+        "[ ] Verify all 19 academic sources cited",
+        "[ ] Verify all tests pass with >90% coverage",
+        "[ ] Verify backward compatibility (--week, --game flags work)",
+        "[ ] Run performance benchmark (<2s per game)",
+        "[ ] Review and merge code",
+        "[ ] Update CLAUDE.md with Session 6 summary",
+        "[ ] Archive plan to coderef/archived/ when complete"
+      ]
+    }
+  }
+}

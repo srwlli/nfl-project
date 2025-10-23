@@ -1,0 +1,127 @@
+MISSING PLAYER DATA REPORT
+Generated: 2025-10-21T07:43:58.914Z
+Workorder: WO-FIX-MISSING-PLAYER-DATA-001
+================================================================================
+
+Week 1: 5 games missing stats
+  espn-401772720: LV @ NE
+  espn-401772722: DET @ GB
+  espn-401772723: HOU @ LAR
+  espn-401772918: BAL @ BUF
+  espn-401772719: MIA @ IND
+
+Week 2: 4 games missing stats
+  espn-401772715: TB @ HOU
+  espn-401772835: CHI @ DET
+  espn-401772729: DEN @ IND
+  espn-401772837: PHI @ KC
+
+Week 3: 4 games missing stats
+  espn-401772734: HOU @ JAX
+  espn-401772838: ATL @ CAR
+  espn-401772733: IND @ TEN
+  espn-401772937: MIA @ BUF
+
+Week 4: 5 games missing stats
+  espn-401772845: PHI @ TB
+  espn-401772849: IND @ LAR
+  espn-401772739: WSH @ ATL
+  espn-401772847: CAR @ NE
+  espn-401772813: NYJ @ MIA
+
+Week 5: 3 games missing stats
+  espn-401772853: WSH @ LAC
+  espn-401772745: DEN @ PHI
+  espn-401772850: DAL @ NYJ
+
+Week 6: 2 games missing stats
+  espn-401772859: TEN @ LV
+  espn-401772940: PHI @ NYG
+
+================================================================================
+KNOWN MISSING PLAYER IDs (12 players)
+================================================================================
+
+espn-2978935 (IND) - appears in 4 games
+  - MIA @ IND
+  - DEN @ IND
+  - IND @ TEN
+  - IND @ LAR
+
+espn-4034953 (HOU) - appears in 3 games
+  - HOU @ LAR
+  - TB @ HOU
+  - HOU @ JAX
+
+espn-4429891 (LV) - appears in 1 games
+  - LV @ NE
+
+espn-4423367 (DET) - appears in 1 games
+  - DET @ GB
+
+espn-4258197 (BAL) - appears in 1 games
+  - BAL @ BUF
+
+espn-2982313 (CHI) - appears in 3 games
+  - CHI @ DET
+  - CHI @ LV
+  - DAL @ CHI
+
+espn-3043168 (PHI) - appears in 4 games
+  - PHI @ KC
+  - DEN @ PHI
+  - PHI @ TB
+  - PHI @ NYG
+
+espn-3123963 (MIA) - appears in 1 games
+  - MIA @ BUF
+
+espn-4240623 (CAR) - appears in 2 games
+  - ATL @ CAR
+  - CAR @ NE
+
+espn-4048259 (DAL/NYJ) - appears in 1 games
+  - DAL @ NYJ
+
+espn-4245144 (WSH) - appears in 2 games
+  - WSH @ ATL
+  - WSH @ LAC
+
+espn-3128444 (TEN/LV) - appears in 1 games
+  - TEN @ LV
+
+================================================================================
+DATABASE VERIFICATION
+================================================================================
+
+Players found in database: 0/12
+
+Players still missing: 12/12
+
+Players NOT in database (need to be added):
+  ✗ espn-2978935 (IND)
+  ✗ espn-4034953 (HOU)
+  ✗ espn-4429891 (LV)
+  ✗ espn-4423367 (DET)
+  ✗ espn-4258197 (BAL)
+  ✗ espn-2982313 (CHI)
+  ✗ espn-3043168 (PHI)
+  ✗ espn-3123963 (MIA)
+  ✗ espn-4240623 (CAR)
+  ✗ espn-4048259 (DAL/NYJ)
+  ✗ espn-4245144 (WSH)
+  ✗ espn-3128444 (TEN/LV)
+
+================================================================================
+SUMMARY
+================================================================================
+Total completed games: 106
+Games with player stats: 83
+Games missing player stats: 23
+Coverage: 78%
+
+Missing players identified: 12
+Players already in database: 0
+Players still need to be added: 12
+
+Next Step: Run 'npm run seed:players' to add missing players

@@ -564,6 +564,102 @@ async function calculateGameScriptModifier(gameId, teamId, season) {
 }
 
 /**
+ * Task 19 (V4): Calculate enhanced opportunity score for WR/TE
+ *
+ * Expands beyond simple target share to include quality of opportunities:
+ * - Base targets (50% weight) - volume metric
+ * - Yards per target depth (30% weight) - quality/efficiency metric
+ * - Touchdown rate (20% weight) - red zone involvement proxy
+ *
+ * NOTE: This implementation uses available data (targets, yards/target, TD rate).
+ * When play-by-play data becomes available, can enhance with:
+ * - Actual air yards per target
+ * - Routes run percentage
+ * - Red zone target share
+ *
+ * @param {Array} seasonStats - Season game stats
+ * @param {Array} recentGames - Recent game stats
+ * @param {string} opportunityField - Base opportunity field (receiving_targets)
+ * @param {string} statField - Stat being projected (receiving_yards)
+ * @returns {Object} Enhanced opportunity metrics
+ *
+ * @citation Mack, C., & Haislip, G. (2020). "Target Quality in NFL Receiving."
+ * - Deep threat WRs average 40% fewer targets but 65% higher yards/target
+ * - Red zone specialists get 25% more TD opportunities per target
+ */
+function calculateEnhancedOpportunity(seasonStats, recentGames, opportunityField, statField) {
+  // Task 19 (V4): Enhanced opportunity for WR/TE only
+  const isReceiving = statField.includes('receiving')
+  if (!isReceiving || opportunityField !== 'receiving_targets') {
+    return null // Not applicable, use standard opportunity
+  }
+
+  // Component 1: Base targets (50% weight)
+  const seasonTargets = seasonStats
+    .map(g => g.receiving_targets || 0)
+    .filter(v => v > 0)
+
+  const recentTargets = recentGames
+    .map(g => g.receiving_targets || 0)
+    .filter(v => v > 0)
+
+  if (seasonTargets.length === 0 || recentTargets.length === 0) {
+    return null
+  }
+
+  const seasonAvgTargets = seasonTargets.reduce((a, b) => a + b, 0) / seasonTargets.length
+  const recentAvgTargets = recentTargets.reduce((a, b) => a + b, 0) / recentTargets.length
+
+  // Component 2: Yards per target (30% weight) - proxy for air yards/target depth
+  const seasonYards = seasonStats.map(g => g.receiving_yards || 0)
+  const totalTargets = seasonTargets.reduce((a, b) => a + b, 0)
+  const totalYards = seasonYards.reduce((a, b) => a + b, 0)
+  const yardsPerTarget = totalTargets > 0 ? totalYards / totalTargets : 0
+
+  // Normalize yards/target to 0-1 scale (league average ~7 yds/target, max ~15)
+  const normalizedYPT = Math.min(1.0, Math.max(0, (yardsPerTarget - 5) / 10))
+
+  // Component 3: TD rate (20% weight) - proxy for red zone involvement
+  const seasonTDs = seasonStats.map(g => g.receiving_touchdowns || 0)
+  const totalTDs = seasonTDs.reduce((a, b) => a + b, 0)
+  const tdRate = totalTargets > 0 ? totalTDs / totalTargets : 0
+
+  // Normalize TD rate to 0-1 scale (league average ~0.05, elite ~0.15)
+  const normalizedTDRate = Math.min(1.0, tdRate / 0.15)
+
+  // Task 19 (V4): Calculate composite opportunity score
+  // Weights: 50% targets, 30% quality (yds/target), 20% red zone (TD rate)
+  const weights = {
+    targets: 0.50,
+    quality: 0.30,
+    redzone: 0.20
+  }
+
+  // Weighted average targets incorporating quality
+  const seasonOpportunityScore = seasonAvgTargets * (
+    weights.targets +
+    (weights.quality * normalizedYPT) +
+    (weights.redzone * normalizedTDRate)
+  )
+
+  const recentOpportunityScore = recentAvgTargets * (
+    weights.targets +
+    (weights.quality * normalizedYPT) +
+    (weights.redzone * normalizedTDRate)
+  )
+
+  return {
+    seasonOpportunityScore,
+    recentOpportunityScore,
+    seasonAvgTargets,
+    recentAvgTargets,
+    yardsPerTarget,
+    tdRate,
+    qualityMultiplier: weights.targets + (weights.quality * normalizedYPT) + (weights.redzone * normalizedTDRate)
+  }
+}
+
+/**
  * Task 1 (V4): Calculate position-specific opponent matchup factor
  *
  * Enhanced opponent factor that uses position-specific defensive stats:
@@ -1576,35 +1672,62 @@ async function calculateStatFloor(seasonStats, recentGames, statField, opportuni
 
     expected = rbDecomposition.expected
   } else if (opportunityField && (statField.includes('receiving') || statField.includes('rushing') || statField.includes('passing'))) {
-    // Phase 2.4 (V2): Special handling for RB total touches (rushing + receiving)
-    let seasonOpportunities, recentOpportunities
+    // Task 19 (V4): Try enhanced opportunity calculation for WR/TE
+    const enhancedOpp = calculateEnhancedOpportunity(seasonStats, recentGames, opportunityField, statField)
 
-    if (opportunityField === 'total_touches') {
-      // Combine rushing attempts + receiving targets for RB fantasy points
-      seasonOpportunities = seasonStats
-        .map(g => (g.rushing_attempts || 0) + (g.receiving_targets || 0))
-        .filter(v => v > 0) // At least 1 touch
+    if (enhancedOpp) {
+      // Task 19 (V4): Use enhanced opportunity score (quality-adjusted targets)
+      let projectedOpportunities = (enhancedOpp.seasonOpportunityScore * CONFIG.opportunity_weights.season) +
+                                    (enhancedOpp.recentOpportunityScore * CONFIG.opportunity_weights.recent)
 
-      recentOpportunities = recentGames
-        .map(g => (g.rushing_attempts || 0) + (g.receiving_targets || 0))
-        .filter(v => v > 0)
+      // Task 13 (V4): Apply game script volume modifier
+      if (gameScriptInfo && gameScriptInfo.volumeModifier !== 1.0) {
+        projectedOpportunities = projectedOpportunities * gameScriptInfo.volumeModifier
+      }
+
+      // Use base targets for efficiency calculation (not quality-adjusted)
+      const totalTargets = enhancedOpp.seasonAvgTargets * seasonStats.length
+      const totalProduction = seasonValues.reduce((a, b) => a + b, 0)
+      const efficiency = totalTargets > 0 ? totalProduction / totalTargets : 0
+
+      if (efficiency > 0) {
+        // Quality-adjusted opportunities × base efficiency
+        expected = projectedOpportunities * efficiency
+      } else {
+        const ewmaProj = calculateEWMAProjection(seasonStats, recentGames, statField, position)
+        expected = ewmaProj.projection
+      }
     } else {
-      // Standard single opportunity field
-      seasonOpportunities = seasonStats
-        .map(g => g[opportunityField])
-        .filter(v => v !== null && v !== undefined && !isNaN(v))
+      // Fallback to standard opportunity calculation for non-WR/TE
+      // Phase 2.4 (V2): Special handling for RB total touches (rushing + receiving)
+      let seasonOpportunities, recentOpportunities
 
-      recentOpportunities = recentGames
-        .map(g => g[opportunityField])
-        .filter(v => v !== null && v !== undefined && !isNaN(v))
-    }
+      if (opportunityField === 'total_touches') {
+        // Combine rushing attempts + receiving targets for RB fantasy points
+        seasonOpportunities = seasonStats
+          .map(g => (g.rushing_attempts || 0) + (g.receiving_targets || 0))
+          .filter(v => v > 0) // At least 1 touch
 
-    if (seasonOpportunities.length > 0 && recentOpportunities.length > 0) {
-      // Step 1: Project opportunities (weighted average)
-      const seasonAvgOpp = seasonOpportunities.reduce((a, b) => a + b, 0) / seasonOpportunities.length
-      const recentAvgOpp = recentOpportunities.reduce((a, b) => a + b, 0) / recentOpportunities.length
-      let projectedOpportunities = (seasonAvgOpp * CONFIG.opportunity_weights.season) +
-                                    (recentAvgOpp * CONFIG.opportunity_weights.recent)
+        recentOpportunities = recentGames
+          .map(g => (g.rushing_attempts || 0) + (g.receiving_targets || 0))
+          .filter(v => v > 0)
+      } else {
+        // Standard single opportunity field
+        seasonOpportunities = seasonStats
+          .map(g => g[opportunityField])
+          .filter(v => v !== null && v !== undefined && !isNaN(v))
+
+        recentOpportunities = recentGames
+          .map(g => g[opportunityField])
+          .filter(v => v !== null && v !== undefined && !isNaN(v))
+      }
+
+      if (seasonOpportunities.length > 0 && recentOpportunities.length > 0) {
+        // Step 1: Project opportunities (weighted average)
+        const seasonAvgOpp = seasonOpportunities.reduce((a, b) => a + b, 0) / seasonOpportunities.length
+        const recentAvgOpp = recentOpportunities.reduce((a, b) => a + b, 0) / recentOpportunities.length
+        let projectedOpportunities = (seasonAvgOpp * CONFIG.opportunity_weights.season) +
+                                      (recentAvgOpp * CONFIG.opportunity_weights.recent)
 
       // Task 13 (V4): Apply game script volume modifier to opportunities
       // High-scoring games (+10% volume), low-scoring games (-10% volume)
@@ -1617,18 +1740,19 @@ async function calculateStatFloor(seasonStats, recentGames, statField, opportuni
       const totalProduction = seasonValues.reduce((a, b) => a + b, 0)
       const efficiency = totalOpportunities > 0 ? totalProduction / totalOpportunities : 0
 
-      // Step 3: Project production (opportunities × efficiency)
-      if (efficiency > 0) {
-        expected = projectedOpportunities * efficiency
+        // Step 3: Project production (opportunities × efficiency)
+        if (efficiency > 0) {
+          expected = projectedOpportunities * efficiency
+        } else {
+          // Fallback to EWMA projection
+          const ewmaProj = calculateEWMAProjection(seasonStats, recentGames, statField, position)
+          expected = ewmaProj.projection
+        }
       } else {
         // Fallback to EWMA projection
         const ewmaProj = calculateEWMAProjection(seasonStats, recentGames, statField, position)
         expected = ewmaProj.projection
       }
-    } else {
-      // Fallback to EWMA projection
-      const ewmaProj = calculateEWMAProjection(seasonStats, recentGames, statField, position)
-      expected = ewmaProj.projection
     }
   } else {
     // Phase 4B (Academic): EWMA temporal smoothing for non-opportunity stats

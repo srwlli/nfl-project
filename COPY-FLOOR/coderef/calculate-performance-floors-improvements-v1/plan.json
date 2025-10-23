@@ -1,0 +1,899 @@
+{
+  "feature_name": "calculate-performance-floors-improvements-v1",
+  "version": "1.0",
+  "created_at": "2025-10-22",
+  "status": "planning",
+  "overview": {
+    "description": "Phase 1 Quick Wins enhancement package for the performance floors projection system. Integrates ML learned weights, adds injury probability adjustments, and implements backtesting validation to improve from 9.5/10 to 9.8/10 rating.",
+    "current_state": "System is production-ready at 9.5/10 with 4 utility modules (hierarchical-stats, bootstrap-intervals, temporal-smoothing, feature-importance), 5 academic citations, and comprehensive statistical modeling. ML module exists but isn't integrated. No backtesting validation yet.",
+    "goals": [
+      "Integrate Random Forest learned weights for 3-5% accuracy improvement",
+      "Add probabilistic injury adjustments for Q/Probable players",
+      "Build backtesting framework to validate and prove accuracy",
+      "Achieve 9.8/10 production readiness with validated metrics"
+    ],
+    "success_metrics": [
+      "MAE (Mean Absolute Error) < 3.5 fantasy points",
+      "RMSE (Root Mean Squared Error) < 5.0 fantasy points",
+      "80% prediction interval hit rate > 75%",
+      "ML feature weights successfully integrated and improving projections",
+      "Injury probability discounts applied to Q/Probable players"
+    ],
+    "estimated_effort": "7-9 hours total",
+    "priority": "HIGH",
+    "dependencies": [
+      "scripts/utils/feature-importance.js (exists, needs integration)",
+      "scripts/performance-floors-config.json (needs learned_feature_weights section)",
+      "ml-random-forest package (already installed)",
+      "Supabase database with weeks 1-7 completed game data"
+    ]
+  },
+  "technical_context": {
+    "related_files": [
+      "scripts/calculate-performance-floors.js (1,119 lines - main script)",
+      "scripts/utils/hierarchical-stats.js (237 lines - Empirical Bayes shrinkage)",
+      "scripts/utils/bootstrap-intervals.js (357 lines - prediction intervals)",
+      "scripts/utils/temporal-smoothing.js (219 lines - EWMA smoothing)",
+      "scripts/utils/feature-importance.js (387 lines - Random Forest training)",
+      "scripts/performance-floors-config.json (55 lines - configuration)"
+    ],
+    "database_tables": [
+      "games (game_id, week, home_team_id, away_team_id, stadium_id, status)",
+      "player_game_stats (player_id, game_id, team_id, fantasy_points_ppr, passing_yards, rushing_yards, receiving_yards)",
+      "team_game_stats (team_id, game_id, total_yards_allowed)",
+      "stadiums (stadium_id, surface_type, roof_type)",
+      "player_injury_status (player_id, season, week, injury_status, injury_type)",
+      "players (player_id, full_name, primary_position)"
+    ],
+    "api_endpoints": "None (command-line script)",
+    "external_services": [
+      "Supabase PostgreSQL database",
+      "ml-random-forest (JavaScript ML library)"
+    ],
+    "architectural_patterns": {
+      "statistical_modeling": "Hierarchical Bayesian + Bootstrap + EWMA + Random Forest ensemble",
+      "configuration": "External JSON config with learned weights support",
+      "data_pipeline": "Batch queries with Promise.all, league average caching",
+      "error_handling": "Validation, graceful degradation, comprehensive logging"
+    }
+  },
+  "implementation_phases": {
+    "phase_1_ml_integration": {
+      "title": "Integrate Random Forest Learned Weights",
+      "priority": "HIGH",
+      "estimated_hours": "2-3 hours",
+      "description": "Train Random Forest model on weeks 1-7 data, extract feature importances, save to config, and integrate into main projection flow via getModifierValue() function.",
+      "tasks": [
+        {
+          "id": "ml-1",
+          "title": "Create ML training script",
+          "description": "Create scripts/train-feature-weights.js that calls trainFeatureImportanceModel() from feature-importance.js, trains on weeks 1-7, and outputs learned weights",
+          "files_to_modify": [],
+          "files_to_create": [
+            "scripts/train-feature-weights.js"
+          ],
+          "implementation_details": {
+            "code_structure": [
+              "Import trainFeatureImportanceModel from utils/feature-importance.js",
+              "Set options: { season: 2025, maxWeek: 7, performCV: true }",
+              "Run training and capture { model, importances, cvResults, trainingSize }",
+              "Display cross-validation results (avg R², avg MSE)",
+              "Display feature importances with percentages",
+              "Export importances object for config integration"
+            ],
+            "sample_output": {
+              "importances": {
+                "opponent_defense": 0.42,
+                "is_home": 0.35,
+                "is_turf": 0.18,
+                "is_dome": 0.05
+              },
+              "cv_results": {
+                "avgR2": 0.68,
+                "avgMSE": 12.4
+              }
+            }
+          },
+          "testing_strategy": "Run on weeks 1-7 data, verify 100+ training examples, check importances sum to 1.0",
+          "estimated_time": "45 minutes"
+        },
+        {
+          "id": "ml-2",
+          "title": "Update config with learned weights",
+          "description": "Add learned_feature_weights section to performance-floors-config.json with trained importances from ml-1",
+          "files_to_modify": [
+            "scripts/performance-floors-config.json"
+          ],
+          "files_to_create": [],
+          "implementation_details": {
+            "config_additions": {
+              "learned_feature_weights": {
+                "enabled": true,
+                "training_date": "2025-10-22",
+                "training_weeks": "1-7",
+                "training_size": 2000,
+                "cross_validation": {
+                  "avg_r2": 0.68,
+                  "avg_mse": 12.4
+                },
+                "importances": {
+                  "opponent_defense": 0.42,
+                  "is_home": 0.35,
+                  "is_turf": 0.18,
+                  "is_dome": 0.05
+                }
+              }
+            },
+            "backward_compatibility": "Falls back to hardcoded modifiers if learned_feature_weights.enabled = false"
+          },
+          "testing_strategy": "Verify JSON is valid, check learned_feature_weights loads correctly",
+          "estimated_time": "15 minutes"
+        },
+        {
+          "id": "ml-3",
+          "title": "Update getModifierValue() to use learned weights",
+          "description": "Modify getModifierValue() in calculate-performance-floors.js (lines 62-98) to check CONFIG.learned_feature_weights.enabled and use learned importances to calculate modifiers",
+          "files_to_modify": [
+            "scripts/calculate-performance-floors.js"
+          ],
+          "files_to_create": [],
+          "implementation_details": {
+            "current_logic": "Lines 62-98: Checks CONFIG.learned_feature_weights?.importances, converts importance to modifier (0.8-1.2 range), falls back to config defaults",
+            "enhancement_needed": "Add CONFIG.learned_feature_weights.enabled check at top of function, return early if disabled",
+            "formula": "modifier = 1.0 + ((importance - 0.25) × 0.2) capped to [0.8, 1.2]",
+            "example": "If is_home importance = 0.35, then modifier = 1.0 + ((0.35 - 0.25) × 0.2) = 1.02"
+          },
+          "testing_strategy": "Set enabled=false → verify hardcoded modifiers used. Set enabled=true → verify learned modifiers used. Compare projections before/after.",
+          "estimated_time": "30 minutes"
+        },
+        {
+          "id": "ml-4",
+          "title": "Add npm script and documentation",
+          "description": "Add 'npm run train:weights' script to package.json and document usage in CLAUDE.md",
+          "files_to_modify": [
+            "package.json",
+            "CLAUDE.md"
+          ],
+          "files_to_create": [],
+          "implementation_details": {
+            "npm_script": "\"train:weights\": \"node scripts/train-feature-weights.js\"",
+            "documentation_sections": [
+              "Add to 'Manual Scraping' section in CLAUDE.md",
+              "Usage: npm run train:weights",
+              "When to run: After every 3-4 weeks of new data",
+              "Expected output: Feature importances + CV results"
+            ]
+          },
+          "testing_strategy": "Run npm run train:weights, verify output matches expected format",
+          "estimated_time": "30 minutes"
+        },
+        {
+          "id": "ml-5",
+          "title": "Validate ML integration end-to-end",
+          "description": "Run calculate-performance-floors.js with ML enabled vs disabled, compare projections, verify 3-5% improvement in modifiers",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "implementation_details": {
+            "test_cases": [
+              "Home team vs away team (verify home modifier changes)",
+              "Turf stadium vs grass stadium (verify venue modifier changes)",
+              "Tough defense vs weak defense (verify opponent factor changes)"
+            ],
+            "comparison_metrics": [
+              "Before ML: Home modifier = 1.05 (hardcoded)",
+              "After ML: Home modifier = 1.02 (learned, if importance = 0.35)",
+              "Expected change: ±3-5% in final projections"
+            ]
+          },
+          "testing_strategy": "Run --week=8 with enabled=false, then enabled=true. Compare expected values. Document differences.",
+          "estimated_time": "30 minutes"
+        }
+      ],
+      "deliverables": [
+        "scripts/train-feature-weights.js (ML training script)",
+        "Updated scripts/performance-floors-config.json (with learned weights)",
+        "Updated scripts/calculate-performance-floors.js (getModifierValue enhanced)",
+        "Updated package.json (train:weights npm script)",
+        "Updated CLAUDE.md (training documentation)"
+      ],
+      "success_criteria": [
+        "ML training completes in <60 seconds",
+        "Cross-validation R² > 0.60",
+        "Feature importances sum to 1.0",
+        "Learned modifiers applied to projections",
+        "3-5% change in modifier values vs hardcoded"
+      ]
+    },
+    "phase_2_injury_probability": {
+      "title": "Add Probabilistic Injury Adjustments",
+      "priority": "MEDIUM",
+      "estimated_hours": "2 hours",
+      "description": "Replace binary injury filter (OUT/DOUBTFUL excluded) with probabilistic discounts for QUESTIONABLE and PROBABLE players",
+      "tasks": [
+        {
+          "id": "injury-1",
+          "title": "Add injury_probability config section",
+          "description": "Add injury probability discount factors to performance-floors-config.json",
+          "files_to_modify": [
+            "scripts/performance-floors-config.json"
+          ],
+          "files_to_create": [],
+          "implementation_details": {
+            "config_additions": {
+              "injury_probability": {
+                "enabled": true,
+                "out_probability": 0.0,
+                "doubtful_discount": 0.25,
+                "questionable_discount": 0.85,
+                "probable_discount": 0.95,
+                "apply_to_floor": true,
+                "apply_to_expected": true,
+                "apply_to_ceiling": false
+              }
+            },
+            "discount_explanation": [
+              "out_probability: 0.0 (100% chance of missing game, already excluded)",
+              "doubtful_discount: 0.25 (75% reduction, already excluded)",
+              "questionable_discount: 0.85 (15% reduction in projection)",
+              "probable_discount: 0.95 (5% reduction in projection)"
+            ]
+          },
+          "testing_strategy": "Verify JSON valid, check config loads properly",
+          "estimated_time": "15 minutes"
+        },
+        {
+          "id": "injury-2",
+          "title": "Update calculateTeamFloors() to apply injury discounts",
+          "description": "Modify lines 595-621 in calculate-performance-floors.js where injury filtering happens. Instead of excluding QUESTIONABLE, apply discount factor to projections.",
+          "files_to_modify": [
+            "scripts/calculate-performance-floors.js"
+          ],
+          "files_to_create": [],
+          "implementation_details": {
+            "current_logic": "Lines 595-621: Excludes OUT/DOUBTFUL, flags QUESTIONABLE with injury_warning but no adjustment",
+            "new_logic": [
+              "Keep exclusion of OUT/DOUBTFUL (no change)",
+              "For QUESTIONABLE: Add injury_discount property from CONFIG.injury_probability.questionable_discount",
+              "For PROBABLE: Add injury_discount property from CONFIG.injury_probability.probable_discount",
+              "Pass injury_discount to calculatePlayerFloors()"
+            ],
+            "data_structure": {
+              "player": {
+                "player_id": "espn-123456",
+                "full_name": "Player Name",
+                "primary_position": "WR",
+                "injury_warning": true,
+                "injury_type": "ankle",
+                "injury_status": "questionable",
+                "injury_discount": 0.85
+              }
+            }
+          },
+          "testing_strategy": "Query player_injury_status for QUESTIONABLE players, verify discount applied",
+          "estimated_time": "45 minutes"
+        },
+        {
+          "id": "injury-3",
+          "title": "Apply injury discount in calculateStatFloor()",
+          "description": "Modify calculateStatFloor() function (lines 775-956) to multiply expected/floor by injury_discount if present",
+          "files_to_modify": [
+            "scripts/calculate-performance-floors.js"
+          ],
+          "files_to_create": [],
+          "implementation_details": {
+            "modification_points": [
+              "After line 934 (bootstrap expected calculated)",
+              "Check if player has injury_discount property",
+              "If CONFIG.injury_probability.apply_to_expected: expected *= injury_discount",
+              "If CONFIG.injury_probability.apply_to_floor: floor *= injury_discount",
+              "If CONFIG.injury_probability.apply_to_ceiling: ceiling *= injury_discount (usually false)"
+            ],
+            "example": {
+              "before_injury_discount": {
+                "floor": 60.5,
+                "expected": 85.2,
+                "ceiling": 110.8
+              },
+              "after_injury_discount_0.85": {
+                "floor": 51.4,
+                "expected": 72.4,
+                "ceiling": 110.8
+              }
+            }
+          },
+          "testing_strategy": "Test with QUESTIONABLE player, verify expected reduced by 15%, floor reduced, ceiling unchanged",
+          "estimated_time": "30 minutes"
+        },
+        {
+          "id": "injury-4",
+          "title": "Update display to show injury discount",
+          "description": "Modify displayTeamFloors() (lines 981-1039) to show injury discount percentage in output",
+          "files_to_modify": [
+            "scripts/calculate-performance-floors.js"
+          ],
+          "files_to_create": [],
+          "implementation_details": {
+            "current_display": "Line 1019: ⚠️ QUESTIONABLE (ankle)",
+            "enhanced_display": "⚠️ QUESTIONABLE (ankle) - Projection reduced 15%",
+            "format": "If injury_discount < 1.0, append '- Projection reduced {percent}%'",
+            "calculation": "percent = Math.round((1 - injury_discount) × 100)"
+          },
+          "testing_strategy": "Run floors for week with QUESTIONABLE players, verify message displays",
+          "estimated_time": "20 minutes"
+        },
+        {
+          "id": "injury-5",
+          "title": "Document injury probability feature",
+          "description": "Add injury probability documentation to CLAUDE.md and create example output",
+          "files_to_modify": [
+            "CLAUDE.md"
+          ],
+          "files_to_create": [],
+          "implementation_details": {
+            "documentation_sections": [
+              "Add to 'Key Achievements' section",
+              "Add to 'Technical Details' section",
+              "Include example output showing injury discount",
+              "Explain when to enable/disable feature"
+            ],
+            "example_output": [
+              "Tyreek Hill (WR) ⚠️ QUESTIONABLE (ankle) - Projection reduced 15%:",
+              "  Receiving Yards:",
+              "    68.0 ← 89.5 → 112.3 (80% CI)",
+              "    Without injury: 80.0 ← 105.3 → 132.1"
+            ]
+          },
+          "testing_strategy": "Review documentation for clarity and accuracy",
+          "estimated_time": "10 minutes"
+        }
+      ],
+      "deliverables": [
+        "Updated scripts/performance-floors-config.json (injury_probability section)",
+        "Updated scripts/calculate-performance-floors.js (injury discount logic)",
+        "Updated CLAUDE.md (injury probability documentation)"
+      ],
+      "success_criteria": [
+        "QUESTIONABLE players get 15% reduction (0.85 discount)",
+        "PROBABLE players get 5% reduction (0.95 discount)",
+        "OUT/DOUBTFUL players still excluded (no change)",
+        "Display shows injury discount percentage",
+        "Feature can be toggled via CONFIG.injury_probability.enabled"
+      ]
+    },
+    "phase_3_backtesting": {
+      "title": "Build Backtesting Validation Framework",
+      "priority": "HIGH",
+      "estimated_hours": "3-4 hours",
+      "description": "Create backtesting script to compare projected vs actual performance for weeks 1-7, calculate MAE/RMSE/hit-rate metrics, and validate model accuracy",
+      "tasks": [
+        {
+          "id": "backtest-1",
+          "title": "Create backtesting script structure",
+          "description": "Create scripts/backtest-performance-floors.js with core functions for fetching projections and actuals",
+          "files_to_modify": [],
+          "files_to_create": [
+            "scripts/backtest-performance-floors.js"
+          ],
+          "implementation_details": {
+            "core_functions": [
+              "generateProjectionsForWeek(week) - Runs calculate-performance-floors.js in JSON mode",
+              "fetchActualResults(week, playerIds) - Queries player_game_stats for actual fantasy_points_ppr",
+              "calculateMetrics(projections, actuals) - Computes MAE, RMSE, hit rate",
+              "generateBacktestReport(weeks) - Aggregates metrics across multiple weeks",
+              "displayBacktestResults(report) - Formats output for console"
+            ],
+            "data_structures": {
+              "projection": {
+                "player_id": "espn-123456",
+                "player_name": "Player Name",
+                "position": "WR",
+                "week": 7,
+                "floor": 60.5,
+                "expected": 85.2,
+                "ceiling": 110.8
+              },
+              "actual": {
+                "player_id": "espn-123456",
+                "week": 7,
+                "fantasy_points_ppr": 92.3
+              },
+              "comparison": {
+                "player_id": "espn-123456",
+                "week": 7,
+                "projected": 85.2,
+                "actual": 92.3,
+                "error": -7.1,
+                "abs_error": 7.1,
+                "within_interval": true
+              }
+            }
+          },
+          "testing_strategy": "Test generateProjectionsForWeek(7), verify JSON output matches expected format",
+          "estimated_time": "90 minutes"
+        },
+        {
+          "id": "backtest-2",
+          "title": "Implement metrics calculations",
+          "description": "Add functions to calculate MAE, RMSE, and 80% prediction interval hit rate",
+          "files_to_modify": [],
+          "files_to_create": [
+            "scripts/backtest-performance-floors.js (continued)"
+          ],
+          "implementation_details": {
+            "metrics": {
+              "MAE": {
+                "formula": "Mean Absolute Error = Σ|projected - actual| / n",
+                "interpretation": "Average prediction error in fantasy points",
+                "target": "< 3.5 fantasy points"
+              },
+              "RMSE": {
+                "formula": "Root Mean Squared Error = √(Σ(projected - actual)² / n)",
+                "interpretation": "Penalizes large errors more than MAE",
+                "target": "< 5.0 fantasy points"
+              },
+              "hit_rate_80pct": {
+                "formula": "% of actuals within [floor, ceiling] interval",
+                "interpretation": "How often actual falls within 80% CI",
+                "target": "> 75% (ideally ~80%)"
+              },
+              "bias": {
+                "formula": "Mean(projected - actual)",
+                "interpretation": "Positive = overestimating, Negative = underestimating",
+                "target": "Close to 0"
+              }
+            },
+            "implementation": [
+              "calculateMAE(comparisons) - returns { mae, n }",
+              "calculateRMSE(comparisons) - returns { rmse, n }",
+              "calculateHitRate(comparisons) - returns { hit_rate, hits, total }",
+              "calculateBias(comparisons) - returns { bias, direction }"
+            ]
+          },
+          "testing_strategy": "Test with sample data: projections=[10,20,30], actuals=[12,18,35], verify MAE=2.33",
+          "estimated_time": "45 minutes"
+        },
+        {
+          "id": "backtest-3",
+          "title": "Add position-level and overall aggregation",
+          "description": "Calculate metrics by position (QB/RB/WR/TE) and overall aggregation",
+          "files_to_modify": [],
+          "files_to_create": [
+            "scripts/backtest-performance-floors.js (continued)"
+          ],
+          "implementation_details": {
+            "aggregation_levels": [
+              "Overall: All players across all positions",
+              "By position: Separate metrics for QB/RB/WR/TE",
+              "By week: Track performance over time",
+              "By confidence level: HIGH vs MEDIUM vs LOW projections"
+            ],
+            "report_structure": {
+              "overall": {
+                "mae": 3.2,
+                "rmse": 4.8,
+                "hit_rate": 78.5,
+                "bias": -0.4,
+                "n": 423
+              },
+              "by_position": {
+                "QB": { "mae": 2.8, "rmse": 4.1, "hit_rate": 82.1, "n": 28 },
+                "RB": { "mae": 3.5, "rmse": 5.2, "hit_rate": 76.3, "n": 152 },
+                "WR": { "mae": 3.4, "rmse": 5.1, "hit_rate": 77.8, "n": 201 },
+                "TE": { "mae": 2.9, "rmse": 4.3, "hit_rate": 79.5, "n": 42 }
+              },
+              "by_week": [
+                { "week": 1, "mae": 3.8, "rmse": 5.4, "hit_rate": 74.2 },
+                { "week": 2, "mae": 3.1, "rmse": 4.6, "hit_rate": 79.8 }
+              ]
+            }
+          },
+          "testing_strategy": "Verify QB metrics separate from WR metrics, check totals sum correctly",
+          "estimated_time": "45 minutes"
+        },
+        {
+          "id": "backtest-4",
+          "title": "Create visualization and reporting",
+          "description": "Format backtesting results for console output with tables and summaries",
+          "files_to_modify": [],
+          "files_to_create": [
+            "scripts/backtest-performance-floors.js (continued)"
+          ],
+          "implementation_details": {
+            "output_sections": [
+              "Executive Summary (overall metrics)",
+              "Position Breakdown Table",
+              "Week-by-Week Trend",
+              "Top 10 Best Predictions (smallest errors)",
+              "Top 10 Worst Predictions (largest errors)",
+              "Confidence Level Analysis (HIGH vs MEDIUM vs LOW)"
+            ],
+            "table_format": [
+              "Use console.table() for tabular data",
+              "Color coding: Green (good) / Yellow (ok) / Red (poor)",
+              "Include comparison to industry benchmarks"
+            ],
+            "example_output": [
+              "═══════════════════════════════════════════",
+              "BACKTESTING RESULTS: Weeks 1-7 (2025 Season)",
+              "═══════════════════════════════════════════",
+              "",
+              "Overall Performance:",
+              "  MAE: 3.2 pts ✅ (Target: <3.5)",
+              "  RMSE: 4.8 pts ✅ (Target: <5.0)",
+              "  80% Hit Rate: 78.5% ✅ (Target: >75%)",
+              "  Bias: -0.4 pts (Slight underestimation)",
+              "  Sample Size: 423 player-games",
+              "",
+              "Position Breakdown:",
+              "┌──────┬──────┬──────┬──────────┬─────┐",
+              "│ Pos  │ MAE  │ RMSE │ Hit Rate │  n  │",
+              "├──────┼──────┼──────┼──────────┼─────┤",
+              "│ QB   │ 2.8  │ 4.1  │ 82.1%    │ 28  │",
+              "│ RB   │ 3.5  │ 5.2  │ 76.3%    │ 152 │",
+              "│ WR   │ 3.4  │ 5.1  │ 77.8%    │ 201 │",
+              "│ TE   │ 2.9  │ 4.3  │ 79.5%    │ 42  │",
+              "└──────┴──────┴──────┴──────────┴─────┘"
+            ]
+          },
+          "testing_strategy": "Run backtest, verify output formatting is clear and readable",
+          "estimated_time": "30 minutes"
+        },
+        {
+          "id": "backtest-5",
+          "title": "Add CLI arguments and npm script",
+          "description": "Support --weeks, --positions, --output flags and add npm run backtest script",
+          "files_to_modify": [
+            "package.json"
+          ],
+          "files_to_create": [],
+          "implementation_details": {
+            "cli_arguments": {
+              "--weeks": "Comma-separated weeks to backtest (e.g., 1,2,3,4,5,6,7)",
+              "--positions": "Filter by positions (e.g., QB,RB)",
+              "--output": "Output format (console | json | csv)",
+              "--confidence": "Show breakdown by confidence level",
+              "--verbose": "Show individual player comparisons"
+            },
+            "npm_scripts": {
+              "backtest": "node scripts/backtest-performance-floors.js --weeks=1,2,3,4,5,6,7",
+              "backtest:recent": "node scripts/backtest-performance-floors.js --weeks=5,6,7",
+              "backtest:json": "node scripts/backtest-performance-floors.js --weeks=1,2,3,4,5,6,7 --output=json"
+            }
+          },
+          "testing_strategy": "Test each CLI flag, verify --output=json produces valid JSON",
+          "estimated_time": "30 minutes"
+        },
+        {
+          "id": "backtest-6",
+          "title": "Document backtesting and interpret results",
+          "description": "Add backtesting documentation to CLAUDE.md, interpret metrics, and provide recommendations",
+          "files_to_modify": [
+            "CLAUDE.md"
+          ],
+          "files_to_create": [],
+          "implementation_details": {
+            "documentation_sections": [
+              "Add to 'Scripts Index' section",
+              "Add to 'Technical Details' section",
+              "Include sample backtesting output",
+              "Explain how to interpret MAE/RMSE/hit-rate",
+              "Provide benchmarks vs industry standards"
+            ],
+            "interpretation_guide": {
+              "MAE_3.2": "Very good - means average error is ~3 fantasy points",
+              "RMSE_4.8": "Excellent - large errors are rare",
+              "hit_rate_78.5": "Good - actual falls within 80% CI 78.5% of the time (close to theoretical 80%)",
+              "bias_negative": "Slight underestimation - conservative floors (good for risk management)"
+            },
+            "recommendations": [
+              "If MAE > 4.0: Retrain ML weights with more data",
+              "If hit_rate < 70%: Widen confidence intervals (increase bootstrap_confidence)",
+              "If hit_rate > 85%: Intervals too wide (decrease bootstrap_confidence)",
+              "If bias > 2.0: Systematic overestimation (adjust position_volatility)"
+            ]
+          },
+          "testing_strategy": "Review documentation for completeness, run backtest and verify metrics match docs",
+          "estimated_time": "30 minutes"
+        }
+      ],
+      "deliverables": [
+        "scripts/backtest-performance-floors.js (complete backtesting framework)",
+        "Updated package.json (backtest npm scripts)",
+        "Updated CLAUDE.md (backtesting documentation + interpretation guide)"
+      ],
+      "success_criteria": [
+        "MAE < 3.5 fantasy points (validates accuracy)",
+        "RMSE < 5.0 fantasy points (validates consistency)",
+        "80% hit rate > 75% (validates confidence intervals)",
+        "Position-level metrics calculated correctly",
+        "Output is clear and actionable"
+      ]
+    }
+  },
+  "testing_strategy": {
+    "unit_tests": {
+      "description": "Test individual functions in isolation",
+      "coverage_target": "Not required for Phase 1 (future enhancement)",
+      "key_functions_to_test": [
+        "calculateMAE() - verify formula correctness",
+        "calculateRMSE() - verify formula correctness",
+        "calculateHitRate() - verify interval logic",
+        "getModifierValue() - verify learned weights vs hardcoded"
+      ]
+    },
+    "integration_tests": {
+      "description": "Test end-to-end workflows",
+      "test_cases": [
+        {
+          "test": "ML Integration End-to-End",
+          "steps": [
+            "1. Run npm run train:weights",
+            "2. Verify CONFIG updated with learned weights",
+            "3. Run npm run floors -- --week=8",
+            "4. Compare modifiers vs hardcoded baseline",
+            "5. Verify 3-5% change in projections"
+          ],
+          "expected_outcome": "Learned weights successfully applied to projections"
+        },
+        {
+          "test": "Injury Probability Adjustment",
+          "steps": [
+            "1. Query player_injury_status for QUESTIONABLE players",
+            "2. Run npm run floors -- --week=8",
+            "3. Verify QUESTIONABLE players have 15% reduced projections",
+            "4. Verify display shows 'Projection reduced 15%'"
+          ],
+          "expected_outcome": "Injury discounts applied correctly"
+        },
+        {
+          "test": "Backtesting Validation",
+          "steps": [
+            "1. Run npm run backtest",
+            "2. Verify weeks 1-7 processed",
+            "3. Check MAE < 3.5, RMSE < 5.0, hit_rate > 75%",
+            "4. Review position breakdown for outliers"
+          ],
+          "expected_outcome": "Backtesting metrics meet success criteria"
+        }
+      ]
+    },
+    "regression_tests": {
+      "description": "Ensure existing functionality still works",
+      "test_cases": [
+        "Run floors without ML enabled - verify hardcoded modifiers still work",
+        "Run floors without injury data - verify graceful fallback",
+        "Compare week 7 projections before/after changes - verify consistency"
+      ]
+    },
+    "performance_tests": {
+      "description": "Ensure performance remains acceptable",
+      "benchmarks": [
+        "ML training: < 60 seconds for weeks 1-7",
+        "Single game projection: < 1 second (currently 800ms)",
+        "Backtesting 7 weeks: < 10 seconds total"
+      ]
+    }
+  },
+  "deployment_plan": {
+    "rollout_strategy": "Phased deployment with validation gates",
+    "phases": [
+      {
+        "phase": "1. ML Integration",
+        "steps": [
+          "1. Create train-feature-weights.js script",
+          "2. Run training on weeks 1-7 data",
+          "3. Update config with learned weights (enabled=false initially)",
+          "4. Test with enabled=false (verify no changes)",
+          "5. Test with enabled=true (verify learned weights applied)",
+          "6. Compare projections before/after",
+          "7. If 3-5% improvement, enable permanently"
+        ],
+        "validation_gate": "Projections change by 3-5% and improve subjective quality",
+        "rollback_plan": "Set CONFIG.learned_feature_weights.enabled = false"
+      },
+      {
+        "phase": "2. Injury Probability",
+        "steps": [
+          "1. Add injury_probability to config (enabled=false initially)",
+          "2. Update calculateTeamFloors() and calculateStatFloor()",
+          "3. Test with enabled=false (verify no changes)",
+          "4. Test with enabled=true on week with QUESTIONABLE players",
+          "5. Verify 15% reduction in projections",
+          "6. Enable permanently"
+        ],
+        "validation_gate": "QUESTIONABLE players get appropriate discounts",
+        "rollback_plan": "Set CONFIG.injury_probability.enabled = false"
+      },
+      {
+        "phase": "3. Backtesting",
+        "steps": [
+          "1. Create backtest-performance-floors.js",
+          "2. Run on weeks 1-7",
+          "3. Review metrics (MAE, RMSE, hit rate)",
+          "4. If metrics meet targets, document and publicize",
+          "5. Schedule monthly retraining and re-backtesting"
+        ],
+        "validation_gate": "MAE < 3.5, RMSE < 5.0, hit rate > 75%",
+        "rollback_plan": "N/A (backtesting is read-only validation)"
+      }
+    ],
+    "monitoring": {
+      "metrics_to_track": [
+        "ML training success rate",
+        "Backtesting MAE/RMSE/hit-rate trends over time",
+        "User feedback on projection quality"
+      ],
+      "retraining_schedule": "Every 3-4 weeks as new data becomes available"
+    },
+    "documentation_updates": [
+      "Update CLAUDE.md with ML training instructions",
+      "Update CLAUDE.md with injury probability explanation",
+      "Update CLAUDE.md with backtesting results",
+      "Add session log entry for Phase 1 completion"
+    ]
+  },
+  "risks_and_mitigations": {
+    "risks": [
+      {
+        "risk": "ML training fails due to insufficient data",
+        "likelihood": "Low",
+        "impact": "Medium",
+        "mitigation": "Require minimum 100 training examples. If < 100, warn user and fall back to hardcoded modifiers.",
+        "detection": "Check trainingSize from trainFeatureImportanceModel() output"
+      },
+      {
+        "risk": "Learned weights make projections worse (negative impact)",
+        "likelihood": "Low",
+        "impact": "High",
+        "mitigation": "Compare projections before/after ML integration. Run backtesting with ML enabled vs disabled. Only enable if improvement is clear.",
+        "detection": "Backtesting MAE increases by > 5% with ML enabled"
+      },
+      {
+        "risk": "Injury probability discounts too aggressive (underprojects healthy players)",
+        "likelihood": "Low",
+        "impact": "Medium",
+        "mitigation": "Start with conservative discounts (Q=0.85, P=0.95). Monitor backtesting metrics. Adjust if bias becomes too negative.",
+        "detection": "Backtesting bias < -2.0 fantasy points"
+      },
+      {
+        "risk": "Backtesting reveals poor model accuracy (MAE > 4.5)",
+        "likelihood": "Medium",
+        "impact": "High",
+        "mitigation": "If MAE > 4.5, investigate: (1) Check data quality, (2) Review position-specific metrics, (3) Retrain ML weights, (4) Adjust bootstrap_confidence",
+        "detection": "Run npm run backtest, check overall MAE"
+      },
+      {
+        "risk": "Performance degradation (ML training or backtesting too slow)",
+        "likelihood": "Low",
+        "impact": "Low",
+        "mitigation": "ML training is one-time per month. Backtesting is optional. Both run offline. No impact on real-time projection speed.",
+        "detection": "ML training > 120 seconds or backtesting > 20 seconds"
+      }
+    ],
+    "rollback_procedures": {
+      "ml_integration": "Set CONFIG.learned_feature_weights.enabled = false in performance-floors-config.json",
+      "injury_probability": "Set CONFIG.injury_probability.enabled = false in performance-floors-config.json",
+      "backtesting": "N/A (read-only tool, no rollback needed)"
+    }
+  },
+  "success_metrics": {
+    "quantitative": [
+      {
+        "metric": "Backtesting MAE",
+        "target": "< 3.5 fantasy points",
+        "current_baseline": "Unknown (no backtesting yet)",
+        "measurement_method": "Run npm run backtest after Phase 3"
+      },
+      {
+        "metric": "Backtesting RMSE",
+        "target": "< 5.0 fantasy points",
+        "current_baseline": "Unknown (no backtesting yet)",
+        "measurement_method": "Run npm run backtest after Phase 3"
+      },
+      {
+        "metric": "80% Prediction Interval Hit Rate",
+        "target": "> 75% (ideally ~80%)",
+        "current_baseline": "Unknown (no backtesting yet)",
+        "measurement_method": "Run npm run backtest after Phase 3"
+      },
+      {
+        "metric": "ML Feature Importance R²",
+        "target": "> 0.60",
+        "current_baseline": "Unknown (not trained yet)",
+        "measurement_method": "Check cross-validation results from npm run train:weights"
+      },
+      {
+        "metric": "Projection Time per Game",
+        "target": "< 1 second (maintain current 800ms)",
+        "current_baseline": "800ms",
+        "measurement_method": "Time npm run floors -- --game=X execution"
+      }
+    ],
+    "qualitative": [
+      {
+        "metric": "User confidence in projections",
+        "target": "Users trust projections for DFS/betting decisions",
+        "measurement_method": "User feedback, anecdotal reports"
+      },
+      {
+        "metric": "Code maintainability",
+        "target": "Future developers can understand and extend system",
+        "measurement_method": "Code review, documentation completeness"
+      },
+      {
+        "metric": "Production readiness rating",
+        "target": "9.8/10 (from current 9.5/10)",
+        "measurement_method": "Self-assessment after all 3 phases complete"
+      }
+    ]
+  },
+  "future_enhancements": {
+    "phase_2_major_features": {
+      "estimated_effort": "10-15 hours",
+      "features": [
+        {
+          "feature": "Correlation Modeling",
+          "description": "Model QB-WR correlations for better DFS game stacks",
+          "priority": "MEDIUM",
+          "effort": "4-6 hours"
+        },
+        {
+          "feature": "Cache Expansion",
+          "description": "Expand caching beyond league averages (opponent factors, environment, weather)",
+          "priority": "MEDIUM",
+          "effort": "2-3 hours",
+          "expected_impact": "50-70% performance improvement (800ms → 300ms)"
+        },
+        {
+          "feature": "Unit Tests with Jest",
+          "description": "Add test coverage for core statistical functions",
+          "priority": "HIGH",
+          "effort": "4-6 hours"
+        }
+      ]
+    },
+    "phase_3_advanced": {
+      "estimated_effort": "9-11 hours",
+      "features": [
+        {
+          "feature": "Ensemble Projections",
+          "description": "Weighted blend of EWMA, bootstrap, and hierarchical methods",
+          "priority": "LOW",
+          "effort": "4-5 hours",
+          "expected_impact": "2-3% accuracy improvement"
+        },
+        {
+          "feature": "Adaptive Volatility",
+          "description": "Player-specific volatility based on historical variance (not just position)",
+          "priority": "LOW",
+          "effort": "3-4 hours"
+        },
+        {
+          "feature": "Multi-Confidence Levels",
+          "description": "Support --confidence=0.70/0.80/0.90 for risk management",
+          "priority": "LOW",
+          "effort": "2 hours"
+        }
+      ]
+    }
+  },
+  "notes": {
+    "context": "This plan implements the Phase 1 Quick Wins from comprehensive feedback analysis of calculate-performance-floors.js system. System currently rated 9.5/10, targeting 9.8/10 after Phase 1 completion.",
+    "key_decisions": [
+      "Focus on highest-ROI improvements first (ML integration, backtesting)",
+      "Keep injury probability as opt-in feature via config flag",
+      "Prioritize validation (backtesting) over new features",
+      "Maintain backward compatibility (all features are config-toggleable)"
+    ],
+    "assumptions": [
+      "Weeks 1-7 have sufficient completed game data (100+ player-games)",
+      "ml-random-forest package already installed and working",
+      "Supabase database is accessible and performant",
+      "User has basic understanding of statistical concepts (MAE, RMSE, etc.)"
+    ],
+    "dependencies_on_other_work": [
+      "None - this is standalone enhancement to existing calculate-performance-floors.js",
+      "No breaking changes to existing functionality"
+    ]
+  }
+}

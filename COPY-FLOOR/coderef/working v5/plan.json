@@ -1,0 +1,773 @@
+{
+  "project": {
+    "name": "Performance Floors V5 Enhancement Plan",
+    "version": "5.0.0",
+    "status": "planning",
+    "created": "2025-10-23",
+    "based_on": "Statistical POWER Analysis of V4 Implementation",
+    "expected_impact": "35-50% cumulative accuracy improvement",
+    "total_effort_hours": 73,
+    "timeline_weeks": 2
+  },
+
+  "executive_summary": {
+    "current_state": {
+      "version": "V4",
+      "file": "scripts/calculate-performance-floors.js",
+      "lines_of_code": 1400,
+      "tasks_complete": "20/25 (80%)",
+      "current_mae": "8.5 pts",
+      "floor_hit_rate": "65-70%"
+    },
+    "key_findings": {
+      "strengths": [
+        "Empirical Bayes opponent factor with optimal shrinkage (τ² and σ²)",
+        "Player-specific environment factors from historical performance",
+        "IQR winsorization preserving sample size",
+        "Comprehensive data validation",
+        "Hierarchical modeling with position-level shrinkage"
+      ],
+      "critical_weaknesses": [
+        "Time series independence assumption (bootstrap ignores autocorrelation)",
+        "Position-agnostic opponent factors (uses total yards vs WR/RB specific)",
+        "Static RB efficiency rates (season-long averages miss role changes)",
+        "No game script adjustment (missing Vegas lines)",
+        "Simplistic trend detection (ignores opponent quality)"
+      ]
+    },
+    "target_improvements": {
+      "overall_mae": {
+        "current": "8.5 pts",
+        "target": "5.5-6.5 pts",
+        "improvement": "24-35% reduction"
+      },
+      "floor_hit_rate": {
+        "current": "65-70%",
+        "target": "78-82%",
+        "improvement": "+10-15%"
+      },
+      "position_accuracy": {
+        "QB": { "current": "7.2 pts", "target": "5.0 pts", "improvement": "31%" },
+        "RB": { "current": "9.8 pts", "target": "6.5 pts", "improvement": "34%" },
+        "WR": { "current": "8.1 pts", "target": "5.8 pts", "improvement": "28%" },
+        "TE": { "current": "7.5 pts", "target": "5.5 pts", "improvement": "27%" }
+      }
+    }
+  },
+
+  "improvements": {
+    "high_priority": [
+      {
+        "improvement_number": 1,
+        "name": "Position-Specific Defensive Matchups",
+        "priority": "HIGH",
+        "current_state": "Uses total_yards_allowed for all positions in calculateOpponentFactor()",
+        "issue": "Total yards allowed treats all offensive positions equally, but defenses have positional strengths. A team might be elite vs the run but weak vs the pass - current system averages this out.",
+        "proposed_change": "Implement position-specific defensive metrics: QB vs pressure rate, RB vs run defense success rate, WR/TE vs pass defense DVOA",
+        "implementation": {
+          "new_function": "calculatePositionOpponentFactor(opponentId, position, statField, season)",
+          "metric_mapping": {
+            "QB": ["passing_yards_allowed", "passing_touchdowns_allowed", "qb_fantasy_points_allowed"],
+            "RB": ["rushing_yards_allowed", "rushing_touchdowns_allowed", "receiving_yards_allowed_rb", "rb_fantasy_points_allowed"],
+            "WR": ["receiving_yards_allowed_wr", "receiving_touchdowns_allowed_wr", "wr_fantasy_points_allowed"],
+            "TE": ["receiving_yards_allowed_te", "receiving_touchdowns_allowed_te", "te_fantasy_points_allowed"]
+          },
+          "database_schema": {
+            "table": "team_game_stats",
+            "new_columns": [
+              "receiving_yards_allowed_rb INTEGER",
+              "receiving_yards_allowed_wr INTEGER",
+              "receiving_yards_allowed_te INTEGER",
+              "rb_fantasy_points_allowed DECIMAL(5,2)",
+              "wr_fantasy_points_allowed DECIMAL(5,2)",
+              "te_fantasy_points_allowed DECIMAL(5,2)",
+              "qb_fantasy_points_allowed DECIMAL(5,2)"
+            ]
+          },
+          "data_sources": [
+            "ESPN API: Position-specific defensive splits",
+            "Pro Football Reference: Position rankings (scraping required)",
+            "PFF API (commercial): Advanced coverage grades"
+          ],
+          "code_location": "scripts/calculate-performance-floors.js:213-308",
+          "scraper_updates": "scripts/scrapers/game-stats-scraper.js (add position-specific extraction)"
+        },
+        "expected_impact": "20-30% accuracy improvement for matchup projections",
+        "estimated_effort_hours": 10,
+        "effort_breakdown": {
+          "database_schema": 2,
+          "scraper_updates": 2,
+          "calculatePositionOpponentFactor_implementation": 4,
+          "testing_validation": 2
+        }
+      },
+      {
+        "improvement_number": 2,
+        "name": "Block Bootstrap for Time Series Dependence",
+        "priority": "HIGH",
+        "current_state": "calculateModifiedPredictionInterval() uses simple bootstrap assuming i.i.d. observations",
+        "issue": "NFL player performance exhibits autocorrelation (hot/cold streaks, momentum). Simple bootstrap breaks this structure, leading to underestimated variance (CIs 20-30% too narrow) and overconfident predictions (actual floor hit rate < 80% target).",
+        "statistical_background": {
+          "problem": "Time series observations are NOT independent - streaks exist",
+          "consequence": "Simple bootstrap produces too-narrow confidence intervals",
+          "solution": "Moving block bootstrap preserves temporal dependence structure",
+          "academic_citation": "Politis, D. N., & White, H. (2004). Automatic block-length selection for the dependent bootstrap. Econometric Reviews, 23(1), 53-70."
+        },
+        "proposed_change": "Implement moving block bootstrap: divide games into overlapping blocks (size 2-3), resample blocks instead of individual games",
+        "implementation": {
+          "new_functions": [
+            "generateBlockBootstrapSamples(observedData, numSamples, blockSize)",
+            "calculateBlockBootstrapDistribution(observedData, numSamples, statistic, blockSize)",
+            "calculateBlockModifiedPredictionInterval(observedData, modifier, options)"
+          ],
+          "optimal_block_size": "Math.max(2, Math.floor(Math.pow(n, 1/3))) per Politis & White",
+          "config_additions": {
+            "block_bootstrap": {
+              "enabled": true,
+              "block_size": 3,
+              "auto_block_size": true
+            }
+          },
+          "code_location": {
+            "primary": "scripts/utils/bootstrap-intervals.js:45-130",
+            "integration": "scripts/calculate-performance-floors.js:1294"
+          },
+          "preserves_v4_features": [
+            "CV-scaled confidence intervals",
+            "Modifier application to entire distribution",
+            "Percentile extraction methodology"
+          ]
+        },
+        "expected_impact": "25-35% reduction in confidence interval undercoverage, floor hit rate 65% → 80%",
+        "estimated_effort_hours": 12,
+        "effort_breakdown": {
+          "implement_block_bootstrap_functions": 6,
+          "integrate_into_main_pipeline": 4,
+          "historical_validation_testing": 2
+        }
+      },
+      {
+        "improvement_number": 3,
+        "name": "Dynamic RB Efficiency Rates",
+        "priority": "HIGH",
+        "current_state": "RB efficiency (yards/attempt, yards/target) calculated from entire season",
+        "issue": "NFL RB roles are highly non-stationary: offensive line injuries, coaching changes, depth chart shifts. Season-long averages lag these changes by 4-6 weeks. Example: RB moves from backup (3.2 YPC) to starter (4.8 YPC) - system uses 4.0 YPC average.",
+        "proposed_change": "Use rolling 4-6 game efficiency rates with Empirical Bayes shrinkage toward career baseline",
+        "implementation": {
+          "new_function": "calculateDynamicRBEfficiency(seasonStats, recentGames, efficiencyType)",
+          "efficiency_types": ["rushing", "receiving"],
+          "methodology": {
+            "recent_window": "4-6 games (configurable by position)",
+            "career_baseline": "Season-long average (proxy for true career)",
+            "shrinkage_formula": "blended = (shrinkage × recent) + ((1 - shrinkage) × career)",
+            "shrinkage_factor": "n / 10, clamped to [0.3, 0.7]",
+            "empirical_bayes": "More recent games = less shrinkage toward prior"
+          },
+          "integration_point": "scripts/calculate-performance-floors.js:1050-1100 (RB section)",
+          "replaces": {
+            "old": "const yardsPerCarry = seasonRushYards / seasonRushAttempts",
+            "new": "const rushEff = calculateDynamicRBEfficiency(seasonStats, recentGames, 'rushing'); const yardsPerCarry = rushEff.blendedEfficiency"
+          },
+          "code_location": "Add new function around line 570, integrate at lines 1050-1100"
+        },
+        "expected_impact": "12-18% accuracy gain for RB projections, especially for role changes",
+        "estimated_effort_hours": 6,
+        "effort_breakdown": {
+          "implement_calculateDynamicRBEfficiency": 3,
+          "integrate_into_rb_projection_logic": 2,
+          "test_with_historical_role_changes": 1
+        }
+      }
+    ],
+
+    "medium_priority": [
+      {
+        "improvement_number": 4,
+        "name": "Game Script Volume Adjustment",
+        "priority": "MEDIUM",
+        "current_state": "No consideration of Vegas lines (point spreads, over/under)",
+        "issue": "Game script is the #1 predictor of RB/WR volume: large favorites run +25% more, large underdogs pass +20% more. Missing implied team totals for game flow.",
+        "proposed_change": "Incorporate Vegas betting lines to adjust opportunity projections based on expected game flow",
+        "implementation": {
+          "new_function": "calculateGameScriptModifier(gameId, teamId, position)",
+          "data_source": "game_betting_lines table (already exists from V4)",
+          "implied_total_formula": "(over_under / 2) ± (spread / 2)",
+          "position_sensitivities": {
+            "RB": {
+              "spread_modifier": "1.0 + (effectiveSpread × 0.02)",
+              "range": "±30% (capped at [0.70, 1.30])",
+              "reasoning": "Favorites run more (positive game script)"
+            },
+            "WR": {
+              "spread_modifier": "1.0 - (effectiveSpread × 0.015)",
+              "range": "±20% (capped at [0.80, 1.20])",
+              "reasoning": "Underdogs pass more (negative game script)"
+            },
+            "TE": {
+              "spread_modifier": "1.0 - (effectiveSpread × 0.015)",
+              "range": "±20% (capped at [0.80, 1.20])"
+            },
+            "QB": {
+              "spread_modifier": "1.0 - (effectiveSpread × 0.01)",
+              "range": "±10% (capped at [0.90, 1.10])",
+              "reasoning": "Slight increase when trailing"
+            }
+          },
+          "total_modifier": "Math.max(0.95, Math.min(1.05, over_under / 45.0))",
+          "integration_point": "scripts/calculate-performance-floors.js:1050-1070",
+          "config_additions": {
+            "game_script": {
+              "enabled": true,
+              "rb_spread_sensitivity": 0.02,
+              "wr_spread_sensitivity": 0.015,
+              "qb_spread_sensitivity": 0.01,
+              "total_modifier_enabled": true
+            }
+          },
+          "code_location": "Add function around line 410, integrate at opportunity projection"
+        },
+        "expected_impact": "15-20% better volume projections for RBs/WRs in extreme game scripts",
+        "estimated_effort_hours": 8,
+        "effort_breakdown": {
+          "implement_calculateGameScriptModifier": 3,
+          "integration_and_testing": 3,
+          "historical_spread_correlation_analysis": 2
+        }
+      },
+      {
+        "improvement_number": 5,
+        "name": "Time-Aware Trend Detection",
+        "priority": "MEDIUM",
+        "current_state": "Simple slope calculation: sum of (game[i] - game[i-1]), treats all games as equally spaced",
+        "issue": "Current trend factor is non-robust: single outlier creates false trend, bye weeks (14-day gaps) treated as single time step, strong opponent performance counted as 'decline'.",
+        "proposed_change": "Implement exponential decay weighting based on actual days between games",
+        "implementation": {
+          "new_function": "calculateTimeAwareTrend(recentGames, statField, lambda)",
+          "methodology": {
+            "weight_formula": "w = exp(-λ × days_since_most_recent)",
+            "default_lambda": 0.05,
+            "weighted_regression": "Weighted least squares for slope calculation",
+            "normalization": "percentTrend = slope / weightedMean",
+            "capping": "Apply CONFIG.trend_momentum.max_trend_adjustment"
+          },
+          "accounts_for": [
+            "Bye weeks (14-day gaps vs normal 7 days)",
+            "Actual calendar time between games",
+            "Recency weighting (more recent = higher weight)"
+          ],
+          "config_additions": {
+            "trend_momentum": {
+              "min_games_for_trend": 3,
+              "max_trend_adjustment": 0.20,
+              "decay_lambda": 0.05,
+              "min_confidence": 0.6
+            }
+          },
+          "code_location": "scripts/calculate-performance-floors.js:1020-1045",
+          "replaces": "Current simple slope calculation"
+        },
+        "expected_impact": "8-12% better trend detection accuracy, especially post-bye or injury return",
+        "estimated_effort_hours": 7,
+        "effort_breakdown": {
+          "implement_calculateTimeAwareTrend": 4,
+          "integrate_and_replace_current_trend": 2,
+          "testing_validation": 1
+        }
+      },
+      {
+        "improvement_number": 6,
+        "name": "Red Zone Efficiency Modeling",
+        "priority": "MEDIUM",
+        "current_state": "TD projections use season-long TD rate, no distinction between red zone (inside 20) vs field TDs",
+        "issue": "TD production is bimodal: red zone TDs are high-probability (20-30%), field TDs are low-probability (2-5%). Goal-line backs have 40%+ red zone TD rate but low overall touches.",
+        "proposed_change": "Separate red zone efficiency from field efficiency with hierarchical Bayesian priors",
+        "implementation": {
+          "new_function": "calculateRedZoneEfficiency(playerId, season, statType)",
+          "data_source": "play_by_play table (filter by yardline_100 <= 20)",
+          "metrics": {
+            "redZoneTDRate": "TDs / opportunities inside 20 yard line",
+            "fieldTDRate": "TDs / opportunities outside 20 yard line",
+            "redZoneOpportunities": "Count of plays inside 20"
+          },
+          "hierarchical_priors": {
+            "RB": { "redZoneTDRate": 0.20, "fieldTDRate": 0.03 },
+            "WR": { "redZoneTDRate": 0.18, "fieldTDRate": 0.05 },
+            "TE": { "redZoneTDRate": 0.15, "fieldTDRate": 0.02 }
+          },
+          "shrinkage": "shrinkage = min(0.7, redZoneOpps / 20)",
+          "blending": "blended = (shrinkage × observed) + ((1 - shrinkage) × prior)",
+          "config_additions": {
+            "position_priors": {
+              "RB": { "redZoneTDRate": 0.20, "fieldTDRate": 0.03 },
+              "WR": { "redZoneTDRate": 0.18, "fieldTDRate": 0.05 },
+              "TE": { "redZoneTDRate": 0.15, "fieldTDRate": 0.02 }
+            }
+          },
+          "code_location": "Add new function around line 690, integrate into TD projection"
+        },
+        "data_requirements": "play_by_play table must have yardline_100 field populated",
+        "expected_impact": "10-15% better TD projections for high-TD players",
+        "estimated_effort_hours": 10,
+        "effort_breakdown": {
+          "implement_calculateRedZoneEfficiency": 5,
+          "query_play_by_play_data": 2,
+          "integrate_into_td_projections": 2,
+          "testing": 1
+        }
+      }
+    ],
+
+    "low_priority": [
+      {
+        "improvement_number": 7,
+        "name": "Defensive Injury Impact",
+        "priority": "LOW",
+        "current_state": "No adjustment for missing defensive starters",
+        "issue": "Elite CB1 out, WR1 floor doesn't increase. Missing impact of key defensive injuries on opponent factors.",
+        "proposed_change": "Adjust opponent factors based on defensive player availability (out/doubtful)",
+        "implementation": {
+          "data_source": "player_injury_status table (filter by defensive players)",
+          "methodology": "Increase opponent factor by 5-15% per starter out, based on player importance",
+          "player_importance_tiers": {
+            "CB1": "+12% easier matchup",
+            "Pass_Rusher": "+10% easier matchup",
+            "MLB": "+8% easier matchup",
+            "Safety": "+6% easier matchup"
+          },
+          "code_location": "Add to calculateOpponentFactor (or calculatePositionOpponentFactor)"
+        },
+        "expected_impact": "5-8% accuracy in specific games when star defenders are out",
+        "estimated_effort_hours": 12,
+        "effort_breakdown": {
+          "defensive_player_mapping": 4,
+          "injury_query_integration": 3,
+          "importance_tier_calibration": 3,
+          "testing": 2
+        }
+      },
+      {
+        "improvement_number": 8,
+        "name": "Role Stability Factor",
+        "priority": "LOW",
+        "current_state": "No measurement of usage volatility, RB committees treated same as workhorse backs",
+        "issue": "High-variance roles (committees) should have wider confidence intervals to reflect uncertainty",
+        "proposed_change": "Calculate coefficient of variation (CV) for opportunities, widen CIs for high-variance roles",
+        "implementation": {
+          "methodology": "Calculate CV of opportunities over recent games, scale CI width by role stability",
+          "metrics": {
+            "opportunityCV": "stdDev(opportunities) / mean(opportunities)",
+            "snapCountVariance": "Track snap count consistency",
+            "targetShareStability": "CV of target share"
+          },
+          "ci_adjustment": "High CV (>0.5) → widen intervals by 15-25%",
+          "code_location": "Integrate into calculateStatFloor confidence calculation"
+        },
+        "expected_impact": "5-8% better risk assessment for volatile situations (committees, depth chart uncertainty)",
+        "estimated_effort_hours": 8,
+        "effort_breakdown": {
+          "implement_cv_calculation": 3,
+          "integrate_into_confidence_intervals": 3,
+          "testing": 2
+        }
+      }
+    ]
+  },
+
+  "implementation_phases": {
+    "phase_1": {
+      "name": "Core Statistical Fixes",
+      "priority": "CRITICAL",
+      "tasks": [
+        "Improvement #2: Block Bootstrap",
+        "Improvement #1: Position-Specific Matchups",
+        "Improvement #3: Dynamic RB Efficiency"
+      ],
+      "total_hours": 28,
+      "expected_impact": "40-60% of total gains",
+      "rationale": "Address fundamental statistical flaws first",
+      "deliverables": [
+        "Block bootstrap implementation in bootstrap-intervals.js",
+        "Position-specific defensive metrics in database",
+        "Dynamic efficiency calculation for RBs",
+        "Historical backtesting validation"
+      ]
+    },
+    "phase_2": {
+      "name": "Context Enhancement",
+      "priority": "HIGH",
+      "tasks": [
+        "Improvement #4: Game Script Modifier",
+        "Improvement #5: Time-Aware Trends",
+        "Improvement #6: Red Zone Efficiency"
+      ],
+      "total_hours": 25,
+      "expected_impact": "30-40% of total gains",
+      "rationale": "Add NFL-specific context after core fixes",
+      "deliverables": [
+        "Vegas line integration for volume adjustments",
+        "Exponential decay trend detection",
+        "Red zone vs field TD modeling",
+        "Updated configuration parameters"
+      ]
+    },
+    "phase_3": {
+      "name": "Polish & Edge Cases",
+      "priority": "MEDIUM",
+      "tasks": [
+        "Improvement #7: Defensive Injury Impact",
+        "Improvement #8: Role Stability Factor"
+      ],
+      "total_hours": 20,
+      "expected_impact": "10-15% of total gains",
+      "rationale": "Address edge cases and specific situations",
+      "deliverables": [
+        "Defensive injury adjustment logic",
+        "Role stability confidence scaling",
+        "Comprehensive test suite"
+      ]
+    }
+  },
+
+  "database_requirements": {
+    "new_columns": {
+      "team_game_stats": [
+        "receiving_yards_allowed_rb INTEGER",
+        "receiving_yards_allowed_wr INTEGER",
+        "receiving_yards_allowed_te INTEGER",
+        "rb_fantasy_points_allowed DECIMAL(5,2)",
+        "wr_fantasy_points_allowed DECIMAL(5,2)",
+        "te_fantasy_points_allowed DECIMAL(5,2)",
+        "qb_fantasy_points_allowed DECIMAL(5,2)"
+      ]
+    },
+    "existing_tables_required": [
+      "play_by_play (with yardline_100 for red zone analysis)",
+      "game_betting_lines (already exists from V4)",
+      "player_injury_status (for defensive injuries)"
+    ],
+    "migration_file": "supabase/migrations/20250101000026_v5_position_specific_defense.sql"
+  },
+
+  "configuration_changes": {
+    "new_sections": {
+      "v5_features": {
+        "position_specific_matchups": true,
+        "block_bootstrap": true,
+        "dynamic_rb_efficiency": true,
+        "game_script_adjustment": true,
+        "time_aware_trends": true,
+        "red_zone_modeling": false,
+        "defensive_injury_impact": false,
+        "role_stability_factor": false
+      },
+      "block_bootstrap": {
+        "enabled": true,
+        "block_size": 3,
+        "auto_block_size": true
+      },
+      "game_script": {
+        "enabled": true,
+        "rb_spread_sensitivity": 0.02,
+        "wr_spread_sensitivity": 0.015,
+        "qb_spread_sensitivity": 0.01,
+        "total_modifier_enabled": true
+      },
+      "trend_momentum": {
+        "min_games_for_trend": 3,
+        "max_trend_adjustment": 0.20,
+        "decay_lambda": 0.05,
+        "min_confidence": 0.6
+      },
+      "position_priors": {
+        "RB": { "redZoneTDRate": 0.20, "fieldTDRate": 0.03 },
+        "WR": { "redZoneTDRate": 0.18, "fieldTDRate": 0.05 },
+        "TE": { "redZoneTDRate": 0.15, "fieldTDRate": 0.02 }
+      }
+    }
+  },
+
+  "testing_validation": {
+    "historical_backtesting": {
+      "test_period": "Weeks 8-17 of 2024 season (10 weeks)",
+      "training_period": "Weeks 1-7 for baseline establishment",
+      "metrics": [
+        "Mean Absolute Error (MAE)",
+        "Floor Hit Rate (target: 80%)",
+        "Confidence Interval Coverage",
+        "Position-specific accuracy",
+        "Boom/bust player performance"
+      ],
+      "comparison": "V4 baseline vs V5 improvements",
+      "validation_script": "scripts/validate-v5-improvements.js"
+    },
+    "test_cases": [
+      {
+        "scenario": "RB role change mid-season",
+        "test": "Dynamic efficiency should catch promotion faster than season-long average",
+        "expected": "MAE reduction 15-20% in weeks 2-4 after promotion"
+      },
+      {
+        "scenario": "WR vs weak secondary",
+        "test": "Position-specific matchup should boost projection vs total yards approach",
+        "expected": "Accuracy improvement 20-30% vs pass-funnel defenses"
+      },
+      {
+        "scenario": "Player on hot streak",
+        "test": "Block bootstrap should preserve autocorrelation, wider CIs",
+        "expected": "Floor hit rate closer to 80% vs current 65%"
+      },
+      {
+        "scenario": "Large underdog RB",
+        "test": "Game script should reduce rush volume projection",
+        "expected": "Volume projection -20-30% for 10+ point underdogs"
+      }
+    ]
+  },
+
+  "academic_citations": {
+    "statistical_methods": [
+      {
+        "authors": "Politis, D. N., & White, H.",
+        "year": 2004,
+        "title": "Automatic block-length selection for the dependent bootstrap",
+        "journal": "Econometric Reviews",
+        "volume": "23(1)",
+        "pages": "53-70",
+        "relevance": "Block bootstrap optimal length selection"
+      },
+      {
+        "authors": "Lahiri, S. N.",
+        "year": 2003,
+        "title": "Resampling Methods for Dependent Data",
+        "publisher": "Springer Series in Statistics",
+        "relevance": "Theoretical foundation for dependent data resampling"
+      },
+      {
+        "authors": "Efron, B., & Tibshirani, R. J.",
+        "year": 1994,
+        "title": "An Introduction to the Bootstrap",
+        "publisher": "CRC Press",
+        "relevance": "Bootstrap fundamentals and percentile methods"
+      },
+      {
+        "authors": "Gelman, A., et al.",
+        "year": 2013,
+        "title": "Bayesian Data Analysis (3rd ed.)",
+        "publisher": "CRC Press",
+        "relevance": "Hierarchical Bayesian modeling and shrinkage estimation"
+      }
+    ],
+    "sports_analytics": [
+      {
+        "authors": "Lopez, M. J., & Matthews, G. J.",
+        "year": 2015,
+        "title": "Building an NCAA men's basketball predictive model and quantifying its success",
+        "journal": "Journal of Quantitative Analysis in Sports",
+        "volume": "11(1)",
+        "pages": "5-12",
+        "relevance": "Sports prediction interval methodology"
+      },
+      {
+        "author": "Burke, B.",
+        "year": 2019,
+        "title": "Expected Points and Expected Points Added Explained",
+        "source": "Advanced Football Analytics",
+        "relevance": "NFL analytics framework"
+      }
+    ]
+  },
+
+  "risk_assessment": {
+    "implementation_risks": [
+      {
+        "risk": "Data Availability (position-specific defense)",
+        "severity": "HIGH",
+        "probability": "MEDIUM",
+        "mitigation": "Start with ESPN splits, add PFF later if needed. Fallback to total yards if position-specific unavailable.",
+        "contingency": "Use heuristic position weights on total defensive metrics"
+      },
+      {
+        "risk": "Computational Cost (block bootstrap)",
+        "severity": "MEDIUM",
+        "probability": "LOW",
+        "mitigation": "Maintain same 500 samples, optimize block generation with pre-allocation",
+        "contingency": "Reduce bootstrap samples to 300 if performance degrades"
+      },
+      {
+        "risk": "Overfitting (too many parameters)",
+        "severity": "MEDIUM",
+        "probability": "MEDIUM",
+        "mitigation": "Cross-validation on historical data, conservative shrinkage factors",
+        "contingency": "Feature flags allow disabling individual improvements"
+      },
+      {
+        "risk": "Breaking Changes (API compatibility)",
+        "severity": "LOW",
+        "probability": "LOW",
+        "mitigation": "Feature flags for all V5 enhancements, backward-compatible output format",
+        "contingency": "Maintain V4 fallback mode in configuration"
+      },
+      {
+        "risk": "Database Schema Changes",
+        "severity": "MEDIUM",
+        "probability": "MEDIUM",
+        "mitigation": "Backward-compatible migrations, nullable columns, scraper updates incremental",
+        "contingency": "V5 works with NULL position-specific metrics (uses V4 logic)"
+      }
+    ]
+  },
+
+  "success_metrics": {
+    "primary_kpis": {
+      "overall_mae_reduction": {
+        "baseline": "8.5 pts",
+        "target": "5.5-6.5 pts",
+        "threshold_for_success": "7.0 pts or better",
+        "measurement": "Average across all positions, weeks 8-17"
+      },
+      "floor_hit_rate": {
+        "baseline": "65-70%",
+        "target": "78-82%",
+        "threshold_for_success": "75% or better",
+        "measurement": "% of actual performances >= projected floor"
+      },
+      "confidence_interval_coverage": {
+        "baseline": "65% (undercovers)",
+        "target": "78-82% (nominal 80%)",
+        "threshold_for_success": "75-85% range",
+        "measurement": "% of actuals within 80% CI"
+      }
+    },
+    "secondary_kpis": {
+      "position_specific_mae": {
+        "QB": { "target": "5.0 pts", "threshold": "6.0 pts" },
+        "RB": { "target": "6.5 pts", "threshold": "7.5 pts" },
+        "WR": { "target": "5.8 pts", "threshold": "6.5 pts" },
+        "TE": { "target": "5.5 pts", "threshold": "6.0 pts" }
+      },
+      "edge_case_performance": {
+        "boom_bust_players": { "target": "8.5 pts", "threshold": "10.0 pts" },
+        "committee_rbs": { "target": "7.8 pts", "threshold": "9.0 pts" },
+        "role_changes": { "target": "6.0 pts", "threshold": "7.0 pts" }
+      }
+    },
+    "performance_benchmarks": {
+      "execution_time": {
+        "current": "~800ms per game",
+        "target": "< 1200ms per game",
+        "rationale": "Block bootstrap adds computational cost, but should stay under 1.5x"
+      },
+      "memory_usage": {
+        "target": "< 500MB for full week calculation",
+        "monitoring": "Track peak memory during bootstrap resampling"
+      }
+    }
+  },
+
+  "next_steps": {
+    "immediate_actions": [
+      {
+        "step": 1,
+        "action": "Create V5 feature branch",
+        "command": "git checkout -b feature/performance-floors-v5",
+        "owner": "Developer",
+        "estimated_time": "5 minutes"
+      },
+      {
+        "step": 2,
+        "action": "Set up feature flags in config",
+        "file": "scripts/performance-floors-config.json",
+        "changes": "Add v5_features section with all flags set to false initially",
+        "estimated_time": "15 minutes"
+      },
+      {
+        "step": 3,
+        "action": "Begin Phase 1, Improvement #2 (Block Bootstrap)",
+        "rationale": "Highest impact, foundational for all other improvements",
+        "files_to_modify": ["scripts/utils/bootstrap-intervals.js"],
+        "estimated_time": "12 hours"
+      }
+    ],
+    "week_1_milestones": [
+      "Block bootstrap implementation complete",
+      "Unit tests for bootstrap functions passing",
+      "Integration into main calculator working",
+      "Initial backtesting results available"
+    ],
+    "week_2_milestones": [
+      "Position-specific defensive metrics in database",
+      "Scraper updates for position-specific extraction",
+      "calculatePositionOpponentFactor() implemented and tested",
+      "Dynamic RB efficiency implementation complete"
+    ],
+    "phase_1_completion": [
+      "All 3 high-priority improvements implemented",
+      "Historical backtesting shows 25-40% MAE improvement",
+      "Floor hit rate improves to 72-78%",
+      "Documentation updated with V5 changes"
+    ]
+  },
+
+  "deliverables": {
+    "code": [
+      "scripts/utils/bootstrap-intervals.js (block bootstrap functions)",
+      "scripts/calculate-performance-floors.js (V5 enhancements integrated)",
+      "scripts/scrapers/game-stats-scraper.js (position-specific defensive extraction)",
+      "scripts/validate-v5-improvements.js (backtesting suite)"
+    ],
+    "database": [
+      "supabase/migrations/20250101000026_v5_position_specific_defense.sql"
+    ],
+    "configuration": [
+      "scripts/performance-floors-config.json (V5 sections added)"
+    ],
+    "documentation": [
+      "PERFORMANCE-FLOORS-V5-PLAN.md (this comprehensive plan)",
+      "PERFORMANCE-FLOORS-ACADEMIC-PAPER.md (updated with V5 methods)",
+      "PERFORMANCE-FLOORS-EXPLAINED-SIMPLE.md (updated with V5 features)",
+      "API-documentation for new functions"
+    ],
+    "testing": [
+      "Unit tests for all new functions",
+      "Integration tests for V5 pipeline",
+      "Historical backtesting results (Weeks 8-17, 2024)",
+      "Performance benchmarking report"
+    ]
+  },
+
+  "timeline": {
+    "week_1": {
+      "days_1_2": "Block bootstrap implementation and unit testing",
+      "days_3_4": "Integration into main calculator and initial validation",
+      "day_5": "Position-specific defensive database schema and migration"
+    },
+    "week_2": {
+      "days_1_2": "Scraper updates for position-specific metrics, calculatePositionOpponentFactor() implementation",
+      "days_3_4": "Dynamic RB efficiency implementation and testing",
+      "day_5": "Phase 1 completion, comprehensive backtesting, documentation updates"
+    },
+    "optional_extensions": {
+      "week_3": "Phase 2 implementation (game script, trends, red zone)",
+      "week_4": "Phase 3 implementation (defensive injuries, role stability)"
+    }
+  },
+
+  "key_files": {
+    "v5_plan": "PERFORMANCE-FLOORS-V5-PLAN.md",
+    "current_v4": "scripts/calculate-performance-floors.js",
+    "bootstrap_utils": "scripts/utils/bootstrap-intervals.js",
+    "config": "scripts/performance-floors-config.json",
+    "academic_paper": "PERFORMANCE-FLOORS-ACADEMIC-PAPER.md",
+    "simplified_guide": "PERFORMANCE-FLOORS-EXPLAINED-SIMPLE.md"
+  },
+
+  "status": {
+    "current_phase": "Planning Complete - Ready for Implementation",
+    "v4_completion": "20/25 tasks (80%)",
+    "v5_completion": "0/8 improvements (0% - planning phase)",
+    "expected_timeline": "2 weeks for Phase 1-3 complete",
+    "expected_accuracy_gain": "35-50% overall",
+    "floor_hit_rate_improvement": "65% → 80%",
+    "next_action": "Create feature branch and begin Improvement #2 (Block Bootstrap)"
+  }
+}

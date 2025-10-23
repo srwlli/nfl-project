@@ -10,7 +10,17 @@
       "Bash(node scripts/check-migrations-applied.js:*)",
       "Bash(npm run scrape:game-stats:*)",
       "Bash(npm run scrape:roster:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(node scripts/calculate-performance-floors.js --week=7 --teams=HOU,SEA)",
+      "Bash(npm install:*)",
+      "Bash(node scripts/add-missing-players-by-id.js:*)",
+      "Bash(for file in logger.js rate-limiter.js espn-api.js player-creator.js team-normalizer.js fantasy-calculator.js)",
+      "Bash(do cp \"C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\scripts\\utils$file\" \"C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\COPY-FLOOR\\utils$file\")",
+      "Bash(done)",
+      "Bash(cp:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []

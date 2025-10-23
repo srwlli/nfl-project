@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NFL Live Scoreboard - Week 7</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+      color: #f0f0f0;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      padding: 30px 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      margin-bottom: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    h1 {
+      font-size: 2.5em;
+      font-weight: 700;
+      margin-bottom: 10px;
+      background: linear-gradient(45deg, #00ff88, #00ccff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .update-info {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      margin-top: 15px;
+      font-size: 0.9em;
+      color: #aaa;
+    }
+
+    .auto-refresh {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(0, 255, 136, 0.1);
+      border: 1px solid rgba(0, 255, 136, 0.3);
+      border-radius: 20px;
+      color: #00ff88;
+    }
+
+    .pulse {
+      width: 8px;
+      height: 8px;
+      background: #00ff88;
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .section {
+      margin-bottom: 40px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 15px 20px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px 8px 0 0;
+      border-bottom: 2px solid;
+      margin-bottom: 0;
+    }
+
+    .section-header.live {
+      border-color: #ff4444;
+      background: rgba(255, 68, 68, 0.1);
+    }
+
+    .section-header.final {
+      border-color: #00ff88;
+      background: rgba(0, 255, 136, 0.05);
+    }
+
+    .section-header.upcoming {
+      border-color: #00ccff;
+      background: rgba(0, 204, 255, 0.05);
+    }
+
+    .section-header h2 {
+      font-size: 1.4em;
+      font-weight: 600;
+    }
+
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.85em;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .status-badge.live {
+      background: #ff4444;
+      color: white;
+    }
+
+    .status-badge.final {
+      background: #00ff88;
+      color: #1a1a1a;
+    }
+
+    .status-badge.upcoming {
+      background: #00ccff;
+      color: #1a1a1a;
+    }
+
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+      gap: 20px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 0 0 8px 8px;
+    }
+
+    .game-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .game-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      border-color: rgba(0, 255, 136, 0.3);
+    }
+
+    .game-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .game-status {
+      font-weight: 600;
+      font-size: 0.9em;
+    }
+
+    .game-status.live {
+      color: #ff4444;
+    }
+
+    .game-status.final {
+      color: #00ff88;
+    }
+
+    .game-status.scheduled {
+      color: #00ccff;
+    }
+
+    .broadcast {
+      font-size: 0.85em;
+      color: #888;
+    }
+
+    .team-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      margin-bottom: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .team-row:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .team-row.winner {
+      background: rgba(0, 255, 136, 0.1);
+      border: 1px solid rgba(0, 255, 136, 0.3);
+    }
+
+    .team-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .team-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 4px;
+      object-fit: contain;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 4px;
+    }
+
+    .team-name {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .team-abbr {
+      font-weight: 700;
+      font-size: 1.1em;
+    }
+
+    .team-full {
+      font-size: 0.85em;
+      color: #aaa;
+    }
+
+    .team-score {
+      font-size: 2em;
+      font-weight: 700;
+      min-width: 50px;
+      text-align: center;
+    }
+
+    .team-score.winner {
+      color: #00ff88;
+    }
+
+    .quarter-scores {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 0.85em;
+    }
+
+    .quarter {
+      text-align: center;
+    }
+
+    .quarter-label {
+      color: #888;
+      font-size: 0.8em;
+      margin-bottom: 4px;
+    }
+
+    .quarter-value {
+      font-weight: 600;
+    }
+
+    .venue-info {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 0.85em;
+      color: #888;
+      text-align: center;
+    }
+
+    .summary {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      padding: 25px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 12px;
+      margin-top: 30px;
+    }
+
+    .summary-item {
+      text-align: center;
+    }
+
+    .summary-value {
+      font-size: 2.5em;
+      font-weight: 700;
+      background: linear-gradient(45deg, #00ff88, #00ccff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .summary-label {
+      color: #888;
+      margin-top: 5px;
+      font-size: 0.9em;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #666;
+    }
+
+    .empty-state-icon {
+      font-size: 4em;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .games-grid {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 1.8em;
+      }
+
+      .summary {
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .update-info {
+        flex-direction: column;
+        gap: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🏈 NFL LIVE SCOREBOARD</h1>
+      <div style="color: #aaa; margin-top: 5px;">Week 7 • 2025 Season</div>
+      <div class="update-info">
+        <div>Last Updated: <strong id="lastUpdated">8:19:09 PM</strong></div>
+        <div class="auto-refresh">
+          <span class="pulse"></span>
+          Auto-refresh: <strong id="countdown">30</strong>s
+        </div>
+      </div>
+    </header>
+
+    
+
+    
+    <div class="section">
+      <div class="section-header final">
+        <span class="status-badge final">✓ FINAL</span>
+        <h2>Final Scores</h2>
+        <div style="margin-left: auto; color: #00ff88; font-size: 0.9em;">13 games</div>
+      </div>
+      <div class="games-grid">
+        
+    <div class="game-card">
+      <div class="game-header">
+        <div class="game-status final">FINAL</div>
+        <div class="broadcast">Prime Video</div>
+      </div>
+
+      <div class="team-row ">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/pit.png" alt="PIT" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">PIT</div>
+            <div class="team-full">Pittsburgh Steelers</div>
+          </div>
+        </div>
+        <div class="team-score ">31</div>
+      </div>
+
+      <div class="team-row winner">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/cin.png" alt="CIN" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">CIN</div>
+            <div class="team-full">Cincinnati Bengals</div>
+          </div>
+        </div>
+        <div class="team-score winner">33</div>
+      </div>
+
+      
+      <div class="quarter-scores">
+        <div class="quarter">
+          <div class="quarter-label">Q1</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q2</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q3</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q4</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        
+      </div>
+      
+
+      
+      <div class="venue-info">
+        📍 Paycor Stadium • Cincinnati, OH
+         • Open
+      </div>
+      
+    </div>
+  
+    <div class="game-card">
+      <div class="game-header">
+        <div class="game-status final">FINAL</div>
+        <div class="broadcast">NFL Net</div>
+      </div>
+
+      <div class="team-row winner">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/lar.png" alt="LAR" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">LAR</div>
+            <div class="team-full">Los Angeles Rams</div>
+          </div>
+        </div>
+        <div class="team-score winner">35</div>
+      </div>
+
+      <div class="team-row ">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/jax.png" alt="JAX" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">JAX</div>
+            <div class="team-full">Jacksonville Jaguars</div>
+          </div>
+        </div>
+        <div class="team-score ">7</div>
+      </div>
+
+      
+      <div class="quarter-scores">
+        <div class="quarter">
+          <div class="quarter-label">Q1</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q2</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q3</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q4</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        
+      </div>
+      
+
+      
+      <div class="venue-info">
+        📍 Wembley Stadium • London, null
+         • Open
+      </div>
+      
+    </div>
+  
+    <div class="game-card">
+      <div class="game-header">
+        <div class="game-status final">FINAL</div>
+        <div class="broadcast">CBS</div>
+      </div>
+
+      <div class="team-row ">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/mia.png" alt="MIA" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">MIA</div>
+            <div class="team-full">Miami Dolphins</div>
+          </div>
+        </div>
+        <div class="team-score ">6</div>
+      </div>
+
+      <div class="team-row winner">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/cle.png" alt="CLE" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">CLE</div>
+            <div class="team-full">Cleveland Browns</div>
+          </div>
+        </div>
+        <div class="team-score winner">31</div>
+      </div>
+
+      
+      <div class="quarter-scores">
+        <div class="quarter">
+          <div class="quarter-label">Q1</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q2</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q3</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q4</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        
+      </div>
+      
+
+      
+      <div class="venue-info">
+        📍 Huntington Bank Field • Cleveland, OH
+         • Open
+      </div>
+      
+    </div>
+  
+    <div class="game-card">
+      <div class="game-header">
+        <div class="game-status final">FINAL</div>
+        <div class="broadcast">FOX</div>
+      </div>
+
+      <div class="team-row winner">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/car.png" alt="CAR" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">CAR</div>
+            <div class="team-full">Carolina Panthers</div>
+          </div>
+        </div>
+        <div class="team-score winner">13</div>
+      </div>
+
+      <div class="team-row ">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/nyj.png" alt="NYJ" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">NYJ</div>
+            <div class="team-full">New York Jets</div>
+          </div>
+        </div>
+        <div class="team-score ">6</div>
+      </div>
+
+      
+      <div class="quarter-scores">
+        <div class="quarter">
+          <div class="quarter-label">Q1</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q2</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q3</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q4</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        
+      </div>
+      
+
+      
+      <div class="venue-info">
+        📍 MetLife Stadium • East Rutherford, NJ
+         • Open
+      </div>
+      
+    </div>
+  
+    <div class="game-card">
+      <div class="game-header">
+        <div class="game-status final">FINAL</div>
+        <div class="broadcast">CBS</div>
+      </div>
+
+      <div class="team-row ">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/lv.png" alt="LV" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">LV</div>
+            <div class="team-full">Las Vegas Raiders</div>
+          </div>
+        </div>
+        <div class="team-score ">0</div>
+      </div>
+
+      <div class="team-row winner">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/kc.png" alt="KC" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">KC</div>
+            <div class="team-full">Kansas City Chiefs</div>
+          </div>
+        </div>
+        <div class="team-score winner">31</div>
+      </div>
+
+      
+      <div class="quarter-scores">
+        <div class="quarter">
+          <div class="quarter-label">Q1</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q2</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q3</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q4</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        
+      </div>
+      
+
+      
+      <div class="venue-info">
+        📍 GEHA Field at Arrowhead Stadium • Kansas City, MO
+         • Open
+      </div>
+      
+    </div>
+  
+    <div class="game-card">
+      <div class="game-header">
+        <div class="game-status final">FINAL</div>
+        <div class="broadcast">FOX</div>
+      </div>
+
+      <div class="team-row ">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/no.png" alt="NO" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">NO</div>
+            <div class="team-full">New Orleans Saints</div>
+          </div>
+        </div>
+        <div class="team-score ">14</div>
+      </div>
+
+      <div class="team-row winner">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/chi.png" alt="CHI" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">CHI</div>
+            <div class="team-full">Chicago Bears</div>
+          </div>
+        </div>
+        <div class="team-score winner">26</div>
+      </div>
+
+      
+      <div class="quarter-scores">
+        <div class="quarter">
+          <div class="quarter-label">Q1</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q2</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q3</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q4</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        
+      </div>
+      
+
+      
+      <div class="venue-info">
+        📍 Soldier Field • Chicago, IL
+         • Open
+      </div>
+      
+    </div>
+  
+    <div class="game-card">
+      <div class="game-header">
+        <div class="game-status final">FINAL</div>
+        <div class="broadcast">FOX</div>
+      </div>
+
+      <div class="team-row winner">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/phi.png" alt="PHI" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">PHI</div>
+            <div class="team-full">Philadelphia Eagles</div>
+          </div>
+        </div>
+        <div class="team-score winner">28</div>
+      </div>
+
+      <div class="team-row ">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/min.png" alt="MIN" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">MIN</div>
+            <div class="team-full">Minnesota Vikings</div>
+          </div>
+        </div>
+        <div class="team-score ">22</div>
+      </div>
+
+      
+      <div class="quarter-scores">
+        <div class="quarter">
+          <div class="quarter-label">Q1</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q2</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q3</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q4</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        
+      </div>
+      
+
+      
+      <div class="venue-info">
+        📍 U.S. Bank Stadium • Minneapolis, MN
+         • Open
+      </div>
+      
+    </div>
+  
+    <div class="game-card">
+      <div class="game-header">
+        <div class="game-status final">FINAL</div>
+        <div class="broadcast">CBS</div>
+      </div>
+
+      <div class="team-row winner">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/ne.png" alt="NE" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">NE</div>
+            <div class="team-full">New England Patriots</div>
+          </div>
+        </div>
+        <div class="team-score winner">31</div>
+      </div>
+
+      <div class="team-row ">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/ten.png" alt="TEN" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">TEN</div>
+            <div class="team-full">Tennessee Titans</div>
+          </div>
+        </div>
+        <div class="team-score ">13</div>
+      </div>
+
+      
+      <div class="quarter-scores">
+        <div class="quarter">
+          <div class="quarter-label">Q1</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q2</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q3</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q4</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        
+      </div>
+      
+
+      
+      <div class="venue-info">
+        📍 Nissan Stadium • Nashville, TN
+         • Open
+      </div>
+      
+    </div>
+  
+    <div class="game-card">
+      <div class="game-header">
+        <div class="game-status final">FINAL</div>
+        <div class="broadcast">CBS</div>
+      </div>
+
+      <div class="team-row winner">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/ind.png" alt="IND" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">IND</div>
+            <div class="team-full">Indianapolis Colts</div>
+          </div>
+        </div>
+        <div class="team-score winner">38</div>
+      </div>
+
+      <div class="team-row ">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/lac.png" alt="LAC" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">LAC</div>
+            <div class="team-full">Los Angeles Chargers</div>
+          </div>
+        </div>
+        <div class="team-score ">24</div>
+      </div>
+
+      
+      <div class="quarter-scores">
+        <div class="quarter">
+          <div class="quarter-label">Q1</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q2</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q3</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q4</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        
+      </div>
+      
+
+      
+      <div class="venue-info">
+        📍 SoFi Stadium • Inglewood, CA
+         • Open
+      </div>
+      
+    </div>
+  
+    <div class="game-card">
+      <div class="game-header">
+        <div class="game-status final">FINAL</div>
+        <div class="broadcast">CBS</div>
+      </div>
+
+      <div class="team-row ">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/nyg.png" alt="NYG" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">NYG</div>
+            <div class="team-full">New York Giants</div>
+          </div>
+        </div>
+        <div class="team-score ">32</div>
+      </div>
+
+      <div class="team-row winner">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/den.png" alt="DEN" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">DEN</div>
+            <div class="team-full">Denver Broncos</div>
+          </div>
+        </div>
+        <div class="team-score winner">33</div>
+      </div>
+
+      
+      <div class="quarter-scores">
+        <div class="quarter">
+          <div class="quarter-label">Q1</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q2</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q3</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q4</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        
+      </div>
+      
+
+      
+      <div class="venue-info">
+        📍 Empower Field at Mile High • Denver, CO
+         • Open
+      </div>
+      
+    </div>
+  
+    <div class="game-card">
+      <div class="game-header">
+        <div class="game-status final">FINAL</div>
+        <div class="broadcast">FOX</div>
+      </div>
+
+      <div class="team-row ">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/wsh.png" alt="WSH" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">WSH</div>
+            <div class="team-full">Washington Commanders</div>
+          </div>
+        </div>
+        <div class="team-score ">22</div>
+      </div>
+
+      <div class="team-row winner">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/dal.png" alt="DAL" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">DAL</div>
+            <div class="team-full">Dallas Cowboys</div>
+          </div>
+        </div>
+        <div class="team-score winner">44</div>
+      </div>
+
+      
+      <div class="quarter-scores">
+        <div class="quarter">
+          <div class="quarter-label">Q1</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q2</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q3</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q4</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        
+      </div>
+      
+
+      
+      <div class="venue-info">
+        📍 AT&T Stadium • Arlington, TX
+         • Open
+      </div>
+      
+    </div>
+  
+    <div class="game-card">
+      <div class="game-header">
+        <div class="game-status final">FINAL</div>
+        <div class="broadcast">FOX</div>
+      </div>
+
+      <div class="team-row winner">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/gb.png" alt="GB" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">GB</div>
+            <div class="team-full">Green Bay Packers</div>
+          </div>
+        </div>
+        <div class="team-score winner">27</div>
+      </div>
+
+      <div class="team-row ">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/ari.png" alt="ARI" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">ARI</div>
+            <div class="team-full">Arizona Cardinals</div>
+          </div>
+        </div>
+        <div class="team-score ">23</div>
+      </div>
+
+      
+      <div class="quarter-scores">
+        <div class="quarter">
+          <div class="quarter-label">Q1</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q2</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q3</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q4</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        
+      </div>
+      
+
+      
+      <div class="venue-info">
+        📍 State Farm Stadium • Glendale, AZ
+         • Open
+      </div>
+      
+    </div>
+  
+    <div class="game-card">
+      <div class="game-header">
+        <div class="game-status final">FINAL</div>
+        <div class="broadcast">NBC</div>
+      </div>
+
+      <div class="team-row ">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/atl.png" alt="ATL" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">ATL</div>
+            <div class="team-full">Atlanta Falcons</div>
+          </div>
+        </div>
+        <div class="team-score ">10</div>
+      </div>
+
+      <div class="team-row winner">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/sf.png" alt="SF" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">SF</div>
+            <div class="team-full">San Francisco 49ers</div>
+          </div>
+        </div>
+        <div class="team-score winner">20</div>
+      </div>
+
+      
+      <div class="quarter-scores">
+        <div class="quarter">
+          <div class="quarter-label">Q1</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q2</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q3</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q4</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        
+      </div>
+      
+
+      
+      <div class="venue-info">
+        📍 Levi's Stadium • Santa Clara, CA
+         • Open
+      </div>
+      
+    </div>
+  
+      </div>
+    </div>
+    
+
+    
+    <div class="section">
+      <div class="section-header upcoming">
+        <span class="status-badge upcoming">⏰ UPCOMING</span>
+        <h2>Scheduled Games</h2>
+        <div style="margin-left: auto; color: #00ccff; font-size: 0.9em;">2 games</div>
+      </div>
+      <div class="games-grid">
+        
+    <div class="game-card">
+      <div class="game-header">
+        <div class="game-status scheduled">11:00 PM</div>
+        <div class="broadcast">ABC</div>
+      </div>
+
+      <div class="team-row ">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/tb.png" alt="TB" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">TB</div>
+            <div class="team-full">Tampa Bay Buccaneers</div>
+          </div>
+        </div>
+        <div class="team-score ">0</div>
+      </div>
+
+      <div class="team-row ">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/det.png" alt="DET" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">DET</div>
+            <div class="team-full">Detroit Lions</div>
+          </div>
+        </div>
+        <div class="team-score ">0</div>
+      </div>
+
+      
+      <div class="quarter-scores">
+        <div class="quarter">
+          <div class="quarter-label">Q1</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q2</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q3</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q4</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        
+      </div>
+      
+
+      
+    </div>
+  
+    <div class="game-card">
+      <div class="game-header">
+        <div class="game-status scheduled">2:00 AM</div>
+        <div class="broadcast">ESPN</div>
+      </div>
+
+      <div class="team-row ">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/hou.png" alt="HOU" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">HOU</div>
+            <div class="team-full">Houston Texans</div>
+          </div>
+        </div>
+        <div class="team-score ">0</div>
+      </div>
+
+      <div class="team-row ">
+        <div class="team-info">
+          <img src="https://a.espncdn.com/i/teamlogos/nfl/500/sea.png" alt="SEA" class="team-logo" onerror="this.src='https://via.placeholder.com/40'">
+          <div class="team-name">
+            <div class="team-abbr">SEA</div>
+            <div class="team-full">Seattle Seahawks</div>
+          </div>
+        </div>
+        <div class="team-score ">0</div>
+      </div>
+
+      
+      <div class="quarter-scores">
+        <div class="quarter">
+          <div class="quarter-label">Q1</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q2</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q3</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        <div class="quarter">
+          <div class="quarter-label">Q4</div>
+          <div class="quarter-value">0-0</div>
+        </div>
+        
+      </div>
+      
+
+      
+    </div>
+  
+      </div>
+    </div>
+    
+
+    
+
+    <div class="summary">
+      <div class="summary-item">
+        <div class="summary-value">15</div>
+        <div class="summary-label">Total Games</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-value">0</div>
+        <div class="summary-label">Live</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-value">13</div>
+        <div class="summary-label">Completed</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-value">2</div>
+        <div class="summary-label">Upcoming</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Auto-refresh every 30 seconds
+    let countdown = 30;
+
+    setInterval(() => {
+      countdown--;
+      document.getElementById('countdown').textContent = countdown;
+
+      if (countdown <= 0) {
+        location.reload();
+      }
+    }, 1000);
+
+    // Update last updated time every second
+    setInterval(() => {
+      const lastUpdated = new Date('2025-10-22T00:19:09.876Z');
+      const now = new Date();
+      const diffSeconds = Math.floor((now - lastUpdated) / 1000);
+
+      if (diffSeconds < 60) {
+        document.getElementById('lastUpdated').textContent = diffSeconds + 's ago';
+      } else {
+        document.getElementById('lastUpdated').textContent = lastUpdated.toLocaleTimeString();
+      }
+    }, 1000);
+  </script>
+</body>
+</html>

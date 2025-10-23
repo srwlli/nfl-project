@@ -1,0 +1,285 @@
+{
+  "meta": {
+    "purpose": "AI Agent reference for navigating NFL database documentation",
+    "last_updated": "2025-10-22",
+    "for": "Claude Code agents and other AI assistants",
+    "total_tables": 37,
+    "active_tables": 29,
+    "future_tables": 8
+  },
+
+  "quick_start": {
+    "critical_reminders": [
+      "Always check DATABASE-SCHEMA-REFERENCE.md FIRST before querying tables",
+      "Verify column names in table's field-mapping-report.md",
+      "Use team-normalizer.js for team IDs (handles WAS/WSH, etc.)",
+      "Check for NULL values - most fields are nullable",
+      "Include season in WHERE clause for partitioned tables"
+    ],
+    "common_mistakes": [
+      "Using 'receptions' instead of 'receiving_receptions'",
+      "Using 'team_abbreviation' instead of 'team_abbr'",
+      "Using 'player_teams.season' instead of 'start_season/end_season'",
+      "Not handling NULL values in calculations",
+      "Forgetting to normalize team IDs"
+    ]
+  },
+
+  "documentation_structure": {
+    "per_table": {
+      "my-guide.md": "Quick reference - read this first",
+      "field-mapping-report.md": "Complete field documentation with types/constraints",
+      "raw-data-source-mapping.md": "API/data source details and transformations"
+    },
+    "location": "FINAL/TABLE-NAME/"
+  },
+
+  "tables_by_priority": {
+    "critical": [
+      {
+        "name": "PLAYERS",
+        "fields": 18,
+        "records": 2571,
+        "status": "active",
+        "purpose": "Player profiles and bio data",
+        "key_fields": ["player_id", "full_name", "primary_position", "height", "weight"]
+      },
+      {
+        "name": "TEAMS",
+        "fields": 17,
+        "records": 33,
+        "status": "active",
+        "purpose": "NFL team information",
+        "key_fields": ["team_id", "team_name", "team_abbr", "division_id", "conference_id"]
+      },
+      {
+        "name": "GAMES",
+        "fields": 20,
+        "records": 272,
+        "status": "active",
+        "purpose": "Game schedule and scores",
+        "key_fields": ["game_id", "season", "home_team_id", "away_team_id", "home_score", "away_score"]
+      },
+      {
+        "name": "PLAYER-GAME-STATS",
+        "fields": 75,
+        "records": 6842,
+        "status": "active",
+        "purpose": "Player performance per game (LARGE TABLE)",
+        "key_fields": ["player_id", "game_id", "passing_yards", "rushing_yards", "receiving_yards", "fantasy_points_ppr"],
+        "warning": "75 fields - always check field list before querying"
+      },
+      {
+        "name": "TEAM-GAME-STATS",
+        "fields": 24,
+        "records": 212,
+        "status": "active",
+        "purpose": "Team performance per game",
+        "key_fields": ["game_id", "team_id", "total_yards", "turnovers", "time_of_possession"]
+      }
+    ],
+    "important": [
+      "PLAYER-TEAMS",
+      "POSITIONS",
+      "SEASONS",
+      "SCORING-PLAYS",
+      "ROSTER-TRANSACTIONS",
+      "GAME-ROSTERS",
+      "STADIUMS",
+      "PLAYER-SEASON-STATS",
+      "TEAM-SEASON-STATS",
+      "WEEKLY-STATS"
+    ],
+    "supporting": [
+      "GAME-WEATHER",
+      "TEAM-ALIASES",
+      "DIVISIONS",
+      "CONFERENCES",
+      "STAT-CATEGORIES"
+    ],
+    "future": [
+      "GAME-DRIVES",
+      "PLAYER-NEWS",
+      "TEAM-NEWS",
+      "COACHES",
+      "GAME-OFFICIALS",
+      "PLAY-BY-PLAY",
+      "BETTING-LINES",
+      "PLAYER-INJURIES"
+    ]
+  },
+
+  "schema_rules": {
+    "foreign_keys": {
+      "player_id": {
+        "format": "espn-{id}",
+        "example": "espn-3139477",
+        "note": "Always use player_id for joins, never player names"
+      },
+      "team_id": {
+        "format": "2-3 letter abbreviation",
+        "examples": ["KC", "SF", "BAL", "WAS"],
+        "critical": "Use team_abbr column, NOT team_abbreviation",
+        "normalize": "Always use team-normalizer.js utility"
+      },
+      "game_id": {
+        "format": "ESPN game ID",
+        "example": "401772510"
+      }
+    },
+    "partitioned_tables": [
+      "games",
+      "player_game_stats",
+      "play_by_play"
+    ],
+    "partitioning_note": "Always include season in WHERE clause for performance"
+  },
+
+  "data_availability": {
+    "populated": {
+      "players": 2571,
+      "teams": 33,
+      "games": 272,
+      "player_game_stats": 6842,
+      "team_game_stats": 212,
+      "player_teams": 2538,
+      "positions": 26,
+      "seasons": 1,
+      "stadiums": 30,
+      "scoring_plays": 917,
+      "roster_transactions": 2161,
+      "game_rosters": 5995,
+      "player_season_stats": 1516,
+      "team_season_stats": 32,
+      "game_weather": 106,
+      "team_aliases": 132
+    },
+    "empty": {
+      "divisions": "No seed script",
+      "conferences": "No seed script",
+      "player_injuries": "Scraper fixed, not run",
+      "betting_lines": "Requires API key",
+      "play_by_play": "Requires nflverse integration",
+      "player_news": "Not implemented",
+      "team_news": "Not implemented",
+      "game_drives": "Not implemented",
+      "coaches": "No data source",
+      "game_officials": "No data source",
+      "stat_categories": "Reference table, needs manual population"
+    }
+  },
+
+  "common_queries": {
+    "get_player_stats": {
+      "description": "Get player stats for a specific game",
+      "tables": ["player_game_stats", "players", "teams"],
+      "example": "supabase.from('player_game_stats').select('*, player:players(full_name), team:teams(team_abbr)').eq('game_id', '401772510')"
+    },
+    "get_team_roster": {
+      "description": "Get current team roster",
+      "tables": ["player_teams", "players"],
+      "example": "supabase.from('player_teams').select('*, player:players(full_name, primary_position)').eq('team_id', 'KC').is('end_season', null)"
+    },
+    "get_game_schedule": {
+      "description": "Get team's schedule",
+      "tables": ["games", "teams"],
+      "example": "supabase.from('games').select('*, home_team:teams!games_home_team_id_fkey(*), away_team:teams!games_away_team_id_fkey(*)').or('home_team_id.eq.KC,away_team_id.eq.KC')"
+    },
+    "get_scoring_summary": {
+      "description": "Get scoring plays for a game",
+      "tables": ["scoring_plays", "players", "teams"],
+      "example": "supabase.from('scoring_plays').select('*, team:teams(team_abbr), player:players(full_name)').eq('game_id', '401772510').order('play_sequence')"
+    }
+  },
+
+  "table_relationships": {
+    "core_hierarchy": {
+      "teams": {
+        "has_many": ["players", "games", "team_game_stats"],
+        "through": ["player_teams"]
+      },
+      "players": {
+        "belongs_to": ["teams", "positions"],
+        "has_many": ["player_game_stats", "player_season_stats"],
+        "through": ["player_teams"]
+      },
+      "games": {
+        "belongs_to": ["teams", "seasons", "stadiums"],
+        "has_many": ["player_game_stats", "team_game_stats", "scoring_plays", "game_rosters", "game_weather"]
+      }
+    }
+  },
+
+  "utilities": {
+    "team_normalizer": {
+      "location": "scripts/utils/team-normalizer.js",
+      "functions": [
+        "normalizeTeamId(alias) - Convert any team name to canonical ID",
+        "getTeamByAlias(alias) - Get team object from alias",
+        "getAllTeamAliases() - Get all aliases for all teams"
+      ],
+      "example": "normalizeTeamId('WSH') → 'WAS'"
+    },
+    "player_creator": {
+      "location": "scripts/utils/player-creator.js",
+      "functions": [
+        "autoCreatePlayers(playerIds) - Auto-create missing players from ESPN",
+        "fetchPlayerFromESPN(playerId) - Get player data from ESPN API"
+      ]
+    }
+  },
+
+  "column_name_warnings": {
+    "player_game_stats": {
+      "wrong": "receptions",
+      "correct": "receiving_receptions"
+    },
+    "teams": {
+      "wrong": "team_abbreviation",
+      "correct": "team_abbr"
+    },
+    "player_teams": {
+      "wrong": "season",
+      "correct": "start_season and end_season"
+    }
+  },
+
+  "best_practices": [
+    "Always read my-guide.md first for field lists",
+    "Check for NULL values before calculations",
+    "Use proper team_id normalization with team-normalizer.js",
+    "Include season in queries for partitioned tables",
+    "Verify FK constraints in field-mapping-report.md",
+    "Handle missing players with player-creator.js utility",
+    "Check data availability before building features"
+  ],
+
+  "learning_path": [
+    "1. Read README.md for overview",
+    "2. Read PLAYERS/my-guide.md",
+    "3. Read TEAMS/my-guide.md",
+    "4. Read GAMES/my-guide.md",
+    "5. Read PLAYER-GAME-STATS/my-guide.md (75 fields!)",
+    "6. Practice queries with sample data",
+    "7. Reference docs as needed during development"
+  ],
+
+  "external_resources": {
+    "project_docs": [
+      "PROJECT-MAP.md - Complete file navigation",
+      "CLAUDE.md - Development history",
+      "DATABASE-SCHEMA-REFERENCE.md - Quick schema reference",
+      "DATABASE-ACCESS-GUIDE.md - Database connection guide",
+      "AUTOMATION-GUARANTEE.md - Scraper automation docs",
+      "SCRIPTS-INDEX.md - All 63 scripts cataloged"
+    ],
+    "live_schema": "coderef/training/database-schema-map.json (auto-generated)",
+    "regenerate_schema": "npm run schema:map"
+  },
+
+  "quick_commands": {
+    "check_table_records": "node -e \"const { getSupabaseClient } = require('./scripts/utils/supabase-client.js'); const supabase = getSupabaseClient(); (async () => { const { count } = await supabase.from('TABLE_NAME').select('*', { count: 'exact', head: true }); console.log(count); })();\"",
+    "view_guide": "cat FINAL/TABLE-NAME/my-guide.md",
+    "get_field_list": "grep '^## All.*Fields' FINAL/TABLE-NAME/my-guide.md -A 3"
+  }
+}

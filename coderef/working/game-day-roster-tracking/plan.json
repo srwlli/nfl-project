@@ -1,0 +1,488 @@
+{
+  "META_DOCUMENTATION": {
+    "feature_name": "game-day-roster-tracking",
+    "version": "1.0.0",
+    "status": "complete",
+    "generated_by": "AI Assistant",
+    "generated_at": "2025-10-21T07:45:00Z",
+    "has_context": false,
+    "has_analysis": false,
+    "workorder_id": "WO-GAME-DAY-ROSTER-TRACKING-001"
+  },
+  "UNIVERSAL_PLANNING_STRUCTURE": {
+    "0_preparation": {
+      "foundation_docs": {
+        "readme": "README.md",
+        "architecture": "Not available",
+        "api_docs": "Not available",
+        "schema": "DATABASE-SCHEMA-REFERENCE.md"
+      },
+      "coding_standards": {
+        "ui_patterns": "Not available",
+        "behavior_patterns": "Not available",
+        "ux_flows": "Not available"
+      },
+      "reference_components": {
+        "similar_features": [
+          "scripts/seed/03-players.js - Current roster seed with UPSERT logic",
+          "scripts/scrapers/game-stats-scraper.js - Game stats scraper encountering FK errors",
+          "scripts/add-missing-players-by-id.js - Manual player addition by ESPN ID"
+        ],
+        "reusable_patterns": [
+          "ESPN API player fetching from add-missing-players-by-id.js",
+          "UPSERT pattern from 03-players.js",
+          "Batch processing from scrapers",
+          "Foreign key relationship handling"
+        ]
+      }
+    },
+    "1_executive_summary": {
+      "problem": "25 out of 93 games (weeks 1-6) are missing player_game_stats due to foreign key constraint violations. Players who appeared in games are not in the players table because they were later released, traded, or moved to practice squad. Current roster seed only fetches ACTIVE rosters, missing historical players.",
+      "solution": "Implement auto-creation of missing players during game scraping + add game_rosters table for proper game-day roster snapshots. This ensures players table serves as permanent registry while game_rosters tracks active/inactive status per game.",
+      "impact": "Achieves 100% game coverage (93/93 games with complete player stats for weeks 1-6), enables accurate season statistics, and provides foundation for tracking player availability and roster changes throughout the season.",
+      "timeline": "4-6 hours total: 2 hours for game-stats-scraper enhancement + 1 hour for game_rosters migration + 1 hour for backfill + 1-2 hours testing/validation"
+    },
+    "2_risk_assessment": {
+      "complexity_score": 6,
+      "complexity_justification": "Medium complexity - requires modifying critical game-stats-scraper, adding new database table, implementing auto-player-creation logic, and backfilling historical data safely.",
+      "risks": [
+        {
+          "risk": "ESPN API rate limiting during batch player creation",
+          "probability": "Medium",
+          "impact": "Medium",
+          "mitigation": "Implement 1 req/sec rate limiting, batch player lookups before game stats insertion"
+        },
+        {
+          "risk": "Duplicate player creation race conditions",
+          "probability": "Low",
+          "impact": "Medium",
+          "mitigation": "Use UPSERT with ON CONFLICT, check existence before API call"
+        },
+        {
+          "risk": "Game-stats-scraper performance degradation",
+          "probability": "Medium",
+          "impact": "Low",
+          "mitigation": "Batch all player existence checks, cache results per game, only fetch missing players"
+        },
+        {
+          "risk": "Incomplete player data from ESPN API",
+          "probability": "Medium",
+          "impact": "Low",
+          "mitigation": "Allow nullable fields, populate what's available, log warnings for incomplete data"
+        },
+        {
+          "risk": "Breaking existing scraper functionality",
+          "probability": "Low",
+          "impact": "High",
+          "mitigation": "Test on single game first, maintain backward compatibility, add feature flag"
+        }
+      ],
+      "dependencies": [
+        "ESPN API availability for player data",
+        "Supabase database connection",
+        "Existing game-stats-scraper.js (critical path)",
+        "Database migration capability"
+      ]
+    },
+    "3_current_state_analysis": {
+      "files_to_create": [
+        {
+          "path": "supabase/migrations/20250101000022_create_game_rosters_table.sql",
+          "purpose": "Create game_rosters table for game-day roster snapshots",
+          "estimated_lines": 40
+        },
+        {
+          "path": "scripts/utils/player-creator.js",
+          "purpose": "Reusable utility for fetching and creating players from ESPN API",
+          "estimated_lines": 150
+        },
+        {
+          "path": "scripts/backfill-missing-players.js",
+          "purpose": "One-time script to backfill 12 missing players for weeks 1-6",
+          "estimated_lines": 100
+        }
+      ],
+      "files_to_modify": [
+        {
+          "path": "scripts/scrapers/game-stats-scraper.js",
+          "purpose": "Add auto-player-creation before inserting player stats",
+          "estimated_changes": "50-70 lines added"
+        }
+      ],
+      "files_to_reference": [
+        "scripts/add-missing-players-by-id.js",
+        "scripts/seed/03-players.js",
+        "DATABASE-SCHEMA-REFERENCE.md"
+      ],
+      "database_changes": {
+        "tables_affected": ["players", "game_rosters (new)", "player_game_stats"],
+        "migration_required": true,
+        "description": "Adding game_rosters table with FK to games and players, modifying game-stats-scraper to auto-populate both players and game_rosters during scraping"
+      }
+    },
+    "4_key_features": {
+      "features": [
+        {
+          "name": "Auto-Create Missing Players",
+          "description": "Automatically create player records when encountered during game scraping if they don't exist",
+          "priority": "Critical",
+          "estimated_effort": "2 hours"
+        },
+        {
+          "name": "Game Rosters Table",
+          "description": "Create game_rosters table to track which players were active/inactive for each game",
+          "priority": "High",
+          "estimated_effort": "1 hour"
+        },
+        {
+          "name": "Player Creation Utility",
+          "description": "Reusable utility function to fetch player data from ESPN API and create database record",
+          "priority": "Critical",
+          "estimated_effort": "1.5 hours"
+        },
+        {
+          "name": "Backfill Missing Players",
+          "description": "One-time backfill of 12 known missing players for weeks 1-6",
+          "priority": "Critical",
+          "estimated_effort": "1 hour"
+        },
+        {
+          "name": "Performance Optimization",
+          "description": "Batch player existence checks to minimize database queries during scraping",
+          "priority": "Medium",
+          "estimated_effort": "30 minutes"
+        }
+      ]
+    },
+    "5_task_id_system": {
+      "workorder": {
+        "id": "WO-GAME-DAY-ROSTER-TRACKING-001",
+        "name": "Game Day Roster Tracking",
+        "feature_dir": "coderef/working/game-day-roster-tracking"
+      },
+      "tasks": [
+        {
+          "id": "MIGRATE-001",
+          "workorder_id": "WO-GAME-DAY-ROSTER-TRACKING-001",
+          "description": "Create game_rosters table migration",
+          "category": "database",
+          "dependencies": [],
+          "estimated_time": "30m"
+        },
+        {
+          "id": "MIGRATE-002",
+          "workorder_id": "WO-GAME-DAY-ROSTER-TRACKING-001",
+          "description": "Apply migration to database",
+          "category": "database",
+          "dependencies": ["MIGRATE-001"],
+          "estimated_time": "5m"
+        },
+        {
+          "id": "UTIL-001",
+          "workorder_id": "WO-GAME-DAY-ROSTER-TRACKING-001",
+          "description": "Create player-creator.js utility with ESPN API fetch logic",
+          "category": "implementation",
+          "dependencies": [],
+          "estimated_time": "45m"
+        },
+        {
+          "id": "UTIL-002",
+          "workorder_id": "WO-GAME-DAY-ROSTER-TRACKING-001",
+          "description": "Add batch player existence check function to player-creator.js",
+          "category": "implementation",
+          "dependencies": ["UTIL-001"],
+          "estimated_time": "30m"
+        },
+        {
+          "id": "UTIL-003",
+          "workorder_id": "WO-GAME-DAY-ROSTER-TRACKING-001",
+          "description": "Add UPSERT logic with conflict resolution to player-creator.js",
+          "category": "implementation",
+          "dependencies": ["UTIL-001"],
+          "estimated_time": "15m"
+        },
+        {
+          "id": "SCRAPER-001",
+          "workorder_id": "WO-GAME-DAY-ROSTER-TRACKING-001",
+          "description": "Import player-creator utility into game-stats-scraper.js",
+          "category": "implementation",
+          "dependencies": ["UTIL-001", "UTIL-002", "UTIL-003"],
+          "estimated_time": "10m"
+        },
+        {
+          "id": "SCRAPER-002",
+          "workorder_id": "WO-GAME-DAY-ROSTER-TRACKING-001",
+          "description": "Add player extraction from ESPN game response in game-stats-scraper",
+          "category": "implementation",
+          "dependencies": ["SCRAPER-001"],
+          "estimated_time": "30m"
+        },
+        {
+          "id": "SCRAPER-003",
+          "workorder_id": "WO-GAME-DAY-ROSTER-TRACKING-001",
+          "description": "Batch check player existence before processing player stats",
+          "category": "implementation",
+          "dependencies": ["SCRAPER-002"],
+          "estimated_time": "20m"
+        },
+        {
+          "id": "SCRAPER-004",
+          "workorder_id": "WO-GAME-DAY-ROSTER-TRACKING-001",
+          "description": "Auto-create missing players with rate limiting (1 req/sec)",
+          "category": "implementation",
+          "dependencies": ["SCRAPER-003"],
+          "estimated_time": "30m"
+        },
+        {
+          "id": "SCRAPER-005",
+          "workorder_id": "WO-GAME-DAY-ROSTER-TRACKING-001",
+          "description": "Populate game_rosters table during game scraping",
+          "category": "implementation",
+          "dependencies": ["SCRAPER-004", "MIGRATE-002"],
+          "estimated_time": "30m"
+        },
+        {
+          "id": "TEST-001",
+          "workorder_id": "WO-GAME-DAY-ROSTER-TRACKING-001",
+          "description": "Test scraper on single game with known missing player",
+          "category": "testing",
+          "dependencies": ["SCRAPER-005"],
+          "estimated_time": "15m"
+        },
+        {
+          "id": "BACKFILL-001",
+          "workorder_id": "WO-GAME-DAY-ROSTER-TRACKING-001",
+          "description": "Create backfill-missing-players.js script",
+          "category": "implementation",
+          "dependencies": ["UTIL-001"],
+          "estimated_time": "30m"
+        },
+        {
+          "id": "BACKFILL-002",
+          "workorder_id": "WO-GAME-DAY-ROSTER-TRACKING-001",
+          "description": "Run backfill for 12 known missing players",
+          "category": "execution",
+          "dependencies": ["BACKFILL-001"],
+          "estimated_time": "15m"
+        },
+        {
+          "id": "BACKFILL-003",
+          "workorder_id": "WO-GAME-DAY-ROSTER-TRACKING-001",
+          "description": "Re-scrape 25 failed games from weeks 1-6",
+          "category": "execution",
+          "dependencies": ["BACKFILL-002"],
+          "estimated_time": "30m"
+        },
+        {
+          "id": "VERIFY-001",
+          "workorder_id": "WO-GAME-DAY-ROSTER-TRACKING-001",
+          "description": "Verify 100% game coverage (93/93 games with stats)",
+          "category": "verification",
+          "dependencies": ["BACKFILL-003"],
+          "estimated_time": "10m"
+        },
+        {
+          "id": "VERIFY-002",
+          "workorder_id": "WO-GAME-DAY-ROSTER-TRACKING-001",
+          "description": "Verify season leaders display correctly with complete data",
+          "category": "verification",
+          "dependencies": ["VERIFY-001"],
+          "estimated_time": "10m"
+        },
+        {
+          "id": "DOC-001",
+          "workorder_id": "WO-GAME-DAY-ROSTER-TRACKING-001",
+          "description": "Update DATABASE-SCHEMA-REFERENCE.md with game_rosters table",
+          "category": "documentation",
+          "dependencies": ["MIGRATE-002"],
+          "estimated_time": "15m"
+        },
+        {
+          "id": "DOC-002",
+          "workorder_id": "WO-GAME-DAY-ROSTER-TRACKING-001",
+          "description": "Update CLAUDE.md with session notes",
+          "category": "documentation",
+          "dependencies": ["VERIFY-002"],
+          "estimated_time": "15m"
+        }
+      ]
+    },
+    "6_implementation_phases": {
+      "phases": [
+        {
+          "phase": 1,
+          "name": "Database Schema & Utilities",
+          "description": "Create game_rosters table and reusable player-creator utility",
+          "tasks": ["MIGRATE-001", "MIGRATE-002", "UTIL-001", "UTIL-002", "UTIL-003"],
+          "estimated_duration": "2 hours",
+          "deliverables": [
+            "game_rosters table with FK constraints",
+            "player-creator.js utility with ESPN API integration",
+            "Batch player existence check function",
+            "UPSERT logic for safe player creation"
+          ]
+        },
+        {
+          "phase": 2,
+          "name": "Game Stats Scraper Enhancement",
+          "description": "Modify game-stats-scraper to auto-create missing players and populate game_rosters",
+          "tasks": ["SCRAPER-001", "SCRAPER-002", "SCRAPER-003", "SCRAPER-004", "SCRAPER-005", "TEST-001"],
+          "estimated_duration": "2 hours",
+          "deliverables": [
+            "Enhanced game-stats-scraper with auto-player-creation",
+            "Game roster snapshot population",
+            "Successful test on single game"
+          ]
+        },
+        {
+          "phase": 3,
+          "name": "Backfill & Verification",
+          "description": "Backfill missing players and re-scrape failed games",
+          "tasks": ["BACKFILL-001", "BACKFILL-002", "BACKFILL-003", "VERIFY-001", "VERIFY-002"],
+          "estimated_duration": "1.5 hours",
+          "deliverables": [
+            "12 missing players added to database",
+            "25 games re-scraped successfully",
+            "100% game coverage (93/93 games)",
+            "Complete season leader statistics"
+          ]
+        },
+        {
+          "phase": 4,
+          "name": "Documentation",
+          "description": "Update schema reference and session notes",
+          "tasks": ["DOC-001", "DOC-002"],
+          "estimated_duration": "30 minutes",
+          "deliverables": [
+            "Updated DATABASE-SCHEMA-REFERENCE.md",
+            "Updated CLAUDE.md with session summary"
+          ]
+        }
+      ]
+    },
+    "7_testing_strategy": {
+      "unit_tests": [],
+      "integration_tests": [
+        {
+          "test": "Single Game Test with Missing Player",
+          "description": "Run enhanced scraper on game with known missing player (e.g., MIA @ IND with espn-2978935)",
+          "command": "npm run scrape:game-stats -- --game=401772719",
+          "expected": "Player auto-created, game stats inserted successfully, no FK errors"
+        },
+        {
+          "test": "Batch Player Existence Check",
+          "description": "Verify batch check returns correct missing player IDs",
+          "command": "node scripts/test-player-creator.js",
+          "expected": "Returns list of missing player IDs without duplicates"
+        },
+        {
+          "test": "ESPN API Player Fetch",
+          "description": "Test ESPN API fetching for various player IDs",
+          "command": "node scripts/test-player-creator.js --fetch",
+          "expected": "Successfully fetches player data with all available fields populated"
+        },
+        {
+          "test": "Game Rosters Population",
+          "description": "Verify game_rosters table populated during scraping",
+          "command": "SELECT COUNT(*) FROM game_rosters WHERE game_id = 'espn-401772719'",
+          "expected": "~60-70 roster entries (both teams)"
+        }
+      ],
+      "e2e_tests": [
+        {
+          "test": "Full Week Re-scrape",
+          "description": "Re-scrape entire week 1 with enhanced scraper",
+          "steps": [
+            "Clear week 1 player_game_stats",
+            "Run npm run scrape:game-stats -- --week=1",
+            "Verify no FK constraint errors",
+            "Verify all 16 games have player stats",
+            "Verify game_rosters populated for all games"
+          ]
+        },
+        {
+          "test": "Season Leaders Verification",
+          "description": "Verify season leaders display correctly after backfill",
+          "steps": [
+            "Run backfill for all missing players",
+            "Re-scrape all failed games (weeks 1-6)",
+            "Run weekly aggregation for weeks 1-7",
+            "Run node scripts/show-season-leaders.js",
+            "Verify top leaders have realistic stats"
+          ]
+        }
+      ]
+    },
+    "8_success_criteria": {
+      "acceptance_criteria": [
+        "All 12 missing player IDs exist in players table with complete data",
+        "93/93 completed games (weeks 1-6) have player_game_stats records",
+        "No foreign key constraint errors when running game-stats-scraper",
+        "game_rosters table populated with ~60-70 entries per game",
+        "Season leaders display complete statistics through week 7",
+        "Enhanced scraper maintains backward compatibility (existing functionality unchanged)",
+        "Rate limiting implemented (max 1 ESPN API req/sec for player creation)",
+        "Batch player existence checks minimize database queries"
+      ],
+      "performance_metrics": [
+        "Game scraping time increases by <20% (acceptable overhead for auto-player-creation)",
+        "Batch player check completes in <500ms per game",
+        "ESPN API player fetch completes in <1000ms per player",
+        "Zero duplicate player records created",
+        "Zero FK constraint violations in logs"
+      ],
+      "rollback_plan": "Revert game-stats-scraper.js to previous version. Players table changes are safe (UPSERT with conflict resolution). game_rosters table can be dropped if needed. No destructive operations performed."
+    },
+    "9_implementation_checklist": {
+      "phase_1_checklist": [
+        "[ ] Create 20250101000022_create_game_rosters_table.sql migration",
+        "[ ] Define table schema (game_id, team_id, player_id, position, jersey_number, active, status)",
+        "[ ] Add FK constraints to games, teams, players tables",
+        "[ ] Apply migration: supabase db push",
+        "[ ] Verify table exists: SELECT * FROM game_rosters LIMIT 1",
+        "[ ] Create scripts/utils/player-creator.js",
+        "[ ] Implement fetchPlayerFromESPN(playerId) function",
+        "[ ] Implement batchCheckPlayerExistence(playerIds) function",
+        "[ ] Implement createPlayer(playerData) with UPSERT logic",
+        "[ ] Add rate limiting (1 req/sec) to ESPN API calls",
+        "[ ] Test player-creator utility in isolation"
+      ],
+      "phase_2_checklist": [
+        "[ ] Import player-creator into game-stats-scraper.js",
+        "[ ] Extract player roster data from ESPN game response",
+        "[ ] Collect all unique player IDs from game data",
+        "[ ] Batch check player existence before processing stats",
+        "[ ] Identify missing players (not in database)",
+        "[ ] Auto-create missing players with rate limiting",
+        "[ ] Populate game_rosters table with roster snapshot",
+        "[ ] Test on single game: npm run scrape:game-stats -- --game=401772719",
+        "[ ] Verify no FK errors in logs",
+        "[ ] Verify player auto-created successfully",
+        "[ ] Verify game_rosters populated"
+      ],
+      "phase_3_checklist": [
+        "[ ] Create scripts/backfill-missing-players.js",
+        "[ ] Add list of 12 known missing player IDs",
+        "[ ] Run backfill: node scripts/backfill-missing-players.js",
+        "[ ] Verify all 12 players added to database",
+        "[ ] Re-scrape week 1: npm run scrape:game-stats -- --week=1",
+        "[ ] Re-scrape week 2: npm run scrape:game-stats -- --week=2",
+        "[ ] Re-scrape week 3: npm run scrape:game-stats -- --week=3",
+        "[ ] Re-scrape week 4: npm run scrape:game-stats -- --week=4",
+        "[ ] Re-scrape week 5: npm run scrape:game-stats -- --week=5",
+        "[ ] Re-scrape week 6: npm run scrape:game-stats -- --week=6",
+        "[ ] Run weekly aggregation for all weeks",
+        "[ ] Verify 93/93 games have player stats",
+        "[ ] Run node scripts/show-season-leaders.js",
+        "[ ] Verify season leaders display correctly"
+      ],
+      "phase_4_checklist": [
+        "[ ] Update DATABASE-SCHEMA-REFERENCE.md with game_rosters table schema",
+        "[ ] Document auto-player-creation behavior in schema reference",
+        "[ ] Update CLAUDE.md with session summary",
+        "[ ] Document 100% game coverage achievement",
+        "[ ] Document known missing players resolution"
+      ]
+    }
+  }
+}

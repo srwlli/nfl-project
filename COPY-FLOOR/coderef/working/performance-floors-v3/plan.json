@@ -1,0 +1,713 @@
+{
+  "plan_name": "Performance Floors V3 - Production Hardening & Statistical Refinements",
+  "description": "Based on comprehensive reviews from ChatGPT, Gemini, DeepSeek, Perplexity, and Grok. Focuses on data quality, performance optimization, statistical accuracy, and production robustness.",
+  "baseline": {
+    "script": "COPY-FLOOR/calculate-performance-floors.js",
+    "lines_of_code": 1327,
+    "v2_status": "Complete (12/12 tasks)",
+    "current_features": [
+      "Opponent defensive efficiency",
+      "Environment modifiers (venue, weather, home field)",
+      "Bayesian shrinkage",
+      "EWMA temporal smoothing",
+      "Bootstrap percentile floors",
+      "Advanced metrics (EPA, QBR, success rate)",
+      "Opportunity-based projections",
+      "Position-specific rolling windows",
+      "Trend detection",
+      "Data validation"
+    ]
+  },
+  "improvement_sources": {
+    "chatgpt": "Performance, modularity, caching, parallelization",
+    "gemini": "Data efficiency, query consolidation, statistical refinement",
+    "deepseek": "Data validation, outlier detection, retry logic, smart caching",
+    "perplexity": "Function design, logging, JSDoc, testing",
+    "grok": "Data validation, stat-specific opponent factors, error handling"
+  },
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Critical Data Quality & Validation",
+      "priority": "CRITICAL",
+      "estimated_time": "3-4 hours",
+      "rationale": "Prevents garbage-in-garbage-out. Outliers and bad data can skew projections by 20-30%",
+      "ai_consensus": "All 5 AIs flagged data validation as top priority",
+      "tasks": [
+        {
+          "id": "1.1",
+          "description": "Add IQR-based Outlier Detection",
+          "ai_sources": ["DeepSeek", "Grok"],
+          "files": ["COPY-FLOOR/calculate-performance-floors.js"],
+          "details": [
+            "Create validateAndCleanStats() function using IQR method",
+            "Remove values outside Q1 - 1.5*IQR and Q3 + 1.5*IQR range",
+            "Log outliers removed (e.g., '⚠️ Removed 2 outliers for Tyreek Hill (receiving_yards)')",
+            "Apply to seasonValues and recentValues in calculateStatFloor()",
+            "Handle edge case: If >30% of data is outliers, keep all (signal of high variance player)"
+          ],
+          "expected_impact": "Reduces floor/ceiling distortion from garbage-time games by ~15-20%",
+          "success_criteria": [
+            "300-yard WR games in blowouts excluded from averages",
+            "QB stat-padding games filtered out",
+            "Floor projections more stable for boom-bust players",
+            "Log shows outlier removal count per player"
+          ],
+          "estimated_time": "60 minutes",
+          "complexity": "Low-Medium"
+        },
+        {
+          "id": "1.2",
+          "description": "Add Configuration Validation at Startup",
+          "ai_sources": ["DeepSeek", "Gemini", "Grok"],
+          "files": ["COPY-FLOOR/calculate-performance-floors.js"],
+          "details": [
+            "Create validateConfig() function",
+            "Check required fields: current_season, min_games_played, bootstrap_samples, etc.",
+            "Validate numeric ranges (bootstrap_confidence: 0-1, min_games_played >= 1)",
+            "Validate position_volatility keys (QB, RB, WR, TE all present)",
+            "Throw error on invalid config, preventing silent failures",
+            "Call validateConfig() at top of main()"
+          ],
+          "expected_impact": "Prevents cryptic runtime errors from bad config, saves 10-15 min debugging time",
+          "success_criteria": [
+            "Invalid config throws clear error message",
+            "Missing required fields detected before processing",
+            "Range violations caught (e.g., bootstrap_confidence = 1.5)",
+            "Logs '✅ Configuration validated successfully'"
+          ],
+          "estimated_time": "45 minutes",
+          "complexity": "Low"
+        },
+        {
+          "id": "1.3",
+          "description": "Enhanced Data Completeness Validation",
+          "ai_sources": ["Gemini", "Grok"],
+          "files": ["COPY-FLOOR/calculate-performance-floors.js"],
+          "details": [
+            "Expand validateDataCompleteness() with severity tiers",
+            "CRITICAL: game missing, teams missing → abort",
+            "MODERATE: <5 stats per team, weather table empty → warn",
+            "MINOR: injury table empty, play_by_play empty → info",
+            "Return structured validation object: { errors[], warnings[], infos[] }",
+            "Include validation summary in JSON output",
+            "Add --strict mode flag that aborts on any warnings"
+          ],
+          "expected_impact": "Prevents processing incomplete data, improves result reliability",
+          "success_criteria": [
+            "Missing game data aborts processing",
+            "Low stat count shows warning but continues",
+            "Empty weather table logged as info",
+            "JSON output includes validation summary"
+          ],
+          "estimated_time": "60 minutes",
+          "complexity": "Medium"
+        },
+        {
+          "id": "1.4",
+          "description": "Add Minimum Floor Constraints",
+          "ai_sources": ["DeepSeek"],
+          "files": ["COPY-FLOOR/calculate-performance-floors.js"],
+          "details": [
+            "Create calculateMinimumFloor(position, statField) function",
+            "Define position minimums:",
+            "  QB: passing_yards >= 150, fantasy_points_ppr >= 8",
+            "  RB: rushing_yards >= 20, receiving_yards >= 10, fantasy >= 5",
+            "  WR: receiving_yards >= 15, fantasy >= 4",
+            "  TE: receiving_yards >= 10, fantasy >= 3",
+            "Apply floor = Math.max(floor, minimumFloor) after bootstrap",
+            "Prevents unrealistic projections (e.g., QB floor of 50 yards)"
+          ],
+          "expected_impact": "Prevents absurd projections for low-usage players",
+          "success_criteria": [
+            "Starting QB floor never below 150 passing yards",
+            "Starting RB floor never below 5 fantasy points",
+            "Backup players still get low floors (expected)",
+            "Minimums configurable via performance-floors-config.json"
+          ],
+          "estimated_time": "30 minutes",
+          "complexity": "Low"
+        }
+      ],
+      "deliverables": [
+        "Outlier detection prevents garbage-time distortion",
+        "Config validation catches errors early",
+        "Enhanced data validation with severity tiers",
+        "Minimum floor constraints prevent absurd projections"
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Performance Optimization & Query Efficiency",
+      "priority": "HIGH",
+      "estimated_time": "4-5 hours",
+      "rationale": "Current execution time ~800ms per game. Goal: reduce to ~300ms via caching and parallelization",
+      "ai_consensus": "ChatGPT, Gemini, DeepSeek all prioritize performance",
+      "tasks": [
+        {
+          "id": "2.1",
+          "description": "Preload League Averages Once per Week",
+          "ai_sources": ["ChatGPT", "Gemini"],
+          "files": ["COPY-FLOOR/calculate-performance-floors.js"],
+          "details": [
+            "Create fetchLeagueAverages(season, week) function",
+            "Fetch all team_game_stats once at startup per (season, week)",
+            "Calculate league averages for passing, rushing, receiving yards allowed",
+            "Cache in LEAGUE_AVG_CACHE with key 'league-{season}-{week}'",
+            "calculateOpponentFactor() reads from cache instead of querying",
+            "Reduces queries from N (per player) to 1 (per week)"
+          ],
+          "expected_impact": "60-70% reduction in calculateOpponentFactor() execution time",
+          "success_criteria": [
+            "League averages fetched once per week (not per player)",
+            "Cache hit rate >95% for opponent factor calls",
+            "Execution time for opponent factor <50ms (down from ~200ms)",
+            "Cache invalidation works correctly for new weeks"
+          ],
+          "estimated_time": "90 minutes",
+          "complexity": "Medium"
+        },
+        {
+          "id": "2.2",
+          "description": "Implement Smart Caching with TTL",
+          "ai_sources": ["DeepSeek"],
+          "files": ["COPY-FLOOR/utils/smart-cache.js"],
+          "details": [
+            "Create SmartCache class with TTL and max size",
+            "Constructor: maxSize (default 1000), ttlMinutes (default 60)",
+            "Methods: set(key, value), get(key), clear()",
+            "Auto-evict oldest entries when maxSize reached",
+            "Check TTL on get(), return null if expired",
+            "Replace simple Map with SmartCache for LEAGUE_AVG_CACHE",
+            "Set TTL to 120 minutes (2 hours) for league averages"
+          ],
+          "expected_impact": "Prevents memory leaks, ensures fresh data, reduces stale cache bugs",
+          "success_criteria": [
+            "Cache auto-evicts when reaching maxSize (1000 items)",
+            "Expired entries return null (TTL enforced)",
+            "Memory usage stable over long-running processes",
+            "Cache clears automatically after 2 hours"
+          ],
+          "estimated_time": "60 minutes",
+          "complexity": "Low-Medium"
+        },
+        {
+          "id": "2.3",
+          "description": "Parallelize Environment Modifier Calculations",
+          "ai_sources": ["ChatGPT"],
+          "files": ["COPY-FLOOR/calculate-performance-floors.js"],
+          "details": [
+            "In calculateFloorsForGame(), fetch home and away environment mods in parallel",
+            "Replace sequential awaits with Promise.all()",
+            "const [homeEnv, awayEnv] = await Promise.all([",
+            "  calculateEnvironmentModifier(gameId, season, homeId, game),",
+            "  calculateEnvironmentModifier(gameId, season, awayId, game)",
+            "])",
+            "Reduces per-game overhead by ~100-150ms"
+          ],
+          "expected_impact": "40-50% faster game-level processing",
+          "success_criteria": [
+            "Home and away environment modifiers calculated in parallel",
+            "Total game processing time reduced to <500ms (from ~800ms)",
+            "No change in calculation results (just faster)",
+            "Works for both --game and --week modes"
+          ],
+          "estimated_time": "30 minutes",
+          "complexity": "Low"
+        },
+        {
+          "id": "2.4",
+          "description": "Parallelize Player Floor Calculations",
+          "ai_sources": ["ChatGPT", "Grok"],
+          "files": ["COPY-FLOOR/calculate-performance-floors.js"],
+          "details": [
+            "In calculateTeamFloors(), use Promise.allSettled() instead of sequential await",
+            "Change from: for (const player of players) { await calculatePlayerFloors(...) }",
+            "To: const results = await Promise.allSettled(players.map(p => calculatePlayerFloors(...)))",
+            "Handle failures gracefully (allSettled doesn't throw on individual failures)",
+            "Filter out rejected promises, log failures",
+            "Parallelizes 20-30 players per team"
+          ],
+          "expected_impact": "Reduces team processing time from ~15s to ~3-4s (70-80% faster)",
+          "success_criteria": [
+            "All players processed in parallel per team",
+            "One player failure doesn't halt team processing",
+            "Team processing time <5s (down from ~15s)",
+            "Failed players logged with error details"
+          ],
+          "estimated_time": "45 minutes",
+          "complexity": "Low-Medium"
+        },
+        {
+          "id": "2.5",
+          "description": "Consolidate Database Queries with Joins",
+          "ai_sources": ["Gemini"],
+          "files": ["COPY-FLOOR/calculate-performance-floors.js"],
+          "details": [
+            "In calculateFloorsForGame(), combine player stats and games queries",
+            "Use nested select to fetch games.week and games.status with player_game_stats",
+            "Replace 3 queries (allTeamStats, gamesWithStats, filter) with 1",
+            "Example: .select('*, game:games(week, status)')",
+            "Filter .eq('game.status', 'final') at database level",
+            "Reduces round-trips to database by 66%"
+          ],
+          "expected_impact": "Faster query execution, reduced database load",
+          "success_criteria": [
+            "Single query returns stats + game details",
+            "No JavaScript-side filtering of game status",
+            "Database handles all filtering (status, week)",
+            "Query execution time <200ms (down from ~500ms)"
+          ],
+          "estimated_time": "90 minutes",
+          "complexity": "Medium-High"
+        },
+        {
+          "id": "2.6",
+          "description": "Add Retry Logic with Exponential Backoff",
+          "ai_sources": ["DeepSeek", "Grok"],
+          "files": ["COPY-FLOOR/utils/query-retry.js"],
+          "details": [
+            "Create queryWithRetry(queryFn, maxRetries=3, delayMs=1000)",
+            "Implement exponential backoff: delay * 2^(attempt-1)",
+            "Catch Supabase connection errors (PGRST116)",
+            "Log retry attempts: '⚠️ Query attempt 2 failed, retrying in 2000ms...'",
+            "Throw error after maxRetries exhausted",
+            "Wrap all Supabase queries in calculateOpponentFactor, calculateEnvironmentModifier"
+          ],
+          "expected_impact": "Prevents transient network failures from aborting runs",
+          "success_criteria": [
+            "Transient errors retry 3 times with backoff",
+            "Persistent errors throw after 3 attempts",
+            "Retry delays: 1s, 2s, 4s",
+            "Production runs complete despite occasional network hiccups"
+          ],
+          "estimated_time": "60 minutes",
+          "complexity": "Low-Medium"
+        }
+      ],
+      "deliverables": [
+        "League averages preloaded (60-70% faster opponent factor)",
+        "Smart caching with TTL prevents memory leaks",
+        "Parallel environment modifier calculations (40-50% faster)",
+        "Parallel player calculations (70-80% faster per team)",
+        "Consolidated queries reduce database round-trips",
+        "Retry logic handles transient failures"
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Statistical Accuracy Refinements",
+      "priority": "HIGH",
+      "estimated_time": "4-5 hours",
+      "rationale": "Improves floor prediction accuracy by 10-15% through better trend detection, position-specific opponent factors, and weighted efficiency",
+      "ai_consensus": "ChatGPT, Gemini, Grok prioritize stat-specific opponent factors",
+      "tasks": [
+        {
+          "id": "3.1",
+          "description": "Position-Specific Opponent Defensive Stats",
+          "ai_sources": ["ChatGPT", "Gemini", "Grok"],
+          "files": ["COPY-FLOOR/calculate-performance-floors.js"],
+          "details": [
+            "Add passing_yards_allowed, rushing_yards_allowed, receiving_yards_allowed to team_game_stats schema",
+            "If columns don't exist, compute on-the-fly from player_game_stats aggregation",
+            "Update calculateOpponentFactor() to use stat-specific columns",
+            "categoryColumn = { passing: 'passing_yards_allowed', rushing: 'rushing_yards_allowed', receiving: 'receiving_yards_allowed' }[statCategory]",
+            "Query: .select(`game_id, ${categoryColumn}`)",
+            "More accurate: Team weak vs. pass but strong vs. run"
+          ],
+          "expected_impact": "10-15% more accurate opponent adjustments for position-specific stats",
+          "success_criteria": [
+            "RB facing run-funnel defense gets lower floor",
+            "WR facing pass-funnel defense gets higher floor",
+            "Opponent factor differentiated by stat type (not just total yards)",
+            "Correlation with actual outcomes improves"
+          ],
+          "estimated_time": "90 minutes",
+          "complexity": "Medium"
+        },
+        {
+          "id": "3.2",
+          "description": "Weighted Linear Regression for Trend Detection",
+          "ai_sources": ["ChatGPT", "DeepSeek", "Gemini"],
+          "files": ["COPY-FLOOR/calculate-performance-floors.js"],
+          "details": [
+            "Replace simple slope with weighted linear regression",
+            "Create calculateWeightedTrend(games, statField, recentWeight=0.7)",
+            "Weights: recentWeight^(n-i) where i=game index, n=total games",
+            "Calculate SLR slope: β = (Σ(w*x*y) - Σ(w*x)Σ(w*y)) / (Σ(w*x²) - (Σ(w*x))²)",
+            "Convert slope to percentage: trendPercent = β / meanY",
+            "Apply to trendFactor: 1 + (trendPercent * max_trend_adjustment)",
+            "More robust to single-game outliers"
+          ],
+          "expected_impact": "Better captures player momentum, reduces noise from volatile games",
+          "success_criteria": [
+            "Trend detection less sensitive to single outlier games",
+            "Weighted regression gives recent games 2-3x more influence",
+            "Trend factor more stable across different rolling windows",
+            "Example: Injured player's recovery trend detected correctly"
+          ],
+          "estimated_time": "90 minutes",
+          "complexity": "Medium"
+        },
+        {
+          "id": "3.3",
+          "description": "Separate RB Rushing and Receiving Efficiency",
+          "ai_sources": ["Gemini"],
+          "files": ["COPY-FLOOR/calculate-performance-floors.js"],
+          "details": [
+            "For RB fantasy_points_ppr, split into two projections",
+            "Step 1: Project rushing yards (rushing_attempts × yards_per_carry)",
+            "Step 2: Project receiving yards (receiving_targets × yards_per_target)",
+            "Step 3: Combine with TDs and receptions",
+            "Fantasy = (rushYds × 0.1) + (recYds × 0.1) + (recs × 1.0) + (TDs × 6)",
+            "More accurate than treating total_touches as single opportunity type",
+            "Captures different efficiency rates for rushing vs. receiving"
+          ],
+          "expected_impact": "5-10% more accurate RB fantasy projections",
+          "success_criteria": [
+            "RB who catches passes gets higher PPR floor than pure runner",
+            "Efficiency differences between rushing and receiving captured",
+            "Projection matches reality for pass-catching backs",
+            "Example: Alvin Kamara vs. Derrick Henry projections diverge correctly"
+          ],
+          "estimated_time": "120 minutes",
+          "complexity": "Medium-High"
+        },
+        {
+          "id": "3.4",
+          "description": "Adaptive Volatility Factor by Player",
+          "ai_sources": ["ChatGPT"],
+          "files": ["COPY-FLOOR/calculate-performance-floors.js"],
+          "details": [
+            "Replace fixed CONFIG.volatility_factor with player-specific calculation",
+            "volatilityAdj = 0.8 + (stdDev / mean) // Coefficient of variation",
+            "Cap at 1.5 to prevent extreme values",
+            "Apply to floor calculation: floor = expected - (stdDev × volatilityAdj)",
+            "Boom-bust players (high CV) get lower floors, consistent players get higher",
+            "More realistic than one-size-fits-all volatility"
+          ],
+          "expected_impact": "Better differentiation between consistent and boom-bust players",
+          "success_criteria": [
+            "Tyreek Hill (high variance) gets lower floor than Stefon Diggs (consistent)",
+            "Position volatility still used as base, player CV adjusts it",
+            "Floor range widened for volatile players, narrowed for consistent",
+            "Volatility adjustment capped at 1.5 to prevent extremes"
+          ],
+          "estimated_time": "45 minutes",
+          "complexity": "Low-Medium"
+        }
+      ],
+      "deliverables": [
+        "Position-specific opponent defensive stats (10-15% accuracy gain)",
+        "Weighted linear regression for trends (less noise)",
+        "Separated RB rushing/receiving efficiency (5-10% accuracy gain)",
+        "Adaptive volatility factor by player (better floor differentiation)"
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Code Quality & Maintainability",
+      "priority": "MEDIUM",
+      "estimated_time": "3-4 hours",
+      "rationale": "Improves long-term maintainability, testability, and developer experience",
+      "ai_consensus": "Perplexity emphasizes modularity, ChatGPT emphasizes testing",
+      "tasks": [
+        {
+          "id": "4.1",
+          "description": "Centralize Supabase Queries in db.js",
+          "ai_sources": ["ChatGPT"],
+          "files": ["COPY-FLOOR/utils/db.js"],
+          "details": [
+            "Create utils/db.js with safeFetch(table, filters, fields='*')",
+            "Wrap all Supabase queries in try-catch with consistent error handling",
+            "Return data || [] to handle null responses",
+            "Throw descriptive errors: `${table}: ${error.message}`",
+            "Replace all direct supabase.from() calls with safeFetch()",
+            "Add query logging in debug mode"
+          ],
+          "expected_impact": "Reduces boilerplate, consistent error handling, easier debugging",
+          "success_criteria": [
+            "All database queries use safeFetch()",
+            "Errors include table name for easy debugging",
+            "Query logging available in debug mode",
+            "Null responses handled consistently"
+          ],
+          "estimated_time": "90 minutes",
+          "complexity": "Low-Medium"
+        },
+        {
+          "id": "4.2",
+          "description": "Add Comprehensive JSDoc",
+          "ai_sources": ["Perplexity"],
+          "files": ["COPY-FLOOR/calculate-performance-floors.js"],
+          "details": [
+            "Add JSDoc to all public functions (20+ functions)",
+            "Include @param, @returns, @example for complex functions",
+            "Document parameter types and ranges",
+            "Add @typedef for complex objects (PlayerProjection, EnvironmentModifier)",
+            "Example:",
+            "/**",
+            " * @typedef {Object} PlayerProjection",
+            " * @property {string} player_id",
+            " * @property {number} floor",
+            " * @property {number} expected",
+            " * @property {number} ceiling",
+            " */"
+          ],
+          "expected_impact": "Better IDE intellisense, easier onboarding, clearer API contracts",
+          "success_criteria": [
+            "All public functions have JSDoc",
+            "Complex objects defined with @typedef",
+            "IDE shows parameter hints and return types",
+            "Examples included for key functions"
+          ],
+          "estimated_time": "120 minutes",
+          "complexity": "Low"
+        },
+        {
+          "id": "4.3",
+          "description": "Split Long Functions into Modules",
+          "ai_sources": ["ChatGPT", "Perplexity"],
+          "files": [
+            "COPY-FLOOR/calculate-performance-floors.js",
+            "COPY-FLOOR/modules/data-fetchers.js",
+            "COPY-FLOOR/modules/calculations.js",
+            "COPY-FLOOR/modules/display.js"
+          ],
+          "details": [
+            "Break calculateFloorsForGame() (250 lines) into:",
+            "  - fetchGameData(gameId, season)",
+            "  - fetchTeamStats(teamId, season, week)",
+            "  - computeTeamProjections(players, stats, game)",
+            "  - displayProjections(results)",
+            "Break calculateTeamFloors() (200 lines) similarly",
+            "Move opponent/environment calculations to calculations.js",
+            "Move display logic to display.js",
+            "Main file becomes orchestrator (~500 lines down from 1327)"
+          ],
+          "expected_impact": "Easier testing, better code organization, reduced cognitive load",
+          "success_criteria": [
+            "Main file reduced to <600 lines",
+            "Functions <100 lines each",
+            "Clear separation: data-fetchers, calculations, display",
+            "All functions unit-testable in isolation"
+          ],
+          "estimated_time": "180 minutes",
+          "complexity": "High"
+        }
+      ],
+      "deliverables": [
+        "Centralized database queries in db.js",
+        "Comprehensive JSDoc for all functions",
+        "Modularized code (data-fetchers, calculations, display)"
+      ]
+    },
+    {
+      "phase": 5,
+      "name": "Enhanced Output & Observability",
+      "priority": "LOW-MEDIUM",
+      "estimated_time": "2-3 hours",
+      "rationale": "Improves debugging, monitoring, and downstream consumption of results",
+      "ai_consensus": "ChatGPT emphasizes JSON improvements, Gemini emphasizes error transparency",
+      "tasks": [
+        {
+          "id": "5.1",
+          "description": "Add Structured Warnings and Errors to JSON Output",
+          "ai_sources": ["ChatGPT", "Gemini"],
+          "files": ["COPY-FLOOR/calculate-performance-floors.js"],
+          "details": [
+            "Collect warnings/errors in arrays throughout processing",
+            "Examples:",
+            "  warnings: ['Low stat count for PHI (18 players)', 'Weather data missing']",
+            "  errors: ['Failed to fetch opponent stats for BAL']",
+            "Include in JSON output metadata:",
+            "  { games: [...], metadata: { timestamp, config, warnings, errors } }",
+            "Add --strict mode that aborts on any warnings"
+          ],
+          "expected_impact": "Easier debugging, better visibility into data quality issues",
+          "success_criteria": [
+            "All warnings collected in structured array",
+            "JSON output includes warnings and errors",
+            "--strict mode aborts on warnings",
+            "Warnings include player/team context"
+          ],
+          "estimated_time": "60 minutes",
+          "complexity": "Low-Medium"
+        },
+        {
+          "id": "5.2",
+          "description": "Add Team and Position Summaries to JSON Output",
+          "ai_sources": ["ChatGPT"],
+          "files": ["COPY-FLOOR/calculate-performance-floors.js"],
+          "details": [
+            "Calculate aggregate stats per team and position",
+            "team_summary: { avg_floor, avg_expected, avg_confidence, player_count }",
+            "position_summary: { QB: { avg_floor: 12.1 }, RB: { avg_floor: 8.7 } }",
+            "Include in JSON output for analytics pipelines",
+            "Useful for quick sanity checks (e.g., is avg QB floor reasonable?)"
+          ],
+          "expected_impact": "Easier consumption by downstream analytics, quick sanity checks",
+          "success_criteria": [
+            "Team summaries calculated for both teams",
+            "Position summaries show avg floor/expected/ceiling",
+            "JSON output includes summaries in metadata",
+            "Summaries rounded to 1 decimal place"
+          ],
+          "estimated_time": "60 minutes",
+          "complexity": "Low"
+        },
+        {
+          "id": "5.3",
+          "description": "Add Feature Flags for Algorithmic Layers",
+          "ai_sources": ["ChatGPT"],
+          "files": ["COPY-FLOOR/performance-floors-config.json"],
+          "details": [
+            "Add features object to config:",
+            "  features: {",
+            "    enable_opponent_factor: true,",
+            "    enable_environment_modifier: true,",
+            "    enable_trend_detection: true,",
+            "    enable_bayesian_shrinkage: true,",
+            "    enable_advanced_metrics: true",
+            "  }",
+            "Wrap calculations in feature flag checks:",
+            "  if (CONFIG.features.enable_opponent_factor) { ... }",
+            "Allows A/B testing and debugging individual layers"
+          ],
+          "expected_impact": "Easier debugging, A/B testing, gradual rollout of new features",
+          "success_criteria": [
+            "All major algorithmic layers controllable via config",
+            "Disabling feature reverts to neutral modifier (1.0)",
+            "Feature flags logged in metadata",
+            "No performance impact when features enabled"
+          ],
+          "estimated_time": "45 minutes",
+          "complexity": "Low"
+        }
+      ],
+      "deliverables": [
+        "Structured warnings/errors in JSON output",
+        "Team and position summaries",
+        "Feature flags for algorithmic layers"
+      ]
+    }
+  ],
+  "implementation_order": [
+    "Phase 1 (CRITICAL): Data Quality & Validation - prevents GIGO, saves debugging time",
+    "Phase 2 (HIGH): Performance Optimization - 60-70% faster execution",
+    "Phase 3 (HIGH): Statistical Accuracy - 10-15% more accurate projections",
+    "Phase 4 (MEDIUM): Code Quality - long-term maintainability",
+    "Phase 5 (LOW-MEDIUM): Enhanced Output - better observability"
+  ],
+  "estimated_total_time": {
+    "phase_1": "3-4 hours",
+    "phase_2": "4-5 hours",
+    "phase_3": "4-5 hours",
+    "phase_4": "3-4 hours",
+    "phase_5": "2-3 hours",
+    "total": "16-21 hours"
+  },
+  "success_metrics": {
+    "performance": [
+      "Execution time reduced from 800ms to <300ms per game (60% improvement)",
+      "League averages cached (not refetched per player)",
+      "Parallel processing reduces team time from 15s to <5s",
+      "Database queries reduced by 50% via consolidation"
+    ],
+    "accuracy": [
+      "Outlier detection removes 15-20% of garbage-time distortion",
+      "Position-specific opponent factors improve accuracy by 10-15%",
+      "Weighted trend regression reduces noise from volatile games",
+      "Separate RB efficiency improves PPR projections by 5-10%"
+    ],
+    "robustness": [
+      "Config validation prevents invalid config errors",
+      "Retry logic handles 95% of transient network failures",
+      "Minimum floors prevent absurd projections",
+      "Structured validation catches data quality issues early"
+    ],
+    "maintainability": [
+      "Main file reduced from 1327 to <600 lines via modularization",
+      "All public functions have JSDoc",
+      "Centralized database queries reduce boilerplate",
+      "Feature flags allow A/B testing and debugging"
+    ]
+  },
+  "dependencies": {
+    "new_database_columns": [
+      "team_game_stats.passing_yards_allowed (if not exists)",
+      "team_game_stats.rushing_yards_allowed (if not exists)",
+      "team_game_stats.receiving_yards_allowed (if not exists)"
+    ],
+    "new_utils_files": [
+      "COPY-FLOOR/utils/smart-cache.js",
+      "COPY-FLOOR/utils/query-retry.js",
+      "COPY-FLOOR/utils/db.js",
+      "COPY-FLOOR/modules/data-fetchers.js",
+      "COPY-FLOOR/modules/calculations.js",
+      "COPY-FLOOR/modules/display.js"
+    ],
+    "config_additions": {
+      "features": {
+        "enable_opponent_factor": true,
+        "enable_environment_modifier": true,
+        "enable_trend_detection": true,
+        "enable_bayesian_shrinkage": true,
+        "enable_advanced_metrics": true
+      },
+      "minimum_floors": {
+        "QB": { "passing_yards": 150, "fantasy_points_ppr": 8 },
+        "RB": { "rushing_yards": 20, "receiving_yards": 10, "fantasy_points_ppr": 5 },
+        "WR": { "receiving_yards": 15, "fantasy_points_ppr": 4 },
+        "TE": { "receiving_yards": 10, "fantasy_points_ppr": 3 }
+      }
+    }
+  },
+  "notes": [
+    "Phase 1 is CRITICAL - data quality issues cause 80% of projection errors",
+    "Phase 2 performance improvements are cumulative (60-70% total speedup expected)",
+    "Phase 3 stat refinements improve accuracy by 10-15% cumulatively",
+    "Phase 4 is optional but recommended for long-term maintenance",
+    "Phase 5 improves observability but doesn't affect core calculations",
+    "All improvements maintain backward compatibility with V2 config structure",
+    "Feature flags allow gradual rollout without breaking existing functionality"
+  ],
+  "risk_mitigation": [
+    "Outlier detection has 30% threshold to prevent over-filtering high-variance players",
+    "Config validation allows override flag for testing",
+    "Retry logic prevents infinite loops with maxRetries cap",
+    "Minimum floors configurable to avoid hard-coded business logic",
+    "Feature flags allow rollback of problematic calculations",
+    "All changes tested in COPY-FLOOR before copying to main scripts"
+  ],
+  "priority_matrix": {
+    "must_have": [
+      "1.1: IQR Outlier Detection",
+      "1.2: Config Validation",
+      "2.1: Preload League Averages",
+      "2.3: Parallel Environment Modifiers",
+      "2.4: Parallel Player Calculations",
+      "3.1: Position-Specific Opponent Stats"
+    ],
+    "should_have": [
+      "1.3: Enhanced Data Validation",
+      "1.4: Minimum Floor Constraints",
+      "2.2: Smart Caching",
+      "2.6: Retry Logic",
+      "3.2: Weighted Trend Regression",
+      "3.4: Adaptive Volatility"
+    ],
+    "nice_to_have": [
+      "2.5: Consolidate Queries",
+      "3.3: Separate RB Efficiency",
+      "4.1: Centralize DB Queries",
+      "4.2: Add JSDoc",
+      "5.1: Structured Warnings",
+      "5.2: Summary Metrics"
+    ],
+    "future": [
+      "4.3: Modularize Code",
+      "5.3: Feature Flags"
+    ]
+  }
+}

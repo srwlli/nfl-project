@@ -1,0 +1,68 @@
+{
+  "foundation_docs": {
+    "available": [],
+    "missing": [
+      "README.md",
+      "API.md",
+      "ARCHITECTURE.md",
+      "COMPONENTS.md",
+      "SCHEMA.md",
+      "USER-GUIDE.md"
+    ]
+  },
+  "coding_standards": {
+    "available": [],
+    "missing": [
+      "BEHAVIOR-STANDARDS.md",
+      "COMPONENT-PATTERN.md",
+      "UI-STANDARDS.md",
+      "UX-PATTERNS.md",
+      "COMPONENT-INDEX.md"
+    ]
+  },
+  "reference_components": {
+    "primary": null,
+    "secondary": [],
+    "note": "Reference component matching requires feature name - not yet implemented"
+  },
+  "key_patterns_identified": [
+    "Error handling: try-catch blocks found in 25 files",
+    "Naming: camelCase for functions (188/188 functions)"
+  ],
+  "technology_stack": {
+    "language": "JavaScript/TypeScript",
+    "framework": "unknown",
+    "database": "PostgreSQL",
+    "testing": "unknown",
+    "build": "unknown"
+  },
+  "project_structure": {
+    "main_directories": [
+      "scripts",
+      "backend\\api",
+      "scripts\\scrapers",
+      "supabase\\migrations",
+      "coderef\\front-end\\00-meta"
+    ],
+    "file_counts": {
+      "scripts": 28,
+      "supabase\\migrations": 18,
+      "backend\\api": 12,
+      "scripts\\scrapers": 10,
+      "coderef\\front-end\\00-meta": 10,
+      "additional-context": 9,
+      "backend\\coderef": 9,
+      "backend": 8,
+      "supabase\\.temp": 7,
+      "coderef\\archived\\historical-data": 7
+    },
+    "organization_pattern": "unknown"
+  },
+  "gaps_and_risks": [
+    "Missing foundation docs: README.md, API.md, ARCHITECTURE.md",
+    "No coding standards directory found (coderef/standards/)",
+    "No test directory found (tests/, test/, or __tests__/)",
+    "No CI configuration found (.github/workflows/, .gitlab-ci.yml, etc.)",
+    "No README.md found in project root"
+  ]
+}

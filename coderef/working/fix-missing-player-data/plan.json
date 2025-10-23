@@ -1,0 +1,361 @@
+{
+  "META_DOCUMENTATION": {
+    "feature_name": "fix-missing-player-data",
+    "version": "1.0.0",
+    "status": "complete",
+    "generated_by": "AI Assistant",
+    "generated_at": "2025-10-21T07:31:00Z",
+    "has_context": true,
+    "has_analysis": false,
+    "workorder_id": "WO-FIX-MISSING-PLAYER-DATA-001"
+  },
+  "UNIVERSAL_PLANNING_STRUCTURE": {
+    "0_preparation": {
+      "foundation_docs": {
+        "readme": "README.md",
+        "architecture": "Not available",
+        "api_docs": "Not available",
+        "schema": "DATABASE-SCHEMA-REFERENCE.md"
+      },
+      "coding_standards": {
+        "ui_patterns": "Not available",
+        "behavior_patterns": "Not available",
+        "ux_flows": "Not available"
+      },
+      "reference_components": {
+        "similar_features": [
+          "scripts/seed/03-players.js - Original roster seed with UPSERT logic",
+          "scripts/scrapers/game-stats-scraper.js - Game stats scraper encountering FK errors",
+          "scripts/investigate-missing-stats.js - Script that identified the 26 missing games"
+        ],
+        "reusable_patterns": [
+          "UPSERT pattern from 03-players.js",
+          "Batch processing from scrapers",
+          "ESPN API rate limiting (1 req/sec)",
+          "Supabase client usage"
+        ]
+      }
+    },
+    "1_executive_summary": {
+      "problem": "26 out of 106 completed games (75% coverage) are missing player_game_stats due to foreign key constraint violations. Approximately 12 players who appeared in games are not present in the players table. These are mid-season roster additions (signings, trades, practice squad call-ups) that occurred after the original roster seed.",
+      "solution": "Re-run the existing player roster seed script (03-players.js) to fetch current rosters from ESPN and add the missing players using UPSERT logic. Then re-scrape the 26 affected games to populate their player statistics.",
+      "impact": "Achieves 100% game coverage (106/106 games with complete player stats), enabling accurate performance floor calculations and full season analysis.",
+      "timeline": "1-2 hours total: 30-60 minutes for roster re-seed + 15-30 minutes for re-scraping 26 games"
+    },
+    "2_risk_assessment": {
+      "complexity_score": 2,
+      "complexity_justification": "Low complexity - using existing scripts, no new code required. Main work is execution and verification.",
+      "risks": [
+        {
+          "risk": "ESPN API rate limiting during roster fetch",
+          "probability": "Medium",
+          "impact": "Low",
+          "mitigation": "Existing script already implements 1 req/sec rate limiting"
+        },
+        {
+          "risk": "Some players still missing after re-seed",
+          "probability": "Low",
+          "impact": "Medium",
+          "mitigation": "Verify all 12 missing player IDs are added, identify any still missing for manual resolution"
+        },
+        {
+          "risk": "Additional FK errors discovered during re-scrape",
+          "probability": "Low",
+          "impact": "Low",
+          "mitigation": "Document any new missing players and repeat process"
+        }
+      ],
+      "dependencies": [
+        "ESPN API availability and accuracy",
+        "Supabase database connection",
+        "Existing scripts: 03-players.js, game-stats-scraper.js, investigate-missing-stats.js"
+      ]
+    },
+    "3_current_state_analysis": {
+      "files_to_create": [
+        {
+          "path": "scripts/list-missing-players.js",
+          "purpose": "Document the 12 missing player IDs before fixing",
+          "estimated_lines": 50
+        }
+      ],
+      "files_to_modify": [],
+      "files_to_reference": [
+        "scripts/seed/03-players.js",
+        "scripts/scrapers/game-stats-scraper.js",
+        "scripts/investigate-missing-stats.js"
+      ],
+      "database_changes": {
+        "tables_affected": ["players", "player_game_stats"],
+        "migration_required": false,
+        "description": "Adding ~12 new player records via UPSERT, then adding ~1,500 player_game_stats records for 26 games"
+      }
+    },
+    "4_key_features": {
+      "features": [
+        {
+          "name": "Document Missing Players",
+          "description": "Create script to list all 12 missing player IDs and which games they affected",
+          "priority": "High",
+          "estimated_effort": "15 minutes"
+        },
+        {
+          "name": "Re-run Player Roster Seed",
+          "description": "Execute npm run seed:players to fetch current rosters and add missing players",
+          "priority": "Critical",
+          "estimated_effort": "30-60 minutes (includes API rate limiting)"
+        },
+        {
+          "name": "Verify Players Added",
+          "description": "Confirm all 12 missing players now exist in players table",
+          "priority": "Critical",
+          "estimated_effort": "5 minutes"
+        },
+        {
+          "name": "Re-scrape Affected Games",
+          "description": "Run game-stats-scraper for the 26 games that previously failed",
+          "priority": "Critical",
+          "estimated_effort": "15-30 minutes"
+        },
+        {
+          "name": "Verify 100% Coverage",
+          "description": "Run investigate-missing-stats.js to confirm 106/106 games have stats",
+          "priority": "Critical",
+          "estimated_effort": "5 minutes"
+        }
+      ]
+    },
+    "5_task_id_system": {
+      "workorder": {
+        "id": "WO-FIX-MISSING-PLAYER-DATA-001",
+        "name": "Fix Missing Player Data",
+        "feature_dir": "coderef/working/fix-missing-player-data"
+      },
+      "tasks": [
+        {
+          "id": "DOC-001",
+          "workorder_id": "WO-FIX-MISSING-PLAYER-DATA-001",
+          "description": "Create list-missing-players.js to document the 12 missing player IDs",
+          "category": "documentation",
+          "dependencies": [],
+          "estimated_time": "15m"
+        },
+        {
+          "id": "DOC-002",
+          "workorder_id": "WO-FIX-MISSING-PLAYER-DATA-001",
+          "description": "Run list-missing-players.js and save output to missing-players-report.txt",
+          "category": "documentation",
+          "dependencies": ["DOC-001"],
+          "estimated_time": "5m"
+        },
+        {
+          "id": "FIX-001",
+          "workorder_id": "WO-FIX-MISSING-PLAYER-DATA-001",
+          "description": "Run npm run seed:players to re-seed player rosters",
+          "category": "execution",
+          "dependencies": ["DOC-002"],
+          "estimated_time": "30-60m"
+        },
+        {
+          "id": "VER-001",
+          "workorder_id": "WO-FIX-MISSING-PLAYER-DATA-001",
+          "description": "Query players table to verify all 12 missing players were added",
+          "category": "verification",
+          "dependencies": ["FIX-001"],
+          "estimated_time": "5m"
+        },
+        {
+          "id": "FIX-002",
+          "workorder_id": "WO-FIX-MISSING-PLAYER-DATA-001",
+          "description": "Re-scrape Week 1 games (6 games with FK errors)",
+          "category": "execution",
+          "dependencies": ["VER-001"],
+          "estimated_time": "5m"
+        },
+        {
+          "id": "FIX-003",
+          "workorder_id": "WO-FIX-MISSING-PLAYER-DATA-001",
+          "description": "Re-scrape Week 2 games (4 games with FK errors)",
+          "category": "execution",
+          "dependencies": ["VER-001"],
+          "estimated_time": "5m"
+        },
+        {
+          "id": "FIX-004",
+          "workorder_id": "WO-FIX-MISSING-PLAYER-DATA-001",
+          "description": "Re-scrape Week 3 games (5 games with FK errors)",
+          "category": "execution",
+          "dependencies": ["VER-001"],
+          "estimated_time": "5m"
+        },
+        {
+          "id": "FIX-005",
+          "workorder_id": "WO-FIX-MISSING-PLAYER-DATA-001",
+          "description": "Re-scrape Week 4 games (6 games with FK errors)",
+          "category": "execution",
+          "dependencies": ["VER-001"],
+          "estimated_time": "5m"
+        },
+        {
+          "id": "FIX-006",
+          "workorder_id": "WO-FIX-MISSING-PLAYER-DATA-001",
+          "description": "Re-scrape Week 5 games (3 games with FK errors)",
+          "category": "execution",
+          "dependencies": ["VER-001"],
+          "estimated_time": "5m"
+        },
+        {
+          "id": "FIX-007",
+          "workorder_id": "WO-FIX-MISSING-PLAYER-DATA-001",
+          "description": "Re-scrape Week 6 games (2 games with FK errors)",
+          "category": "execution",
+          "dependencies": ["VER-001"],
+          "estimated_time": "5m"
+        },
+        {
+          "id": "VER-002",
+          "workorder_id": "WO-FIX-MISSING-PLAYER-DATA-001",
+          "description": "Run investigate-missing-stats.js to verify 106/106 game coverage",
+          "category": "verification",
+          "dependencies": ["FIX-002", "FIX-003", "FIX-004", "FIX-005", "FIX-006", "FIX-007"],
+          "estimated_time": "5m"
+        },
+        {
+          "id": "DOC-003",
+          "workorder_id": "WO-FIX-MISSING-PLAYER-DATA-001",
+          "description": "Document final results and update CLAUDE.md",
+          "category": "documentation",
+          "dependencies": ["VER-002"],
+          "estimated_time": "10m"
+        }
+      ]
+    },
+    "6_implementation_phases": {
+      "phases": [
+        {
+          "phase": 1,
+          "name": "Documentation & Preparation",
+          "description": "Document the current state and missing players before fixing",
+          "tasks": ["DOC-001", "DOC-002"],
+          "estimated_duration": "20 minutes",
+          "deliverables": [
+            "scripts/list-missing-players.js",
+            "missing-players-report.txt with 12 player IDs and affected games"
+          ]
+        },
+        {
+          "phase": 2,
+          "name": "Fix Root Cause - Add Missing Players",
+          "description": "Re-run player roster seed to add the 12 missing players",
+          "tasks": ["FIX-001", "VER-001"],
+          "estimated_duration": "35-65 minutes",
+          "deliverables": [
+            "12 new player records in players table",
+            "Verification query results"
+          ]
+        },
+        {
+          "phase": 3,
+          "name": "Re-scrape Affected Games",
+          "description": "Run game-stats-scraper for all 26 games that previously failed",
+          "tasks": ["FIX-002", "FIX-003", "FIX-004", "FIX-005", "FIX-006", "FIX-007"],
+          "estimated_duration": "30 minutes",
+          "deliverables": [
+            "~1,500 new player_game_stats records (26 games × ~60 players/game)",
+            "100% game coverage (106/106)"
+          ]
+        },
+        {
+          "phase": 4,
+          "name": "Verification & Documentation",
+          "description": "Verify complete coverage and document the fix",
+          "tasks": ["VER-002", "DOC-003"],
+          "estimated_duration": "15 minutes",
+          "deliverables": [
+            "investigate-missing-stats.js showing 106/106 coverage",
+            "Updated CLAUDE.md with session notes"
+          ]
+        }
+      ]
+    },
+    "7_testing_strategy": {
+      "unit_tests": [],
+      "integration_tests": [
+        {
+          "test": "Verify Missing Player IDs",
+          "description": "Query players table for the 12 known missing player IDs",
+          "command": "SELECT player_id, player_name FROM players WHERE player_id IN ('espn-2978935', 'espn-4034953', ...)",
+          "expected": "12 rows returned"
+        },
+        {
+          "test": "Verify Game Coverage",
+          "description": "Run investigate-missing-stats.js to check coverage",
+          "command": "node scripts/investigate-missing-stats.js",
+          "expected": "106/106 games with stats (100% coverage)"
+        },
+        {
+          "test": "Verify Player Stats Count",
+          "description": "Count player_game_stats records for re-scraped games",
+          "command": "SELECT COUNT(*) FROM player_game_stats WHERE game_id IN (...26 game IDs...)",
+          "expected": "~1,500 records (26 games × ~60 players/game)"
+        }
+      ],
+      "e2e_tests": [
+        {
+          "test": "Full Workflow Verification",
+          "description": "Run seed → scrape → verify workflow on a new week to ensure no FK errors",
+          "steps": [
+            "Run npm run seed:players",
+            "Run npm run scrape:game-stats -- --week=8",
+            "Verify no FK constraint errors in logs",
+            "Verify all games have player stats"
+          ]
+        }
+      ]
+    },
+    "8_success_criteria": {
+      "acceptance_criteria": [
+        "All 12 missing player IDs are present in players table",
+        "106/106 completed games have player_game_stats records",
+        "No foreign key constraint errors when running game-stats-scraper",
+        "investigate-missing-stats.js reports 100% coverage",
+        "Documentation includes list of missing players and resolution steps"
+      ],
+      "performance_metrics": [
+        "Roster seed completes in 30-60 minutes (1 req/sec rate limiting)",
+        "Game re-scrape completes in 15-30 minutes (26 games)",
+        "Zero FK errors in scraper logs",
+        "Player count increases by exactly 12 (or document why fewer if duplicates)"
+      ],
+      "rollback_plan": "No rollback needed - UPSERT operations are idempotent. If issues occur, can re-run seed:players without duplicates. Player stats can be re-scraped multiple times safely."
+    },
+    "9_implementation_checklist": {
+      "phase_1_checklist": [
+        "[ ] Create scripts/list-missing-players.js",
+        "[ ] Run list-missing-players.js and save output",
+        "[ ] Review missing-players-report.txt to confirm 12 players"
+      ],
+      "phase_2_checklist": [
+        "[ ] Run npm run seed:players",
+        "[ ] Wait for completion (30-60 minutes)",
+        "[ ] Query players table to verify 12 new players added",
+        "[ ] Document any players still missing (should be zero)"
+      ],
+      "phase_3_checklist": [
+        "[ ] Run npm run scrape:game-stats -- --week=1",
+        "[ ] Run npm run scrape:game-stats -- --week=2",
+        "[ ] Run npm run scrape:game-stats -- --week=3",
+        "[ ] Run npm run scrape:game-stats -- --week=4",
+        "[ ] Run npm run scrape:game-stats -- --week=5",
+        "[ ] Run npm run scrape:game-stats -- --week=6",
+        "[ ] Verify no FK errors in any scraper logs"
+      ],
+      "phase_4_checklist": [
+        "[ ] Run node scripts/investigate-missing-stats.js",
+        "[ ] Verify output shows 106/106 games (100% coverage)",
+        "[ ] Update CLAUDE.md with session notes",
+        "[ ] Archive missing-players-report.txt for future reference"
+      ]
+    }
+  }
+}

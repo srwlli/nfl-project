@@ -1,0 +1,34 @@
+{
+  "feature_name": "performance-floors-academic-v2",
+  "description": "Enhance performance floor calculator using academic research from 19 peer-reviewed sources. Implement hierarchical modeling, Bayesian prediction intervals, meta-analytic variance estimation, feature importance weighting, and temporal modeling to create production-grade player performance projection system.",
+  "goal": "Transform the current linear statistical model into a research-backed hierarchical Bayesian framework that provides probabilistic prediction intervals instead of deterministic floors, with data-driven parameter estimation and contextual adjustments validated by sports analytics literature.",
+  "requirements": [
+    "Fix existing schema errors (primary_position, game_weather, player_injury_status, total_yards_allowed)",
+    "Implement hierarchical mixed-effects model for player-game-season nesting (Paper #3)",
+    "Replace 15th percentile floor with Bayesian prediction intervals (Papers #8, #10)",
+    "Add meta-analytic variance estimation for position volatility (Paper #7)",
+    "Implement LASSO/Random Forest feature importance for opponent/environment weights (Paper #12)",
+    "Add exponential smoothing or LSTM for temporal autocorrelation (Paper #18)",
+    "Create confidence interval visualization with upper/lower bounds",
+    "Validate against 2025 season actual outcomes (backtesting framework)",
+    "Add unit tests for all statistical functions",
+    "Document all academic sources and formula derivations in code comments"
+  ],
+  "out_of_scope": [],
+  "constraints": [
+    "Must maintain backward compatibility with existing CLI interface (--week, --game flags)",
+    "Performance target: <2 seconds per game for real-time projections",
+    "Database schema cannot change (use existing tables only)",
+    "Must work with existing Supabase connection patterns",
+    "Output format must remain human-readable for CLI display",
+    "No external Python dependencies (Node.js only)",
+    "Must handle missing data gracefully (injury data, weather data)"
+  ],
+  "decisions": {},
+  "success_criteria": {},
+  "_metadata": {
+    "workorder_id": "WO-PERFORMANCE-FLOORS-ACADEMIC-V2-001",
+    "workorder_assigned_at": "2025-10-21T04:42:47.119318+00:00",
+    "workorder_assigned_by": "gather_context"
+  }
+}

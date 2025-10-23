@@ -1,0 +1,26 @@
+{
+  "feature_name": "fix-missing-player-data",
+  "description": "Fix missing player data causing foreign key errors when scraping game stats. 26 games (out of 106 completed) are failing to import player stats because ~12 players are missing from the players table. These are mid-season roster additions not present in the original seed.",
+  "goal": "Achieve 100% game coverage (106/106 games with player stats) by adding missing players and re-scraping affected games",
+  "requirements": [
+    "Re-run player roster seed (03-players.js) to add missing ~12 players",
+    "Identify and list all 26 games currently failing due to FK errors",
+    "Re-scrape the 26 affected games after players are added",
+    "Verify 100% coverage (106/106 games have player_game_stats)",
+    "Document the missing player IDs and which games they affected"
+  ],
+  "out_of_scope": [],
+  "constraints": [
+    "Must use existing seed script (03-players.js) - already has UPSERT logic",
+    "Rate limiting: ESPN API allows 1 req/sec",
+    "Foreign key constraints prevent stats insertion without players",
+    "Cannot modify database schema - must add missing players first"
+  ],
+  "decisions": {},
+  "success_criteria": {},
+  "_metadata": {
+    "workorder_id": "WO-FIX-MISSING-PLAYER-DATA-001",
+    "workorder_assigned_at": "2025-10-21T07:31:16.873483+00:00",
+    "workorder_assigned_by": "gather_context"
+  }
+}
