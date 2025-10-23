@@ -1,0 +1,677 @@
+{
+  "agent_instructions": {
+    "title": "V5 Game Script Implementation - Ready to Start",
+    "status": "APPROVED - Proceed with implementation",
+    "last_updated": "2025-10-23",
+
+    "summary": {
+      "what_you_need_to_build": "Add Vegas betting line context (spread, over/under) to performance floor projections to account for game pace and flow",
+      "data_source": "nflverse consensus betting lines (already in database)",
+      "records_available": "121 betting lines for 2025 season",
+      "implementation_time": "2.5-3 hours",
+      "expected_improvement": "Coverage rate 39.4% → 45-50% (+5-10% improvement)"
+    },
+
+    "critical_findings": {
+      "schema_type": "FLAT SCHEMA (Schema A) - Not normalized 3-table schema",
+      "table_structure": {
+        "table_name": "game_betting_lines",
+        "columns": {
+          "game_id": "20250904-DAL@PHI (date-based format, NOT ESPN IDs)",
+          "spread_line": "8.5 (absolute value, favorite determined by favorite_team_id)",
+          "total_line": "47.5 (over/under total points)",
+          "favorite_team_id": "PHI (3-letter team abbreviation)",
+          "underdog_team_id": "DAL (3-letter team abbreviation)",
+          "bookmaker": "consensus (aggregated from multiple bookmakers)"
+        },
+        "record_count": 121,
+        "season": 2025
+      },
+      "game_id_format": "YYYYMMDD-AWAY@HOME (e.g., 20251020-PIT@CIN)",
+      "espn_game_id_format": "espn-401772941 (what performance floors script uses)",
+      "mapping_required": true
+    },
+
+    "blocking_issues": {
+      "resolved": [
+        "✅ Betting data exists (121 lines populated)",
+        "✅ Schema documented correctly (flat, not normalized)",
+        "✅ Game ID mapping strategy defined",
+        "✅ Implementation plan approved by project owner"
+      ],
+      "none_remaining": "All blockers cleared - proceed with implementation"
+    },
+
+    "implementation_phases": [
+      {
+        "phase": 1,
+        "name": "Game ID Mapping Utility",
+        "estimated_hours": 0.5,
+        "file_to_create": "scripts/utils/game-script.js",
+        "tasks": [
+          {
+            "task_id": "T1",
+            "description": "Create mapGameToBettingId() function",
+            "input": "espnGameId (string) - e.g., 'espn-401772941'",
+            "output": "bettingGameId (string) - e.g., '20251020-PIT@CIN'",
+            "logic": [
+              "1. Query games table: SELECT game_date, home_team_id, away_team_id FROM games WHERE game_id = espnGameId",
+              "2. Parse game_date (format: YYYY-MM-DD) to YYYYMMDD",
+              "3. Format: `${dateStr}-${away_team_id}@${home_team_id}`",
+              "4. Return formatted betting game ID"
+            ],
+            "example": {
+              "input": "espn-401772941",
+              "games_table_result": {
+                "game_date": "2025-10-20",
+                "home_team_id": "CIN",
+                "away_team_id": "PIT"
+              },
+              "output": "20251020-PIT@CIN"
+            },
+            "edge_cases": [
+              "Game not found in database → return null",
+              "Invalid date format → log error, return null",
+              "Missing team IDs → log error, return null"
+            ],
+            "code_template": {
+              "function_signature": "async function mapGameToBettingId(espnGameId, season)",
+              "imports": "import { getSupabaseClient } from './supabase-client.js'",
+              "returns": "Promise<string | null>"
+            }
+          },
+          {
+            "task_id": "T2",
+            "description": "Create getGameBettingLines() function",
+            "input": "bettingGameId (string), season (number)",
+            "output": "{ spread, total, favoriteTeam, underdogTeam, hasData }",
+            "logic": [
+              "1. Query game_betting_lines table WHERE game_id = bettingGameId AND season = season",
+              "2. Extract spread_line, total_line, favorite_team_id, underdog_team_id",
+              "3. Return structured object with betting data",
+              "4. If no data found, return { hasData: false }"
+            ],
+            "example": {
+              "input": {
+                "bettingGameId": "20251020-PIT@CIN",
+                "season": 2025
+              },
+              "database_result": {
+                "spread_line": 3.5,
+                "total_line": 48.5,
+                "favorite_team_id": "CIN",
+                "underdog_team_id": "PIT"
+              },
+              "output": {
+                "spread": 3.5,
+                "total": 48.5,
+                "favoriteTeam": "CIN",
+                "underdogTeam": "PIT",
+                "hasData": true
+              }
+            },
+            "edge_cases": [
+              "No betting data for game → return { hasData: false }",
+              "Multiple bookmakers (shouldn't happen with consensus) → use first result",
+              "NULL spread_line or total_line → return { hasData: false }"
+            ],
+            "code_template": {
+              "function_signature": "async function getGameBettingLines(bettingGameId, season)",
+              "query": "SELECT spread_line, total_line, favorite_team_id, underdog_team_id FROM game_betting_lines WHERE game_id = $1 AND season = $2",
+              "returns": "Promise<{ spread: number | null, total: number | null, favoriteTeam: string | null, underdogTeam: string | null, hasData: boolean }>"
+            }
+          }
+        ]
+      },
+      {
+        "phase": 2,
+        "name": "Game Script Calculator",
+        "estimated_hours": 0.75,
+        "file_to_modify": "scripts/utils/game-script.js",
+        "tasks": [
+          {
+            "task_id": "T3",
+            "description": "Create calculateGameScriptModifier() function",
+            "input": "position (string), playerTeam (string), spread (number), total (number), favoriteTeam (string)",
+            "output": "{ modifier: number, spreadMod: number, totalMod: number, details: object }",
+            "logic": {
+              "step_1": "Determine if player's team is favored",
+              "check": "const isFavored = playerTeam === favoriteTeam",
+              "step_2": "Calculate spread modifier (position-specific)",
+              "formulas": {
+                "RB": {
+                  "logic": "Favored teams run more (script favors RBs)",
+                  "formula": "isFavored ? 1 + (spread × 0.02) : 1 - (spread × 0.02)",
+                  "cap": "0.80 - 1.20",
+                  "example": "CIN RB, spread 3.5, favored → 1 + (3.5 × 0.02) = 1.07 (+7%)"
+                },
+                "WR": {
+                  "logic": "Underdogs pass more (script favors WRs)",
+                  "formula": "isFavored ? 1 - (spread × 0.015) : 1 + (spread × 0.015)",
+                  "cap": "0.85 - 1.15",
+                  "example": "PIT WR, spread 3.5, underdog → 1 + (3.5 × 0.015) = 1.05 (+5%)"
+                },
+                "QB": {
+                  "logic": "Underdogs pass more (moderate boost)",
+                  "formula": "isFavored ? 1 - (spread × 0.01) : 1 + (spread × 0.01)",
+                  "cap": "0.85 - 1.15",
+                  "example": "PIT QB, spread 3.5, underdog → 1 + (3.5 × 0.01) = 1.035 (+3.5%)"
+                },
+                "TE": {
+                  "logic": "Minimal impact (TEs less game-script dependent)",
+                  "formula": "isFavored ? 1 - (spread × 0.005) : 1 + (spread × 0.005)",
+                  "cap": "0.95 - 1.05",
+                  "example": "CIN TE, spread 3.5, favored → 1 - (3.5 × 0.005) = 0.98 (-2%)"
+                }
+              },
+              "step_3": "Calculate total (pace) modifier",
+              "pace_logic": "High-scoring games increase volume for all positions",
+              "formula": "totalMod = 1 + ((total - 47.5) / 47.5) × sensitivity[position]",
+              "sensitivities": {
+                "QB": 0.4,
+                "RB": 0.3,
+                "WR": 0.5,
+                "TE": 0.3
+              },
+              "pace_cap": "0.70 - 1.30",
+              "pace_example": "WR in 52.5 O/U game → 1 + ((52.5-47.5)/47.5) × 0.5 = 1.05 (+5%)",
+              "step_4": "Combine modifiers",
+              "combined_formula": "modifier = spreadMod × totalMod",
+              "combined_example": "PIT WR, +3.5 underdog, 52.5 O/U → 1.05 (spread) × 1.05 (pace) = 1.10 (+10% boost)"
+            },
+            "test_cases": [
+              {
+                "name": "Favorite RB in high-scoring game",
+                "input": {
+                  "position": "RB",
+                  "playerTeam": "CIN",
+                  "spread": 7.0,
+                  "total": 51.5,
+                  "favoriteTeam": "CIN"
+                },
+                "expected": {
+                  "spreadMod": 1.14,
+                  "totalMod": 1.03,
+                  "modifier": 1.17,
+                  "interpretation": "+17% boost (heavy favorite + high-scoring)"
+                }
+              },
+              {
+                "name": "Underdog WR in shootout",
+                "input": {
+                  "position": "WR",
+                  "playerTeam": "PIT",
+                  "spread": 7.0,
+                  "total": 52.5,
+                  "favoriteTeam": "CIN"
+                },
+                "expected": {
+                  "spreadMod": 1.11,
+                  "totalMod": 1.05,
+                  "modifier": 1.16,
+                  "interpretation": "+16% boost (underdog + shootout)"
+                }
+              },
+              {
+                "name": "Pick'em QB in defensive game",
+                "input": {
+                  "position": "QB",
+                  "playerTeam": "PIT",
+                  "spread": 0.0,
+                  "total": 42.5,
+                  "favoriteTeam": "PIT"
+                },
+                "expected": {
+                  "spreadMod": 1.0,
+                  "totalMod": 0.96,
+                  "modifier": 0.96,
+                  "interpretation": "-4% decrease (low-scoring game)"
+                }
+              }
+            ],
+            "code_template": {
+              "function_signature": "function calculateGameScriptModifier(position, playerTeam, spread, total, favoriteTeam)",
+              "returns": "{ modifier: number, spreadMod: number, totalMod: number, spread: number, total: number, isFavored: boolean }"
+            }
+          },
+          {
+            "task_id": "T4",
+            "description": "Add helper function getBettingContextForGame()",
+            "purpose": "Combine T1 + T2 into single convenience function",
+            "input": "espnGameId (string), season (number)",
+            "output": "{ spread, total, favoriteTeam, underdogTeam, bettingGameId, hasData }",
+            "logic": [
+              "1. Call mapGameToBettingId(espnGameId, season) → bettingGameId",
+              "2. If mapping fails, return { hasData: false }",
+              "3. Call getGameBettingLines(bettingGameId, season) → betting data",
+              "4. Return combined result with bettingGameId included"
+            ],
+            "code_template": {
+              "function_signature": "async function getBettingContextForGame(espnGameId, season)",
+              "implementation": "Wrapper combining mapGameToBettingId + getGameBettingLines",
+              "returns": "Promise<{ spread: number | null, total: number | null, favoriteTeam: string | null, underdogTeam: string | null, bettingGameId: string | null, hasData: boolean }>"
+            }
+          }
+        ]
+      },
+      {
+        "phase": 3,
+        "name": "Integration with Performance Floors Calculator",
+        "estimated_hours": 0.5,
+        "file_to_modify": "scripts/calculate-performance-floors.js",
+        "tasks": [
+          {
+            "task_id": "T5",
+            "description": "Import game-script utilities",
+            "location": "Top of file (around line 10)",
+            "code": "import { getBettingContextForGame, calculateGameScriptModifier } from './utils/game-script.js'"
+          },
+          {
+            "task_id": "T6",
+            "description": "Fetch betting data in calculateFloorsForGame()",
+            "location": "Line ~875 (after game data fetch, before player processing)",
+            "code": [
+              "// Fetch betting lines for game script context",
+              "const bettingContext = await getBettingContextForGame(gameId, season)",
+              "if (!bettingContext.hasData) {",
+              "  logger.debug('  No betting data available for game script adjustment')",
+              "}",
+              "",
+              "// Pass betting context to team processing",
+              "const homeFloors = await calculateTeamFloors(game, homeTeam, 'home', bettingContext)",
+              "const awayFloors = await calculateTeamFloors(game, awayTeam, 'away', bettingContext)"
+            ]
+          },
+          {
+            "task_id": "T7",
+            "description": "Update calculateTeamFloors() signature",
+            "location": "Line ~920",
+            "change": "Add bettingContext parameter",
+            "old_signature": "async function calculateTeamFloors(game, team, homeAway)",
+            "new_signature": "async function calculateTeamFloors(game, team, homeAway, bettingContext = null)"
+          },
+          {
+            "task_id": "T8",
+            "description": "Pass betting context to calculateStatFloor()",
+            "location": "Inside calculateTeamFloors(), when calling calculateStatFloor()",
+            "code": [
+              "const floor = calculateStatFloor(",
+              "  stat,",
+              "  playerStats,",
+              "  position,",
+              "  config,",
+              "  opponentDefensiveFactor,",
+              "  environmentModifiers,",
+              "  bettingContext, // NEW PARAMETER",
+              "  teamId // Player's team for game script calculation",
+              ")"
+            ]
+          },
+          {
+            "task_id": "T9",
+            "description": "Update calculateStatFloor() to apply game script modifier",
+            "location": "Line ~1321 (calculateStatFloor function)",
+            "changes": [
+              {
+                "step": 1,
+                "description": "Add parameters to function signature",
+                "code": "function calculateStatFloor(stat, playerStats, position, config, opponentFactor, envMods, bettingContext, playerTeam)"
+              },
+              {
+                "step": 2,
+                "description": "Calculate game script modifier",
+                "location": "After environmentMods calculation, before expected calculation",
+                "code": [
+                  "// Game Script Adjustment (betting lines context)",
+                  "let gameScriptMod = { modifier: 1.0, spreadMod: 1.0, totalMod: 1.0 }",
+                  "if (config.game_script?.enabled && bettingContext?.hasData) {",
+                  "  gameScriptMod = calculateGameScriptModifier(",
+                  "    position,",
+                  "    playerTeam,",
+                  "    bettingContext.spread,",
+                  "    bettingContext.total,",
+                  "    bettingContext.favoriteTeam",
+                  "  )",
+                  "}"
+                ]
+              },
+              {
+                "step": 3,
+                "description": "Apply modifier to expected value",
+                "location": "After expected calculation",
+                "code": [
+                  "// Apply game script modifier to expected",
+                  "expected = expected × gameScriptMod.modifier"
+                ]
+              },
+              {
+                "step": 4,
+                "description": "Include in bootstrap combined modifier",
+                "location": "Inside bootstrap percentile calculation",
+                "code": "const combinedModifier = opponentFactor × environmentMod × gameScriptMod.modifier"
+              },
+              {
+                "step": 5,
+                "description": "Add to return object",
+                "code": [
+                  "return {",
+                  "  stat,",
+                  "  expected,",
+                  "  floor,",
+                  "  ceiling,",
+                  "  // ... other fields ...",
+                  "  game_script_factor: gameScriptMod.modifier,",
+                  "  spread: bettingContext?.spread || null,",
+                  "  total: bettingContext?.total || null,",
+                  "  is_favored: playerTeam === bettingContext?.favoriteTeam",
+                  "}"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "phase": 4,
+        "name": "Display & Output",
+        "estimated_hours": 0.25,
+        "file_to_modify": "scripts/calculate-performance-floors.js",
+        "tasks": [
+          {
+            "task_id": "T10",
+            "description": "Add game script info to console output",
+            "location": "displayTeamFloors() function (line ~1569)",
+            "logic": [
+              "1. Check if bettingContext.hasData",
+              "2. Calculate team-level game script summary",
+              "3. Display formatted betting context"
+            ],
+            "output_format": {
+              "with_data": "Game Script: CIN -3.5 | O/U 48.5 📈 (Pace Up)",
+              "no_data": "Game Script: No betting data available",
+              "indicators": {
+                "pace_up": "📈 Pace Up (total > 50)",
+                "pace_down": "📉 Pace Down (total < 45)",
+                "neutral": "➖ Neutral"
+              }
+            },
+            "code_location": "Before displaying player floors, after team header"
+          },
+          {
+            "task_id": "T11",
+            "description": "Add game script modifier to individual player output",
+            "location": "Inside player floor display loop",
+            "format": "Show modifier as percentage next to player name if significant (>5% or <-5%)",
+            "example": "Ja'Marr Chase (WR) - Floor: 62.3 (+12% script)",
+            "condition": "Only show if Math.abs(gameScriptMod - 1.0) > 0.05"
+          }
+        ]
+      },
+      {
+        "phase": 5,
+        "name": "Configuration & Testing",
+        "estimated_hours": 0.5,
+        "tasks": [
+          {
+            "task_id": "T12",
+            "description": "Add game_script config section",
+            "file": "scripts/performance-floors-config.json",
+            "location": "Add new section after environment_modifiers",
+            "config": {
+              "game_script": {
+                "enabled": true,
+                "rb_spread_sensitivity": 0.02,
+                "wr_spread_sensitivity": 0.015,
+                "qb_spread_sensitivity": 0.01,
+                "te_spread_sensitivity": 0.005,
+                "spread_cap_min": 0.80,
+                "spread_cap_max": 1.20,
+                "total_modifier_enabled": true,
+                "qb_total_sensitivity": 0.4,
+                "rb_total_sensitivity": 0.3,
+                "wr_total_sensitivity": 0.5,
+                "te_total_sensitivity": 0.3,
+                "total_cap_min": 0.70,
+                "total_cap_max": 1.30
+              }
+            }
+          },
+          {
+            "task_id": "T13",
+            "description": "Test with Week 7 PIT @ CIN game",
+            "command": "node scripts/calculate-performance-floors.js --game=espn-401772941",
+            "game_details": {
+              "matchup": "Pittsburgh Steelers @ Cincinnati Bengals",
+              "date": "2025-10-20",
+              "actual_score": "PIT 38, CIN 41 (79 total)",
+              "betting_context": {
+                "expected_spread": "CIN -3 to -3.5",
+                "expected_total": "48.5 to 50.5",
+                "favorite": "CIN"
+              },
+              "test_player": "Ja'Marr Chase",
+              "actual_fantasy": 38.1,
+              "baseline_projection": 74.1,
+              "expected_with_script": "79-85 (closer to actual)"
+            },
+            "validation_checks": [
+              "✅ CIN RBs get boost (favored team)",
+              "✅ PIT WRs/QB get boost (underdog + shootout)",
+              "✅ High total boosts all players",
+              "✅ Game script modifier shown in output",
+              "✅ Projections closer to actuals than baseline"
+            ]
+          },
+          {
+            "task_id": "T14",
+            "description": "Run full Week 7 validation",
+            "command": "node scripts/validate-floors.js --week=7",
+            "baseline_metrics": {
+              "coverage_rate": "39.4%",
+              "mae": "13.8 pts",
+              "shootout_hit_rate": "0% (11/11 above ceiling)"
+            },
+            "target_metrics": {
+              "coverage_rate": "45-50% (+5-10%)",
+              "mae": "12-13 pts (-5-10%)",
+              "shootout_hit_rate": "30-40% (3-4/11 within range)"
+            }
+          }
+        ]
+      },
+      {
+        "phase": 6,
+        "name": "Documentation",
+        "estimated_hours": 0.5,
+        "tasks": [
+          {
+            "task_id": "T15",
+            "description": "Add JSDoc comments to game-script.js",
+            "include": [
+              "Function descriptions",
+              "Parameter explanations",
+              "Return value documentation",
+              "Example usage",
+              "Edge case notes"
+            ]
+          },
+          {
+            "task_id": "T16",
+            "description": "Update CLAUDE.md",
+            "section": "Session 8 - V5 Game Script Implementation",
+            "content": [
+              "Feature description",
+              "Implementation details",
+              "Formulas used",
+              "Testing results",
+              "Coverage improvement metrics"
+            ]
+          },
+          {
+            "task_id": "T17",
+            "description": "Add inline comments to config",
+            "file": "scripts/performance-floors-config.json",
+            "explain": "Each game_script parameter and its impact on projections"
+          }
+        ]
+      }
+    ],
+
+    "key_formulas_reference": {
+      "rb_modifier": "isFavored ? 1 + (spread × 0.02) : 1 - (spread × 0.02), capped 0.80-1.20",
+      "wr_modifier": "isFavored ? 1 - (spread × 0.015) : 1 + (spread × 0.015), capped 0.85-1.15",
+      "qb_modifier": "isFavored ? 1 - (spread × 0.01) : 1 + (spread × 0.01), capped 0.85-1.15",
+      "te_modifier": "isFavored ? 1 - (spread × 0.005) : 1 + (spread × 0.005), capped 0.95-1.05",
+      "total_modifier": "1 + ((total - 47.5) / 47.5) × position_sensitivity",
+      "combined": "spreadModifier × totalModifier"
+    },
+
+    "testing_checklist": [
+      "✅ Game ID mapping works (ESPN → date-based)",
+      "✅ Betting data fetched correctly",
+      "✅ Favorite/underdog determined correctly",
+      "✅ RB boosted for favored teams",
+      "✅ WR/QB boosted for underdogs",
+      "✅ High total boosts all positions",
+      "✅ Low total decreases all positions",
+      "✅ Modifiers capped at max/min values",
+      "✅ No betting data doesn't crash (fallback to 1.0)",
+      "✅ Output displays game script context",
+      "✅ Week 7 PIT@CIN projections improved"
+    ],
+
+    "edge_cases_to_handle": [
+      "No betting data for game → modifier = 1.0, display 'No betting data'",
+      "Invalid ESPN game ID → log warning, use modifier = 1.0",
+      "Game ID mapping fails → log warning, use modifier = 1.0",
+      "Extreme spread (>15) → cap modifier at 0.80/1.20",
+      "Extreme total (<35 or >60) → cap modifier at 0.70/1.30",
+      "Pick'em game (spread 0) → only apply total modifier",
+      "Missing favorite_team_id → use spread sign to infer favorite"
+    ],
+
+    "file_locations": {
+      "new_file": "scripts/utils/game-script.js",
+      "modified_files": [
+        "scripts/calculate-performance-floors.js",
+        "scripts/performance-floors-config.json"
+      ],
+      "database_tables": [
+        "games (for game ID mapping)",
+        "game_betting_lines (for spread/total data)"
+      ]
+    },
+
+    "acceptance_criteria": {
+      "phase_1": [
+        "mapGameToBettingId() converts ESPN IDs to date-based IDs",
+        "getGameBettingLines() fetches spread/total from database",
+        "getBettingContextForGame() combines both functions"
+      ],
+      "phase_2": [
+        "calculateGameScriptModifier() applies correct position-specific formulas",
+        "RBs boosted for favored teams, decreased for underdogs",
+        "WRs/QBs boosted for underdogs, decreased for favorites",
+        "Total modifier boosts/decreases based on pace",
+        "All modifiers respect cap values"
+      ],
+      "phase_3": [
+        "Betting context fetched in calculateFloorsForGame()",
+        "Game script modifier applied in calculateStatFloor()",
+        "Expected values adjusted by modifier",
+        "Bootstrap calculations include game script factor"
+      ],
+      "phase_4": [
+        "Console output shows spread/total context",
+        "Player-level modifiers displayed when significant",
+        "Pace indicators (📈/📉) shown"
+      ],
+      "phase_5": [
+        "Config file has game_script section",
+        "Week 7 PIT@CIN projections improved",
+        "Coverage rate increases by 5-10%"
+      ],
+      "phase_6": [
+        "Code has JSDoc comments",
+        "CLAUDE.md updated with implementation details",
+        "Config has inline parameter explanations"
+      ]
+    },
+
+    "expected_results": {
+      "week7_pitcin_example": {
+        "game": "espn-401772941 (PIT @ CIN, Week 7)",
+        "betting_lines": {
+          "spread": "CIN -3.5",
+          "total": "48.5"
+        },
+        "ja_marr_chase": {
+          "position": "WR",
+          "team": "CIN",
+          "actual_fantasy": 38.1,
+          "baseline_projection": 74.1,
+          "with_game_script": {
+            "spread_mod": 0.95,
+            "total_mod": 1.01,
+            "combined": 0.96,
+            "explanation": "Slight decrease (favored team WR + normal total)"
+          }
+        },
+        "najee_harris": {
+          "position": "RB",
+          "team": "PIT",
+          "actual_fantasy": 12.4,
+          "baseline_projection": 45.2,
+          "with_game_script": {
+            "spread_mod": 0.93,
+            "total_mod": 1.01,
+            "combined": 0.94,
+            "explanation": "Decrease (underdog RB in normal-scoring game)"
+          }
+        },
+        "george_pickens": {
+          "position": "WR",
+          "team": "PIT",
+          "actual_fantasy": 19.5,
+          "baseline_projection": 51.3,
+          "with_game_script": {
+            "spread_mod": 1.05,
+            "total_mod": 1.01,
+            "combined": 1.06,
+            "explanation": "Boost (underdog WR in normal-scoring game)"
+          }
+        }
+      },
+      "overall_improvement": {
+        "before": {
+          "coverage_rate": "39.4%",
+          "mae_week7": "13.8 pts",
+          "shootout_games": "0% hit rate"
+        },
+        "after": {
+          "coverage_rate": "45-50%",
+          "mae_week7": "12-13 pts",
+          "shootout_games": "30-40% hit rate"
+        }
+      }
+    },
+
+    "notes_from_project_lead": [
+      "Your original plan was CORRECT - flat schema with favorite_team_id exists in database",
+      "Historical nflverse data (consensus lines) already populated for 2025 season",
+      "121 betting lines available covering most/all games",
+      "Date-based game IDs (20251020-PIT@CIN) used in betting table, ESPN IDs (espn-401772941) in games table",
+      "Game ID mapping is required (Phase 1 Task 1)",
+      "Focus on Week 7 PIT@CIN as primary test case (high-scoring shootout)",
+      "Expected improvement: 5-10% coverage rate increase",
+      "All blocking issues resolved - cleared to implement"
+    ],
+
+    "start_here": {
+      "first_task": "Phase 1, Task 1 (T1): Create mapGameToBettingId() function",
+      "file_to_create": "scripts/utils/game-script.js",
+      "verification_query": "SELECT game_id, spread_line, total_line, favorite_team_id FROM game_betting_lines WHERE season = 2025 LIMIT 5;",
+      "test_command": "node scripts/calculate-performance-floors.js --game=espn-401772941"
+    }
+  }
+}

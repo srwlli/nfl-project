@@ -11,9 +11,9 @@
   },
   "venue_modifiers": {
     "turf": 1.03,
-    "grass": 1.0,
+    "grass": 1,
     "dome": 1.02,
-    "outdoor": 1.0
+    "outdoor": 1
   },
   "weather_penalties": {
     "high_wind": 0.95,
@@ -32,7 +32,7 @@
   },
   "bayesian_shrinkage": {
     "min_sample_size": 4,
-    "target_mean": 1.0
+    "target_mean": 1
   },
   "empirical_bayes": {
     "enabled": true
@@ -54,7 +54,7 @@
     "max": 1.3
   },
   "bootstrap_samples": 500,
-  "bootstrap_confidence": 0.80,
+  "bootstrap_confidence": 0.8,
   "winsorize_outliers": true,
   "v5_features": {
     "position_specific_matchups": true,
@@ -72,15 +72,24 @@
     "auto_block_size": true
   },
   "game_script": {
-    "enabled": false,
+    "enabled": true,
     "rb_spread_sensitivity": 0.02,
     "wr_spread_sensitivity": 0.015,
     "qb_spread_sensitivity": 0.01,
-    "total_modifier_enabled": true
+    "te_spread_sensitivity": 0.005,
+    "spread_cap_min": 0.80,
+    "spread_cap_max": 1.20,
+    "total_modifier_enabled": true,
+    "qb_total_sensitivity": 0.4,
+    "rb_total_sensitivity": 0.3,
+    "wr_total_sensitivity": 0.5,
+    "te_total_sensitivity": 0.3,
+    "total_cap_min": 0.70,
+    "total_cap_max": 1.30
   },
   "position_priors": {
     "RB": {
-      "redZoneTDRate": 0.20,
+      "redZoneTDRate": 0.2,
       "fieldTDRate": 0.03
     },
     "WR": {
@@ -90,6 +99,18 @@
     "TE": {
       "redZoneTDRate": 0.15,
       "fieldTDRate": 0.02
+    }
+  },
+  "learned_feature_weights": {
+    "generated_at": "2025-10-23T08:15:19.276Z",
+    "training_week": 7,
+    "training_samples": 327,
+    "cross_validation_r2": -0.0666842218315454,
+    "importances": {
+      "opponent_defense": 0.8076139058719324,
+      "is_home": 0.03776158763001264,
+      "is_turf": 0.154624506498055,
+      "is_dome": 0
     }
   }
 }

@@ -18,7 +18,9 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import {
   calculatePositionStats,
-  applyHierarchicalAdjustment
+  applyHierarchicalAdjustment,
+  calculateAllPositionVolatility,
+  calculateMetaAnalyticVolatility
 } from './utils/hierarchical-stats.js'
 import {
   calculateModifiedPredictionInterval,
@@ -29,6 +31,10 @@ import {
   calculateEWMAProjection,
   getPositionAlpha
 } from './utils/temporal-smoothing.js'
+import {
+  getBettingContextForGame,
+  calculateGameScriptModifier
+} from './utils/game-script.js'
 
 const supabase = getSupabaseClient()
 
@@ -50,6 +56,7 @@ const JSON_OUTPUT = {
 
 // Phase 3.3 (V2): League average cache (key: "season-week-statCategory")
 const LEAGUE_AVG_CACHE = new Map()
+const OPPONENT_FACTOR_CACHE = new Map() // V5: Position-specific opponent factors cache
 
 /**
  * Get modifier value (learned weights if available, otherwise default config)
@@ -900,6 +907,16 @@ async function calculateFloorsForGame(gameId, season = CONFIG.current_season) {
   log(`Status: ${game.status}`)
   log(`Date: ${game.game_date}`)
 
+  // Fetch betting lines for game script context
+  const bettingContext = await getBettingContextForGame(gameId, season)
+  if (bettingContext.hasData) {
+    const { spread, total, favoriteTeam } = bettingContext
+    const paceIndicator = total > 50 ? '📈 Pace Up' : total < 45 ? '📉 Pace Down' : '➖ Neutral'
+    log(`\n💰 Game Script: ${favoriteTeam} -${spread} | O/U ${total} ${paceIndicator}`)
+  } else {
+    log(`\n💰 Game Script: No betting data available`)
+  }
+
   // Get active players for both teams
   const teams = [game.home_team_id, game.away_team_id]
 
@@ -979,7 +996,7 @@ async function calculateFloorsForGame(gameId, season = CONFIG.current_season) {
     log(`Processing ${enrichedPlayers.length} skill position players for ${teamId}`)
 
     // Calculate floors for key positions
-    const keyPlayers = await calculateTeamFloors(enrichedPlayers, teamId, opponentId, game.week, season, environmentMod)
+    const keyPlayers = await calculateTeamFloors(enrichedPlayers, teamId, opponentId, game.week, season, environmentMod, bettingContext)
 
     log(`Generated projections for ${keyPlayers.length} players`)
 
@@ -1003,7 +1020,7 @@ async function calculateFloorsForGame(gameId, season = CONFIG.current_season) {
 /**
  * Calculate floors for team players (Phase 1.3: Batch queries with Promise.all)
  */
-async function calculateTeamFloors(players, teamId, opponentId, week, season, environmentMod = { modifier: 1.0 }) {
+async function calculateTeamFloors(players, teamId, opponentId, week, season, environmentMod = { modifier: 1.0 }, bettingContext = null) {
   // Phase 1.3: Batch fetch all player stats in parallel
   const playerIds = players.map(p => p.player_id)
 
@@ -1137,6 +1154,35 @@ async function calculateTeamFloors(players, teamId, opponentId, week, season, en
     }
   }
 
+  // FEATURE-004: Calculate meta-analytic position volatility
+  // Replace hardcoded volatility factors with data-driven estimates
+  const calculatedVolatility = calculateAllPositionVolatility(playersByPosition, 'fantasy_points_ppr')
+
+  // Log calculated vs hardcoded volatility for validation
+  log('\n📊 Position Volatility Comparison (Calculated vs Hardcoded):')
+  for (const [position, calculated] of Object.entries(calculatedVolatility)) {
+    const hardcoded = CONFIG.position_volatility[position] || 0.75
+    const diff = Math.round((calculated - hardcoded) * 100)
+    const diffSymbol = diff > 0 ? '↑' : diff < 0 ? '↓' : '='
+    log(`   ${position}: ${calculated.toFixed(2)} ${diffSymbol} ${hardcoded.toFixed(2)} (${diff > 0 ? '+' : ''}${diff}%)`)
+  }
+
+  // Override CONFIG with calculated values if within reasonable range (±40% of hardcoded)
+  // This prevents extreme outliers from bad data while allowing data-driven adaptation
+  for (const [position, calculated] of Object.entries(calculatedVolatility)) {
+    const hardcoded = CONFIG.position_volatility[position] || 0.75
+    const percentDiff = Math.abs((calculated - hardcoded) / hardcoded)
+
+    if (percentDiff <= 0.4) {
+      // Within 40% tolerance - use calculated value
+      CONFIG.position_volatility[position] = calculated
+    } else {
+      // Outside tolerance - use weighted average (70% calculated, 30% hardcoded)
+      CONFIG.position_volatility[position] = (calculated * 0.7) + (hardcoded * 0.3)
+      log(`   ⚠️  ${position}: Using blended volatility ${CONFIG.position_volatility[position].toFixed(2)} (calculated was ${(percentDiff * 100).toFixed(0)}% off)`)
+    }
+  }
+
   // Process all active players in parallel
   const playerPromises = activePlayers.map(async (player) => {
     const seasonStats = playerStatsMap.get(player.player_id) || []
@@ -1163,7 +1209,9 @@ async function calculateTeamFloors(players, teamId, opponentId, week, season, en
       week,
       season,
       environmentMod,
-      positionStats
+      positionStats,
+      teamId,
+      bettingContext
     )
 
     return floorData
@@ -1176,7 +1224,7 @@ async function calculateTeamFloors(players, teamId, opponentId, week, season, en
 /**
  * Calculate floors for individual player
  */
-async function calculatePlayerFloors(player, seasonStats, recentGames, opponentId, week, season, environmentMod = { modifier: 1.0 }, positionStats = {}) {
+async function calculatePlayerFloors(player, seasonStats, recentGames, opponentId, week, season, environmentMod = { modifier: 1.0 }, positionStats = {}, teamId = null, bettingContext = null) {
   const stats = {
     player_id: player.player_id,
     player_name: player.full_name,
@@ -1203,7 +1251,9 @@ async function calculatePlayerFloors(player, seasonStats, recentGames, opponentI
       season,
       environmentMod,
       statPositionStats,
-      player.player_id  // Task 12 (V4): Pass player_id for personalized environment
+      player.player_id,  // Task 12 (V4): Pass player_id for personalized environment
+      teamId,
+      bettingContext
     )
 
     if (projection) {
@@ -1286,7 +1336,7 @@ function winsorizeIQR(values) {
 /**
  * Calculate floor for specific stat (Enhanced with Phase 1.1, 1.4, 2.1, 2.2, and Task 12 V4)
  */
-async function calculateStatFloor(seasonStats, recentGames, statField, opportunityField, position, opponentId, week, season, environmentMod = { modifier: 1.0 }, positionStats = null, playerId = null) {
+async function calculateStatFloor(seasonStats, recentGames, statField, opportunityField, position, opponentId, week, season, environmentMod = { modifier: 1.0 }, positionStats = null, playerId = null, teamId = null, bettingContext = null) {
   // Filter out null values
   let seasonValues = seasonStats
     .map(g => g[statField])
@@ -1459,9 +1509,22 @@ async function calculateStatFloor(seasonStats, recentGames, statField, opportuni
     expected = expected * playerEnvironmentFactor;
   }
 
+  // V5 Phase 4: Apply game script adjustment (betting lines context)
+  let gameScriptMod = { modifier: 1.0, spreadMod: 1.0, totalMod: 1.0 }
+  if (CONFIG.game_script?.enabled && bettingContext?.hasData && teamId) {
+    gameScriptMod = calculateGameScriptModifier(
+      position,
+      teamId,
+      bettingContext.spread,
+      bettingContext.total,
+      bettingContext.favoriteTeam
+    )
+    expected = expected * gameScriptMod.modifier
+  }
+
   // Phase 3 (Academic V2): Bootstrap Prediction Intervals
-  // Task 12 (V4): Calculate combined modifier for bootstrap (opponent × environment × player-specific)
-  const combinedModifier = opponentFactor * environmentMod.modifier * playerEnvironmentFactor
+  // Task 12 (V4): Calculate combined modifier for bootstrap (opponent × environment × player-specific × game script)
+  const combinedModifier = opponentFactor * environmentMod.modifier * playerEnvironmentFactor * gameScriptMod.modifier
 
   // Task 17 (V4): Calculate player CV for bootstrap width scaling
   const playerCV = seasonAvg > 0 ? seasonStdDev / seasonAvg : 0
@@ -1507,7 +1570,11 @@ async function calculateStatFloor(seasonStats, recentGames, statField, opportuni
     confidence_level: confidenceLevel, // HIGH/MEDIUM/LOW (bootstrap-based)
     opponent_factor: opponentFactor,  // Show opponent matchup difficulty
     bootstrap_interval_width: bootstrapInterval.intervalWidth,
-    bootstrap_samples: bootstrapInterval.bootstrapSamples
+    bootstrap_samples: bootstrapInterval.bootstrapSamples,
+    game_script_factor: gameScriptMod.modifier,  // V5 Phase 4: Game script modifier
+    spread: bettingContext?.spread || null,      // Betting spread
+    total: bettingContext?.total || null,        // Over/under total
+    is_favored: teamId === bettingContext?.favoriteTeam  // Is player's team favored
   }
 }
 

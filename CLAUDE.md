@@ -1016,13 +1016,190 @@ node scripts/generate-comprehensive-index.js
 
 **Current Data Status**:
 - ✅ play_by_play: 1,964 records (Week 7 only)
-- ✅ player_injuries: Being populated
+- ✅ player_injuries: 690 records (all teams updated)
 - ✅ snap_counts: 10,079 records
 - ✅ game_betting_lines: 121 records
-- ❌ game_weather: 0 records (needs population)
+- ⚠️ game_weather: 0 records (ESPN API limitation - historical weather not available)
 
 
-### Total Scripts Created: 37
+### Session 10 (October 23, 2025 - V5 Game Script Adjustment Implementation): **🎯 BETTING LINES INTEGRATION**
+- ✅ **Created Game Script Utility Module**
+  - **File**: `scripts/utils/game-script.js` (288 lines)
+  - **mapGameToBettingId()**: Converts ESPN game IDs to date-based betting IDs
+    - Input: `espn-401772941` → Output: `20251017-PIT@CIN`
+    - Queries games table for date/teams, formats as YYYYMMDD-AWAY@HOME
+  - **getGameBettingLines()**: Fetches spread/total from flat schema
+    - Queries game_betting_lines table with date-based ID
+    - Returns: `{ spread, total, favoriteTeam, underdogTeam, hasData }`
+  - **getBettingContextForGame()**: Convenience wrapper combining above functions
+  - **calculateGameScriptModifier()**: Position-specific game flow adjustments
+    - **RB Formula**: `isFavored ? 1 + (spread × 0.02) : 1 - (spread × 0.02)` (cap: 0.80-1.20)
+      - Favored teams run more → RBs boosted (+9% for -4.5 favorite)
+    - **WR Formula**: `isFavored ? 1 - (spread × 0.015) : 1 + (spread × 0.015)` (cap: 0.85-1.15)
+      - Underdogs pass more → WRs boosted (+7% for +4.5 underdog)
+    - **QB Formula**: `isFavored ? 1 - (spread × 0.01) : 1 + (spread × 0.01)` (cap: 0.85-1.15)
+    - **TE Formula**: `isFavored ? 1 - (spread × 0.005) : 1 + (spread × 0.005)` (cap: 0.95-1.05)
+    - **Total (Pace) Modifier**: `1 + ((total - 47.5) / 47.5) × sensitivity`
+      - QB: 0.4, RB: 0.3, WR: 0.5, TE: 0.3 (cap: 0.70-1.30)
+    - **Combined**: `spreadMod × totalMod`
+- ✅ **Integrated Game Script into Performance Floors Calculator**
+  - **File**: `scripts/calculate-performance-floors.js` (modified)
+  - **Imports**: Added game-script utility imports (line 34-37)
+  - **Betting Context Fetching**: Added in calculateFloorsForGame() (line 910-918)
+    - Displays: `💰 Game Script: DET -6 | O/U 52.5 📈 Pace Up`
+    - Pace indicators: 📈 Pace Up (>50), 📉 Pace Down (<45), ➖ Neutral
+  - **Parameter Threading**: Passed betting context through call chain:
+    - `calculateFloorsForGame()` → `calculateTeamFloors()` (line 999, 1023)
+    - `calculateTeamFloors()` → `calculatePlayerFloors()` (line 1204-1215, 1227)
+    - `calculatePlayerFloors()` → `calculateStatFloor()` (line 1243-1257, 1339)
+  - **Game Script Application**: In calculateStatFloor() (line 1512-1523)
+    - Calculates position-specific modifier using betting context
+    - Applies to expected value: `expected = expected × gameScriptMod.modifier`
+    - Includes in bootstrap combined modifier: `opponentFactor × environmentMod × playerEnvFactor × gameScriptMod`
+  - **Metadata Addition**: Added to projection return object (line 1574-1577)
+    - `game_script_factor`: Combined modifier value
+    - `spread`: Betting spread
+    - `total`: Over/under total
+    - `is_favored`: Boolean indicating if player's team is favored
+- ✅ **Enabled Game Script in Configuration**
+  - **File**: `scripts/performance-floors-config.json`
+  - Set `game_script.enabled: true` (line 75)
+  - Added all sensitivity parameters (QB/RB/WR/TE)
+  - Added spread and total cap values
+- ✅ **Tested with Multiple Games**
+  - **Week 8 NYJ @ CIN**: ✅ `💰 Game Script: CIN -4.5 | O/U 44.5 📉 Pace Down`
+  - **Week 1 PIT @ NYJ**: ✅ `💰 Game Script: PIT -3 | O/U 37.5 📉 Pace Down`
+  - **Week 7 TB @ DET**: ✅ `💰 Game Script: DET -6 | O/U 52.5 📈 Pace Up`
+  - All modifiers applying correctly to projections
+- ✅ **Ran Week 7 Validation (Backtesting)**
+  - **With Game Script**:
+    - MAE: **12.9 points** (improved from 13.8, -6.5% decrease)
+    - Coverage: 38.9% (target: 80%)
+    - Total Predictions: 725
+  - **Position Breakdown**:
+    - QB: 27.8% coverage (MAE 31.3)
+    - RB: 35.8% coverage (MAE 11.6)
+    - **WR: 48.9% coverage** (MAE 9.2) ✅ Best
+    - TE: 24.5% coverage (MAE 11.2)
+  - **Stat Type Performance**:
+    - **Rushing Yards: 59.0% coverage** ✅ Excellent
+    - Fantasy Points: 32.3% coverage (MAE 4.7)
+    - Receiving Yards: 31.7% coverage (MAE 17.2)
+    - Passing Yards: 13.3% coverage (MAE 76.3)
+- ✅ **Verified Betting Data Coverage**
+  - Created `scripts/check-betting-coverage.js` to analyze coverage
+  - **Weeks 1-8**: 75-81% coverage (96/123 games)
+  - **Weeks 9-18**: 0% coverage (future games, no historical data)
+  - **Total**: 96/272 games (35%) have betting lines
+  - Data source: nflverse historical consensus betting lines
+
+**Example Calculations**:
+```javascript
+// DET RB, -6 favorite, 52.5 O/U total
+spreadMod = 1 + (6 × 0.02) = 1.12  // +12% for favored RB
+totalMod = 1 + ((52.5-47.5)/47.5) × 0.3 = 1.03  // +3% for high-scoring game
+combined = 1.12 × 1.03 = 1.15  // +15% overall boost
+
+// TB WR, +6 underdog, 52.5 O/U total
+spreadMod = 1 + (6 × 0.015) = 1.09  // +9% for underdog WR
+totalMod = 1 + ((52.5-47.5)/47.5) × 0.5 = 1.05  // +5% for high-scoring game
+combined = 1.09 × 1.05 = 1.14  // +14% overall boost
+```
+
+**Files Created**:
+- `scripts/utils/game-script.js` (288 lines)
+- `scripts/test-betting-lookup.js` (test utility)
+- `scripts/check-betting-coverage.js` (coverage analysis)
+
+**Files Modified**:
+- `scripts/calculate-performance-floors.js` - Full game script integration
+- `scripts/performance-floors-config.json` - Enabled game_script feature
+
+**Academic Foundation**:
+- Favored teams run more (negative game script) → RB boost
+- Underdogs pass more (positive game script) → QB/WR boost
+- High-scoring games increase volume → All positions boosted
+- Based on Vegas betting market efficiency
+
+**Impact**:
+- ✅ **6.5% MAE improvement** (13.8 → 12.9 pts)
+- ⚠️ Coverage stable at ~39% (requires further tuning)
+- ✅ Feature automatically applies when betting data available
+- ✅ Gracefully falls back to neutral modifier (1.0) when no betting data
+
+**Next Steps**:
+- Populate more betting data (Weeks 9+ when available)
+- Fine-tune sensitivity parameters based on more validation
+- Consider player-specific game script sensitivity
+
+
+### Session 11 (October 23, 2025 - Season Stats Verification & Table Population): **✅ DATA COMPLETENESS AUDIT**
+- ✅ **Verified player_season_cumulative_stats Population**
+  - **Issue**: User asked "completely populated?" - needed verification
+  - **Created**: check-completeness.js script to compare game stats vs season stats
+  - **Finding**: ✅ **100% COMPLETE** - All 219 unique players with 2025 game stats have been aggregated
+  - **Table status**: 1,516 total records (includes historical data from previous weeks)
+  - **Top performer**: espn-3117251 with 187.1 fantasy pts in 7 games
+  - **Verification method**: Set-based comparison between player_game_stats and player_season_cumulative_stats
+- ✅ **Identified Schema Architecture Change**
+  - **Discovery**: player_season_stats table was intentionally removed in migration 20250101000005
+  - **Replacement**: player_season_cumulative_stats (more comprehensive aggregation)
+  - **Column schema**: All stat columns use 'season_' prefix (season_passing_yards, season_fantasy_points_ppr)
+  - **Key difference**: No full_name column, only player_id (requires join to players table)
+- ✅ **Updated list-all-tables.js Script**
+  - Changed from obsolete 'player_season_stats' to 'player_season_cumulative_stats'
+  - Now correctly recognizes the active aggregation table
+- ✅ **Completed Comprehensive Table Audit**
+  - **Populated tables**: 20/30 (67% coverage)
+  - **Total records**: 45,991 across all populated tables
+  - **Key findings**:
+    - ✅ Core data complete: players (2,578), games (272), rosters (13,686)
+    - ✅ Stats complete: player_game_stats (6,843), player_season_cumulative_stats (1,516)
+    - ✅ Betting data: game_betting_lines (5,267) - up from 121 in Session 9
+    - ⚠️ Empty tables: game_drives, player_injury_status, betting detail tables (spread_lines, moneyline_odds, etc.)
+    - ⚠️ Aggregation views empty: weekly_leaders, season_leaders, hot_players (require weekly-aggregation run)
+- ✅ **Background Scrapers Completed**
+  - **roster-updates-scraper**: All 32 teams updated
+    - Found 9 roster changes (6 additions, 4 removals)
+    - Notable: Washington (WSH) has FK constraint issue (team_id not found)
+    - Updated players table: 2,578 total players
+  - **injuries-scraper**: 690 injury records updated for all teams
+  - **rescrape-missing-rosters**: 43 games with missing rosters re-scraped successfully
+    - Populated game_rosters table: 13,686 roster entries
+  - **analytics-scraper**: ❌ Failed with constraint error
+    - Error: "no unique or exclusion constraint matching ON CONFLICT specification"
+    - Root cause: play_by_play table missing unique constraint on (game_id, play_id)
+    - Needs schema fix before re-run
+- ✅ **Cleanup**
+  - Removed 3 temporary check scripts (check-season-stats.js, check-season-stats2.js, check-completeness.js)
+  - Updated documentation with final table counts
+
+**Files Created**:
+- `scripts/check-completeness.js` - Verification script (created then removed)
+
+**Files Modified**:
+- `scripts/list-all-tables.js` - Updated to use player_season_cumulative_stats
+- `CLAUDE.md` - Session 11 documentation
+
+**Current Data Status** (Updated):
+- ✅ players: 2,578 records (up from 2,571)
+- ✅ player_game_stats: 6,843 records
+- ✅ player_season_cumulative_stats: 1,516 records (100% coverage verified)
+- ✅ game_rosters: 13,686 records (43 missing games re-scraped)
+- ✅ roster_transactions: 2,165 records (9 new transactions)
+- ✅ game_betting_lines: 5,267 records (43x increase from 121)
+- ⚠️ player_injury_status: Still 0 records (injuries-scraper may need investigation)
+- ⚠️ play_by_play: 1,964 records but upsert failing (constraint issue needs fix)
+
+**Issues Identified**:
+1. **Washington (WSH) team_id FK error** - team_id "WSH" not found in teams table (should be "WAS")
+2. **play_by_play constraint error** - Missing unique constraint for upsert operation
+3. **player_injury_status empty** - injuries-scraper ran but didn't populate table
+4. **Betting detail tables empty** - spread_lines, moneyline_odds, over_under_lines not populated
+5. **Aggregation views empty** - weekly_leaders, season_leaders, hot_players need weekly-aggregation.js run
+
+
+### Total Scripts Created: 40
 - 4 seed scripts
 - 8 scraper scripts (7 implemented, 1 planned)
 - 1 aggregator (weekly-aggregation.js)
@@ -1031,9 +1208,10 @@ node scripts/generate-comprehensive-index.js
 - 1 schema generator (generate-schema-map.js)
 - 1 training script (train-feature-weights.js) **V5**
 - 1 scheduler
-- 10 utility modules: **V5 ENHANCED**
+- 11 utility modules: **V5 ENHANCED**
   - player-creator.js
   - fantasy-calculator.js
+  - game-script.js (288 lines, betting lines integration) **V5 NEW**
   - hierarchical-stats.js (V5: +79 lines for meta-analytic volatility)
   - bootstrap-intervals.js (518 lines, block bootstrap)
   - temporal-smoothing.js (219 lines, EWMA)
@@ -1044,15 +1222,15 @@ node scripts/generate-comprehensive-index.js
 - 1 greatest games algorithm document
 - 1 feature plan (game-day-roster-tracking)
 
-### Total Lines of Code: ~17,300+
+### Total Lines of Code: ~17,600+
 - Scrapers: ~4,500 lines
 - Aggregators: ~500 lines
 - Backfill: ~60 lines
 - Performance calculators: ~1,700 lines (calculate-performance-floors.js enhanced to 1,707 lines) **V5 ENHANCED**
 - Seeds: ~800 lines
-- Utils: ~3,640 lines: **V5 EXPANDED**
+- Utils: ~3,928 lines: **V5 EXPANDED**
   - Statistical modules: ~2,458 lines (hierarchical-stats, bootstrap-intervals, temporal-smoothing, feature-importance)
-  - Player/game utilities: ~280 lines (player-creator, fantasy-calculator)
+  - Player/game utilities: ~568 lines (player-creator, fantasy-calculator, game-script) **V5 +288**
   - Schema/validation: ~300 lines (schema-map, validators)
   - Core utilities: ~600 lines (supabase-client, espn-api, logger, rate-limiter)
 - Config: ~200 lines (performance-floors-config.json with learned weights)
@@ -1081,16 +1259,20 @@ All planned features have been implemented and tested. The backend now includes:
 - ✅ Advanced analytics (EPA, WPA)
 - ✅ Betting lines integration
 - ✅ Enhanced game statistics (quarter scores, weather)
-- ✅ **V5 Performance Floor Calculators (fantasy + props)** 🎓 **ALL 4 PHASES COMPLETE**
-  - Position-specific defensive matchups (80.8% importance via Random Forest)
-  - Block bootstrap for time series (preserves autocorrelation)
-  - Hierarchical Bayesian variance modeling (Empirical Bayes shrinkage)
-  - Meta-analytic position volatility (data-driven, adapts by team)
-  - EWMA temporal smoothing (momentum detection)
-  - Bayesian prediction intervals (floor/expected/ceiling with 80% CI)
-  - Random Forest feature importance learning (self-improving weekly)
-  - **19 peer-reviewed papers cited**, 2,458 lines of statistical code
-  - **Expected Impact**: 35-50% cumulative accuracy improvement
+- ✅ **V5 Performance Floor Calculators (fantasy + props)** 🎓 **ALL 5 PHASES COMPLETE**
+  - **Phase 1-3**: Position-specific defensive matchups (80.8% importance via Random Forest)
+  - **Phase 1-3**: Block bootstrap for time series (preserves autocorrelation)
+  - **Phase 1-3**: Hierarchical Bayesian variance modeling (Empirical Bayes shrinkage)
+  - **Phase 1-3**: Meta-analytic position volatility (data-driven, adapts by team)
+  - **Phase 1-3**: EWMA temporal smoothing (momentum detection)
+  - **Phase 1-3**: Bayesian prediction intervals (floor/expected/ceiling with 80% CI)
+  - **Phase 1-3**: Random Forest feature importance learning (self-improving weekly)
+  - **Phase 4**: Game Script Adjustment (betting lines context) **NEW**
+    - Vegas spread impact: RBs boosted on favored teams, WRs/QBs boosted on underdogs
+    - Over/under pace modifier: High-scoring games boost all positions
+    - 6.5% MAE improvement (13.8 → 12.9 pts on Week 7 validation)
+  - **19 peer-reviewed papers cited**, 2,746 lines of statistical code
+  - **Measured Impact**: 6.5% MAE improvement with game script enabled
 - ✅ Comprehensive schema documentation (3 formats)
 - ✅ Game-day roster infrastructure (auto-create missing players)
 - ✅ Comprehensive data showcase

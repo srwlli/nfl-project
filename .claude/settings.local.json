@@ -22,7 +22,9 @@
       "Bash(git commit:*)",
       "Bash(node:*)",
       "Bash(npm run scrape:snap-counts:*)",
-      "Bash(npm run floors:*)"
+      "Bash(npm run floors:*)",
+      "WebFetch(domain:www.rotowire.com)",
+      "Bash(timeout 180 node:*)"
     ],
     "deny": [],
     "ask": []

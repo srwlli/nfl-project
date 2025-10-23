@@ -13,7 +13,6 @@
     "backfill:missing-players": "node scripts/backfill-missing-players.js",
     "scrape:game-stats": "node scripts/scrapers/game-stats-scraper.js",
     "scrape:live": "node scripts/scrapers/live-games-scraper.js",
-    "scrape:injuries": "node scripts/scrapers/injuries-scraper.js",
     "scrape:roster": "node scripts/scrapers/roster-updates-scraper.js",
     "scrape:standings": "node scripts/scrapers/standings-scraper.js",
     "scrape:betting": "node scripts/scrapers/betting-scraper.js",

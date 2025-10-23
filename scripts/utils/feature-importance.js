@@ -67,22 +67,32 @@ export async function prepareTrainingData(options = {}) {
   const gameIds = games.map(g => g.game_id);
 
   // Fetch all player stats for these games in batch
+  // Join with players table to get position (position not in player_game_stats)
   const { data: playerStats } = await supabase
     .from('player_game_stats')
     .select(`
       player_id, game_id, team_id,
       ${statField},
-      passing_yards, rushing_yards, receiving_yards
+      passing_yards, rushing_yards, receiving_yards,
+      players!inner(primary_position)
     `)
     .in('game_id', gameIds)
-    .in('position', positions)
     .eq('season', season);
 
   if (!playerStats || playerStats.length === 0) {
     throw new Error('No player stats found for training');
   }
 
-  console.log(`Found ${playerStats.length} player stat records`);
+  // Filter by position after fetch (can't filter on joined table in Supabase)
+  const filteredStats = playerStats.filter(s =>
+    positions.includes(s.players?.primary_position)
+  );
+
+  if (filteredStats.length === 0) {
+    throw new Error(`No player stats found for positions: ${positions.join(', ')}`);
+  }
+
+  console.log(`Found ${filteredStats.length} player stat records for positions: ${positions.join(', ')}`);
 
   // Fetch team defensive stats (yards allowed) for opponent strength calculation
   const { data: teamDefenseStats } = await supabase
@@ -115,8 +125,8 @@ export async function prepareTrainingData(options = {}) {
 
   const stadiumMap = new Map((stadiums || []).map(s => [s.stadium_id, s]));
 
-  // Build training examples from player stats
-  for (const stat of playerStats) {
+  // Build training examples from filtered player stats
+  for (const stat of filteredStats) {
     const game = gameMap.get(stat.game_id);
     if (!game) continue;
 

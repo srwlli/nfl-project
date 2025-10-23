@@ -234,3 +234,100 @@ export function applyHierarchicalAdjustment(playerGames, positionStats) {
                      playerGames.length >= 3 ? 'MEDIUM' : 'LOW'
   };
 }
+
+/**
+ * Calculate meta-analytic position volatility
+ *
+ * FEATURE-004: Replace hardcoded position volatility with data-driven estimates
+ * Uses coefficient of variation (CV) for scale-independent comparison across positions.
+ *
+ * Academic Foundation:
+ * @citation Paper #7: Solent University (2023) - Variance estimation in sports analytics
+ *
+ * Formula: CV = (standard deviation / mean)
+ * Higher CV = more volatile position (e.g., WR > QB)
+ *
+ * @param {Array<Object>} allPlayers - All players at position with game data
+ * @param {string} statField - Stat to analyze (e.g., 'fantasy_points_ppr')
+ * @returns {Object} Position volatility metrics
+ */
+export function calculateMetaAnalyticVolatility(allPlayers, statField) {
+  // Collect all player means and variances
+  const playerMetrics = [];
+
+  for (const player of allPlayers) {
+    const games = player.games
+      .map(g => g[statField])
+      .filter(v => v !== null && v !== undefined && !isNaN(v));
+
+    if (games.length >= 3) { // Minimum 3 games for reliable variance
+      const playerMean = calculateMean(games);
+      const playerVariance = calculateVariance(games);
+      const playerStdDev = Math.sqrt(playerVariance);
+
+      playerMetrics.push({
+        mean: playerMean,
+        variance: playerVariance,
+        stdDev: playerStdDev,
+        cv: playerMean > 0 ? playerStdDev / playerMean : 0, // Coefficient of variation
+        games: games.length
+      });
+    }
+  }
+
+  if (playerMetrics.length === 0) {
+    return {
+      volatilityFactor: 0.75, // Default fallback
+      coefficientOfVariation: 0,
+      avgStdDev: 0,
+      avgMean: 0,
+      sampleSize: 0
+    };
+  }
+
+  // Meta-analytic aggregation: average CV across all players
+  const avgCV = calculateMean(playerMetrics.map(p => p.cv));
+  const avgStdDev = calculateMean(playerMetrics.map(p => p.stdDev));
+  const avgMean = calculateMean(playerMetrics.map(p => p.mean));
+
+  // Convert CV to volatility factor (normalized to ~0.6-0.9 range)
+  // CV typically ranges from 0.3 (QB) to 0.6 (WR)
+  // Map to volatility factor: CV * 1.5 ≈ 0.45-0.90
+  const volatilityFactor = Math.min(0.95, Math.max(0.55, avgCV * 1.5));
+
+  return {
+    // Primary output: volatility factor for floor calculation
+    volatilityFactor,
+
+    // Supporting metrics for validation
+    coefficientOfVariation: avgCV,
+    avgStdDev,
+    avgMean,
+    sampleSize: playerMetrics.length,
+
+    // Interpretation
+    volatilityLevel: avgCV < 0.35 ? 'LOW' :
+                     avgCV < 0.50 ? 'MEDIUM' : 'HIGH'
+  };
+}
+
+/**
+ * Calculate position volatility for all positions
+ *
+ * Batch calculation wrapper for all positions at once.
+ * Returns object keyed by position (QB, RB, WR, TE).
+ *
+ * @param {Object} playersByPosition - Players grouped by position
+ * @param {string} statField - Stat to analyze
+ * @returns {Object} Volatility factors by position
+ */
+export function calculateAllPositionVolatility(playersByPosition, statField = 'fantasy_points_ppr') {
+  const volatilityByPosition = {};
+
+  for (const [position, players] of Object.entries(playersByPosition)) {
+    const volatilityMetrics = calculateMetaAnalyticVolatility(players, statField);
+    volatilityByPosition[position] = volatilityMetrics.volatilityFactor;
+  }
+
+  return volatilityByPosition;
+}

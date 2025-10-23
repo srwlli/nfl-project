@@ -864,9 +864,16 @@ async function scrapeGameStats(gameId) {
         }
       }
 
+      // V5: Remove position field before upserting (position not stored in player_game_stats)
+      // Position was only needed for enhanceTeamStatsWithPositionDefense()
+      const playerStatsForDB = playerStats.map(stat => {
+        const { position, ...statWithoutPosition } = stat
+        return statWithoutPosition
+      })
+
       // Now upsert player stats (all players should exist)
-      logger.info(`  Found ${playerStats.length} player stat records`)
-      const result = await upsertBatch('player_game_stats', playerStats, ['player_id', 'game_id', 'season'])
+      logger.info(`  Found ${playerStatsForDB.length} player stat records`)
+      const result = await upsertBatch('player_game_stats', playerStatsForDB, ['player_id', 'game_id', 'season'])
       results.playerStats = result.success
       logger.info(`✓ Upserted ${result.success} player stat records`)
     } else {

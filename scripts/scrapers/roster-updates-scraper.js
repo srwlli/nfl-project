@@ -23,9 +23,15 @@
 import { fetchAllRosters, fetchTeamRoster, fetchTeams, transformPlayerData } from '../utils/espn-api.js'
 import { getSupabaseClient, upsertBatch, insertBatch } from '../utils/supabase-client.js'
 import { logger, logScriptStart, logScriptEnd } from '../utils/logger.js'
+import { createRateLimiter } from '../utils/rate-limiter.js'
+import { normalizeTeamId } from '../utils/team-normalizer.js'
+import axios from 'axios'
 
 const SCRIPT_NAME = 'roster-updates-scraper.js'
 const SEASON_YEAR = 2025
+const ESPN_V2_BASE = 'https://sports.core.api.espn.com/v2/sports/football/leagues/nfl'
+
+const rateLimiter = createRateLimiter(2) // 2 requests per second for ESPN v2
 
 /**
  * Get current roster from database for a team
@@ -209,10 +215,13 @@ async function updatePlayerRecords(espnRoster, teamId) {
  * Process roster updates for a specific team
  */
 async function processTeamRosterUpdates(team, forceUpdate = false) {
-  const teamId = team.abbreviation
+  const espnTeamId = team.abbreviation
   const teamName = team.displayName
 
-  logger.info(`Processing ${teamName} (${teamId})...`)
+  // Normalize team ID (handles WSH → WAS conversion)
+  const teamId = await normalizeTeamId(espnTeamId) || espnTeamId
+
+  logger.info(`Processing ${teamName} (${espnTeamId}${espnTeamId !== teamId ? ` → ${teamId}` : ''})...`)
 
   try {
     // Fetch current ESPN roster
@@ -293,6 +302,110 @@ async function processTeamRosterUpdates(team, forceUpdate = false) {
 }
 
 /**
+ * Map ESPN injury status to our database enum
+ */
+function mapInjuryStatus(espnStatus) {
+  const statusLower = (espnStatus || '').toLowerCase()
+
+  if (statusLower.includes('out')) return 'out'
+  if (statusLower.includes('doubtful')) return 'doubtful'
+  if (statusLower.includes('questionable')) return 'questionable'
+  if (statusLower.includes('probable')) return 'questionable'
+  if (statusLower.includes('active')) return 'questionable'
+
+  return 'questionable'
+}
+
+/**
+ * Extract injury type from comment
+ */
+function extractInjuryType(comment) {
+  if (!comment) return 'Unknown'
+
+  const injuries = ['knee', 'ankle', 'shoulder', 'hamstring', 'concussion', 'back', 'hip', 'wrist', 'hand', 'foot', 'groin', 'quad', 'calf', 'chest', 'neck', 'elbow', 'rib', 'thumb', 'finger']
+
+  const commentLower = comment.toLowerCase()
+  for (const injury of injuries) {
+    if (commentLower.includes(injury)) {
+      return injury.charAt(0).toUpperCase() + injury.slice(1)
+    }
+  }
+
+  return 'Unknown'
+}
+
+/**
+ * Fetch and process injury status for a team
+ */
+async function processTeamInjuries(team) {
+  try {
+    // Fetch injury references (with pagination)
+    const injuryRefs = []
+    let page = 1
+    let pageCount = 1
+
+    while (page <= pageCount) {
+      const response = await rateLimiter.execute(async () => {
+        return axios.get(
+          `${ESPN_V2_BASE}/teams/${team.id}/injuries`,
+          { params: { lang: 'en', region: 'us', page } }
+        )
+      })
+
+      const data = response.data
+      injuryRefs.push(...(data.items || []))
+      pageCount = data.pageCount || 1
+      page++
+    }
+
+    if (injuryRefs.length === 0) {
+      return []
+    }
+
+    // Process each injury (fetch details)
+    const injuries = []
+    for (const injuryRef of injuryRefs) {
+      const injury = await rateLimiter.execute(async () => {
+        try {
+          const response = await axios.get(injuryRef.$ref)
+          return response.data
+        } catch (error) {
+          return null
+        }
+      })
+
+      if (!injury) continue
+
+      // Extract player ID
+      const athleteIdMatch = injury.athlete?.$ref.match(/athletes\/(\d+)/)
+      const playerId = athleteIdMatch ? `espn-${athleteIdMatch[1]}` : null
+
+      if (!playerId) continue
+
+      const injuryType = extractInjuryType(injury.longComment || injury.shortComment)
+      const injuryDescription = (injury.shortComment || injury.longComment || 'No details').substring(0, 500)
+
+      injuries.push({
+        player_id: playerId,
+        season: SEASON_YEAR,
+        injury_type: injuryType,
+        injury_description: injuryDescription,
+        injury_status: mapInjuryStatus(injury.status),
+        injury_date: injury.date ? injury.date.split('T')[0] : new Date().toISOString().split('T')[0],
+        return_date: null,
+        games_missed: 0
+      })
+    }
+
+    return injuries
+
+  } catch (error) {
+    logger.error(`Failed to fetch injuries for ${team.abbreviation}:`, error.message)
+    return []
+  }
+}
+
+/**
  * Main scraper function
  */
 async function scrapeRosterUpdates(specificTeamId = null, forceUpdate = false) {
@@ -338,14 +451,56 @@ async function scrapeRosterUpdates(specificTeamId = null, forceUpdate = false) {
       totalErrors += result.errors.length
     }
 
+    // Process injury status for all teams
+    logger.info('')
+    logger.info('Processing injury status for all teams...')
+    const allInjuries = []
+    let totalInjuries = 0
+
+    for (let i = 0; i < teams.length; i++) {
+      const team = teams[i]
+      logger.info(`  [${i + 1}/${teams.length}] Fetching injuries for ${team.abbreviation}...`)
+
+      const teamInjuries = await processTeamInjuries(team)
+      allInjuries.push(...teamInjuries)
+      totalInjuries += teamInjuries.length
+
+      if (teamInjuries.length > 0) {
+        logger.info(`    ✓ Found ${teamInjuries.length} injury status records`)
+      }
+    }
+
+    // Batch upsert injuries to database
+    if (allInjuries.length > 0) {
+      const supabase = getSupabaseClient()
+      logger.info(`\nUpserting ${allInjuries.length} injury records...`)
+
+      const { data, error } = await supabase
+        .from('player_injuries')
+        .upsert(allInjuries, {
+          onConflict: 'player_id, season',
+          ignoreDuplicates: false
+        })
+        .select()
+
+      if (error) {
+        logger.error('Failed to upsert injuries:', error)
+      } else {
+        logger.info(`✓ Updated ${allInjuries.length} injury status records in database`)
+      }
+    } else {
+      logger.info('No injury status records found')
+    }
+
     logger.info('')
     logger.info('═'.repeat(60))
-    logger.info('ROSTER UPDATES SUMMARY')
+    logger.info('ROSTER UPDATES & INJURY STATUS SUMMARY')
     logger.info('═'.repeat(60))
     logger.info(`Teams processed: ${teams.length}`)
     logger.info(`Total roster additions: ${totalAdditions}`)
     logger.info(`Total roster removals: ${totalRemovals}`)
     logger.info(`Total player records updated: ${totalUpdates}`)
+    logger.info(`Total injury status records: ${totalInjuries}`)
     if (totalErrors > 0) {
       logger.error(`Total errors: ${totalErrors}`)
     }
@@ -356,6 +511,7 @@ async function scrapeRosterUpdates(specificTeamId = null, forceUpdate = false) {
       additions: totalAdditions,
       removals: totalRemovals,
       updates: totalUpdates,
+      injuries: totalInjuries,
       errors: totalErrors
     }
 

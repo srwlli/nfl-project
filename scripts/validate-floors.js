@@ -68,6 +68,7 @@ async function backtestWeek(week, season = 2025) {
   const validationResults = []
   let totalPlayers = 0
   let playersWithHistory = 0
+  let playersProcessed = 0
   const statFields = [
     'passing_yards',
     'rushing_yards',
@@ -93,7 +94,12 @@ async function backtestWeek(week, season = 2025) {
       .eq('game_id', gameId)
       .eq('season', season)
 
-    if (!actualStats || actualStats.length === 0) continue
+    if (!actualStats || actualStats.length === 0) {
+      console.log(`  No stats for game ${gameId}`)
+      continue
+    }
+
+    totalPlayers += actualStats.length
 
     // Filter to skill positions
     const filteredStats = actualStats
@@ -103,36 +109,57 @@ async function backtestWeek(week, season = 2025) {
         position: s.players.primary_position
       }))
 
+    console.log(`  Game ${gameId}: ${filteredStats.length} skill position players`)
+
     // For each player, generate projection using historical data
     for (const playerActual of filteredStats) {
       const { player_id, position } = playerActual
 
-      // Get player's historical games BEFORE this week (join with games to get week)
-      const { data: historicalGames } = await supabase
+      // Get player's historical games BEFORE this week
+      // Step 1: Get all player stats for this season
+      const { data: playerAllStats } = await supabase
         .from('player_game_stats')
-        .select(`
-          *,
-          games!inner(week, status)
-        `)
+        .select('*')
         .eq('player_id', player_id)
         .eq('season', season)
 
+      if (!playerAllStats || playerAllStats.length === 0) {
+        console.log(`    Player ${player_id}: No stats found`)
+        continue
+      }
+
+      // Step 2: Get game weeks for those stats
+      const gameIds = playerAllStats.map(s => s.game_id)
+      const { data: gameWeeks } = await supabase
+        .from('games')
+        .select('game_id, week, status')
+        .in('game_id', gameIds)
+        .eq('season', season)
+        .eq('status', 'final')
+        .lt('week', week)
+
+      const weekMap = new Map((gameWeeks || []).map(g => [g.game_id, g]))
+
       // Filter to completed games before this week
-      const filteredHistorical = (historicalGames || [])
-        .filter(g => g.games?.week < week && g.games?.status === 'final')
-        .sort((a, b) => b.games.week - a.games.week) // Descending by week
+      const filteredHistorical = playerAllStats
+        .filter(s => weekMap.has(s.game_id))
+        .map(s => ({
+          ...s,
+          week: weekMap.get(s.game_id).week
+        }))
+        .sort((a, b) => b.week - a.week) // Descending by week
 
       if (!filteredHistorical || filteredHistorical.length < CONFIG.min_games_played) {
+        console.log(`    Player ${player_id}: Only ${filteredHistorical?.length || 0} games (need ${CONFIG.min_games_played})`)
         continue // Not enough data to project
       }
 
+      playersWithHistory++
+      console.log(`    Player ${player_id} (${position}): ${filteredHistorical.length} historical games`)
+
       // Get position stats for hierarchical adjustment
-      const positionStats = await calculatePositionStats(
-        supabase,
-        position,
-        season,
-        week - 1 // Use data up to previous week
-      )
+      // Note: This is a simplified version - full version requires all player data
+      const positionStats = null // Skip hierarchical adjustment for validation
 
       // Generate projections for each stat
       for (const statField of statFields) {

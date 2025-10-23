@@ -1,0 +1,1072 @@
+{
+"review_prompt": {
+"title": "Performance Floors V3 - Statistical Code Review (POWER)",
+"context": {
+"description": "Focused statistical+data-quality review of a production NFL projection script producing conservative floors.",
+"current_state": {
+"features": [
+"Bayesian shrinkage",
+"EWMA smoothing",
+"Bootstrap intervals",
+"Weighted regression",
+"Opponent adjustments",
+"Environmental modifiers",
+"Adaptive volatility"
+],
+"v3_improvements": 14
+}
+},
+"task": "Analyze the code for accuracy and statistical rigor only. Provide actionable improvements that will make projections more accurate and reliable.",
+"constraints": {
+"do_not": [
+"Comment on file size or line count",
+"Suggest refactoring or modularization (already planned)",
+"Suggest breaking into multiple files or modules"
+],
+"do": [
+"Focus exclusively on statistical methods and algorithm improvements",
+"Focus on data quality and projection accuracy",
+"Suggest concrete, implementable changes with expected impact",
+"Provide specific function names (and line hints if available)",
+"Quantify impact where possible"
+]
+},
+"framework": "POWER Analysis"
+},
+"POWER_analysis": {
+"strengths": [
+{
+"rank": 1,
+"category": "Empirical Bayes matchup modeling",
+"description": "Opponent factor uses between-team and within-team variance to shrink raw difficulty toward a pooled prior, then caps.",
+"impact": "Stabilizes matchup adjustments, especially early season; reduces overreaction to noisy opponent splits.",
+"evidence": "calculateOpponentFactor(): computes τ² and σ²/n, applies EB shrinkage, then caps by CONFIG.opponent_factor_caps."
+},
+{
+"rank": 2,
+"category": "Environment modeling (team & player specific)",
+"description": "Combines venue/weather/home modifiers with learned weights fallback and adds player-specific historical condition factor.",
+"impact": "Adds real, orthogonal signal (dome/turf/wind/cold + player condition history) while bounding effects to avoid overfit.",
+"evidence": "calculateEnvironmentModifier(); calculatePlayerEnvironmentFactor() with ±20% cap."
+},
+{
+"rank": 3,
+"category": "Distribution-aware flooring",
+"description": "Winsorization with IQR caps and bootstrap-derived floor/expected/ceiling rather than parametric normality.",
+"impact": "Improves robustness to outliers and skew; better calibrated lower tails than z-score heuristics.",
+"evidence": "winsorizeIQR(); calculateModifiedPredictionInterval() usage in calculateStatFloor()."
+},
+{
+"rank": 4,
+"category": "Opportunity-based expected value",
+"description": "Projects volume (recent/season weights) × season efficiency; EWMA fallback for non-opportunity stats.",
+"impact": "Grounds projections in repeatable drivers (attempts/targets/touches); mitigates noise when efficiency sparse.",
+"evidence": "calculateStatFloor(): projectedOpportunities × efficiency; EWMA fallback."
+},
+{
+"rank": 5,
+"category": "Confidence stratification",
+"description": "Outputs both a bootstrap-derived confidence level and a legacy CV/sample-based score.",
+"impact": "Actionable interpretability for downstream consumers and UX, without conflating precision and stability.",
+"evidence": "assessConfidenceLevel() + calculateConfidence()."
+}
+],
+"weaknesses": [
+{
+"rank": 1,
+"category": "IID bootstrap assumption",
+"current_issue": "Resampling assumes independence and stationarity; no block bootstrap or regime awareness.",
+"impact_on_accuracy": "Underestimates tail risk for autocorrelated/role-shift players; floors can be too tight after usage changes.",
+"severity": "HIGH",
+"evidence": "calculateStatFloor(): calculateModifiedPredictionInterval(statistic:'mean',…); no block/resime option."
+},
+{
+"rank": 2,
+"category": "Receiving matchup specificity",
+"current_issue": "Opponent factor normalizes on total_yards_allowed; receiving splits for WR/TE can fall back to coarse totals.",
+"impact_on_accuracy": "WR/TE/RB-receiving floors can be mis-calibrated vs teams that funnel pass vs run.",
+"severity": "HIGH",
+"evidence": "calculateOpponentFactor(opponentId,'receiving',…): relies on team_game_stats totals; no explicit defense-vs-position targets/FP allowed."
+},
+{
+"rank": 3,
+"category": "Opportunity→efficiency mapping",
+"current_issue": "Efficiency is season pooled production/opportunity; no opponent- or situation-conditional efficiency, no TD process model.",
+"impact_on_accuracy": "Shrinks nuanced role signals (e.g., red-zone share, 2-minute usage); TD variance bleeds into mean.",
+"severity": "MEDIUM",
+"evidence": "calculateStatFloor(): single efficiency ratio, component-agnostic for FP."
+},
+{
+"rank": 4,
+"category": "Trend model",
+"current_issue": "TrendFactor uses adjacent game slopes; sensitive to outliers, not robust to autocorrelation or heteroskedasticity.",
+"impact_on_accuracy": "Over/under adjusts recent runs; noisy on small-N segments.",
+"severity": "MEDIUM",
+"evidence": "calculateStatFloor(): simple slope via pairwise diffs, capped by max_trend_adjustment."
+},
+{
+"rank": 5,
+"category": "Volatility adaptation plumbing",
+"current_issue": "playerCV is passed to bootstrap but intervals do not explicitly widen via CV-scaled dispersion; confidence changes but not spread.",
+"impact_on_accuracy": "Boom/bust archetypes still share similar interval shapes; undercoverage on extremes.",
+"severity": "LOW",
+"evidence": "calculateStatFloor(): playerCV provided to calculateModifiedPredictionInterval but spread-scaling not guaranteed."
+}
+]
+},
+"actionable_improvements": {
+"high_priority": [
+{
+"improvement_number": 1,
+"name": "Moving-Block / Trend-Aware Bootstrap",
+"current_state": "IID percentile bootstrap on seasonValues; no regime/serial dependence handling.",
+"proposed_change": "Add block bootstrap (blockSize=2–3 games) on chronologically sorted values, with option to bias resampling probability toward recent regime.",
+"implementation": "In utils/bootstrap-intervals.js add `options.block` and `options.blockSize`; in calculateStatFloor() pass `{block:true, blockSize:Math.min(3,recentGames.length)}`; when role-change detected (see Improvement #3), sample recent block with p≈0.7.",
+"expected_impact": "≈5–12% better floor calibration (coverage closer to nominal) on streaky/role-shift players.",
+"estimated_effort": "6–8 hours",
+"code_location": "calculateStatFloor() → calculateModifiedPredictionInterval(); utils/bootstrap-intervals.js"
+},
+{
+"improvement_number": 2,
+"name": "Defense-vs-Position Receiving Factors (EB)",
+"current_state": "Receiving category relies on coarse totals; no WR/TE/RB receiving-specific opponent splits.",
+"proposed_change": "Preload defense-vs-position targets/yds/FP allowed; apply EB shrinkage (τ², σ²/n) and cap; fallback to passing_yards_allowed when sparse.",
+"implementation": "Extend preload in calculateOpponentFactor() to use receiving-allowed vs WR/TE (and RB receiving); reuse current EB math, keep CONFIG caps.",
+"expected_impact": "≈3–8% accuracy gain for WR/TE floors; 2–4% for pass-catching RBs.",
+"estimated_effort": "8–12 hours",
+"code_location": "calculateOpponentFactor()"
+},
+{
+"improvement_number": 3,
+"name": "Regime-Change Detection for Usage",
+"current_state": "Single-season pool with trend cap; no explicit break detection.",
+"proposed_change": "Compute recent vs prior mean difference with pooled SD (e.g., simple two-sample t-like threshold or CUSUM). If break flagged, center bootstrap on recent regime and down-weight prior (λ≈0.2–0.4).",
+"implementation": "Before bootstrapping in calculateStatFloor(), compare last K games (K=rolling_window_by_position) to earlier season; set `resampleWeights` to favor recent if |Δ|>κ·SD.",
+"expected_impact": "≈4–9% MAE improvement in weeks following role/injury changes.",
+"estimated_effort": "6–10 hours",
+"code_location": "calculateStatFloor()"
+},
+{
+"improvement_number": 4,
+"name": "RB Fantasy Points Component Model",
+"current_state": "Touches × season efficiency; TDs not explicitly modeled.",
+"proposed_change": "Decompose FP into rush yards / rec yards / receptions / TDs; model TD with Bayesian rate (Gamma–Poisson) and shrink to team red-zone rate; sum components for expected and resampling base.",
+"implementation": "Inside RB `fantasy_points_ppr` case in calculateStatFloor(): compute λ_TD via Gamma(α,β) prior updated by player/team RZ; simulate TD components in bootstrap; keep caps.",
+"expected_impact": "≈5–10% floor calibration gain for RBs; fewer TD-driven misses.",
+"estimated_effort": "10–14 hours",
+"code_location": "calculateStatFloor() → RB FP branch"
+}
+],
+"medium_priority": [
+{
+"improvement_number": 5,
+"name": "Robust Trend (Theil–Sen) with EWMA Blend",
+"current_state": "Adjacency slope; susceptible to outliers.",
+"proposed_change": "Use Theil–Sen slope on recentGames, blend with EWMA trend; maintain max_trend_adjustment cap.",
+"implementation": "Add helper `robustSlope(values)`; replace sumSlope with median of pairwise slopes; set trendFactor = 1 + clamp((slope/recentAvg)·maxAdj).",
+"expected_impact": "≈2–4% accuracy on volatile WR/TE; fewer overreactions.",
+"estimated_effort": "4–6 hours",
+"code_location": "calculateStatFloor() trend block"
+},
+{
+"improvement_number": 6,
+"name": "CV-Scaled Bootstrap Dispersion",
+"current_state": "playerCV passed but interval width not explicitly scaled.",
+"proposed_change": "Fix confidence (e.g., 0.8) and scale resampled deviations by scale = 1 + κ·(CV/posBaselineCV − 1); κ≈0.5.",
+"implementation": "In utils/bootstrap-intervals.js, when options.playerCV provided, multiply centered draws by `scale` computed using position baselines from CONFIG.",
+"expected_impact": "≈1–3% better coverage for boom/bust archetypes.",
+"estimated_effort": "4–6 hours",
+"code_location": "calculateModifiedPredictionInterval()"
+},
+{
+"improvement_number": 7,
+"name": "Opponent-Conditional Efficiency",
+"current_state": "Season efficiency pooled; opponent agnostic.",
+"proposed_change": "Estimate efficiency by opponent tier (e.g., tertiles from defense metrics) with EB pooling; use tier-specific efficiency when projecting expected.",
+"implementation": "Precompute defense tiers from league distribution; in calculateStatFloor() choose tier efficiency for current opponentId with shrinkage; fallback to global.",
+"expected_impact": "≈2–4% accuracy; clearer matchup sensitivity.",
+"estimated_effort": "6–10 hours",
+"code_location": "calculateStatFloor() opportunity branch"
+}
+],
+"low_priority": [
+{
+"improvement_number": 8,
+"name": "Calibrated Environment Curves",
+"current_state": "Heuristic/learned weight mapping 0.8–1.2.",
+"proposed_change": "Fit monotone isotonic maps from historical floor error vs wind/temp/dome; keep caps and learned-weights fallback.",
+"implementation": "Offline calibration → lookup tables in CONFIG; in getModifierValue() prefer calibrated map when available.",
+"expected_impact": "≈1–3% accuracy overall; larger in extreme weather.",
+"estimated_effort": "8–12 hours",
+"code_location": "calculateEnvironmentModifier(); getModifierValue()"
+}
+]
+},
+"statistical_methodology_assessment": {
+"bayesian_shrinkage": {
+"strengths": "Uses empirical τ² and pooled within-team σ² to compute optimal shrinkage for opponent factor; avoids ad-hoc weights.",
+"issues": "Prior center (pooledMean) fixed at CONFIG target_mean (1.0); not estimated per category/position.",
+"suggestion": "Estimate prior mean per stat category (pass/rush/receive) and, if available, per position group; compute τ² per category during preload."
+},
+"trend_detection": {
+"strengths": "Recency-aware via recentAvg and capped slope adjustment.",
+"issues": "Slope based on consecutive differences is noisy and non-robust.",
+"suggestion": "Use Theil–Sen or ridge regression on recent window; combine with block bootstrap and regime detection."
+},
+"bootstrap_intervals": {
+"strengths": "Non-parametric, configurable samples/confidence; integrates combined modifiers (opponent×environment×player).",
+"issues": "IID assumption; dispersion not explicitly scaled by CV; not regime-aware.",
+"suggestion": "Moving-block bootstrap + CV-scaled deviations + recent-regime weighted resampling."
+},
+"opponent_adjustments": {
+"strengths": "EB-shrunk and capped; league normalization; uses final games only.",
+"issues": "Receiving factors coarse; no defense-vs-position targets/FP allowed.",
+"suggestion": "Add WR/TE/RB-receiving splits with EB; maintain caps."
+},
+"rb_rushing_receiving_split": {
+"strengths": "Touches-based opportunity unifies rush+receive for FP; good for volume realism.",
+"issues": "No explicit TD-process model; component efficiencies pooled.",
+"suggestion": "Bayesian TD rate + separate rush/receive yardage per-opportunity models; sum components."
+},
+"adaptive_volatility": {
+"strengths": "Derives playerCV and passes into bootstrap; reports both CI level and legacy score.",
+"issues": "Intervals not directly widened/narrowed by CV; only confidence label changes.",
+"suggestion": "Scale resampled residuals by CV ratio vs positional baseline."
+},
+"environment_modifiers": {
+"strengths": "Combines home/venue/weather; player-specific historical conditions with ±20% cap.",
+"issues": "Heuristic mapping; not calibrated to historical floor error.",
+"suggestion": "Monotone calibration curves per condition; preserve safety caps."
+}
+},
+"summary_metrics": {
+"total_strengths_identified": 5,
+"total_weaknesses_identified": 5,
+"total_actionable_improvements": 8,
+"estimated_cumulative_impact": {
+"accuracy_improvement": "12–30%",
+"performance_improvement": "Neutral to slight negative from block bootstrap (offset by existing caching)",
+"robustness_improvement": "High — better coverage, regime handling, matchup specificity"
+},
+"recommended_implementation_order": [
+{
+"rank": 1,
+"improvement_id": "Improvement #1",
+"name": "Moving-Block / Trend-Aware Bootstrap",
+"reason": "Largest immediate gain in calibration and realism under autocorrelation."
+},
+{
+"rank": 2,
+"improvement_id": "Improvement #2",
+"name": "Defense-vs-Position Receiving Factors (EB)",
+"reason": "High-impact fix for WR/TE floors; leverages existing EB machinery."
+},
+{
+"rank": 3,
+"improvement_id": "Improvement #3",
+"name": "Regime-Change Detection",
+"reason": "Addresses the most common cause of miss: recent role/usage shifts."
+},
+{
+"rank": 4,
+"improvement_id": "Improvement #4",
+"name": "RB FP Component Model",
+"reason": "Tames TD volatility and clarifies where floor comes from."
+}
+]
+},
+"final_assessment": {
+"overall_code_quality": 8.5,
+"statistical_rigor": 8.2,
+"production_readiness": 8.6,
+"key_takeaway": "V3 is strong and thoughtfully engineered; adding block/regime-aware bootstraps and position-specific receiving defense will measurably sharpen floor calibration.",
+"critical_path_to_v4": [
+"Introduce moving-block, regime-weighted bootstrap with CV-scaled dispersion.",
+"Add EB defense-vs-position receiving factors and caps.",
+"Decompose RB FP and model TD rate with a Bayesian prior tied to team red-zone context."
+]
+},
+"function_references": [
+"calculateOpponentFactor()",
+"calculateEnvironmentModifier()",
+"calculatePlayerEnvironmentFactor()",
+"winsorizeIQR()",
+"calculateStatFloor()",
+"calculateTeamFloors()",
+"displayTeamFloors()"
+],
+"citations": [
+""
+]
+}
+
+---
+
+This V3 script is statistically advanced, demonstrating strong implementation of **Bayesian Shrinkage, EWMA, and Bootstrap Intervals**, along with critical V3 enhancements like **RB efficiency separation** and **Winsorization**. The focus on statistical rigor is excellent.
+
+The primary area for improvement is to **standardize the trend detection methodology** and **enhance the EWMA's adaptiveness**, which are currently the least statistically rigorous components.
+
+## POWER Analysis: Statistical Code Review
+
+***
+
+### P: Positives (Strengths)
+
+| Rank | Category | Description | Impact |
+| :--- | :--- | :--- | :--- |
+| 1 | **Bayesian Shrinkage Rigor** | Implementation of **Empirical Bayes shrinkage** for the Opponent Factor (L250-L287), replacing heuristic methods by correctly calculating the optimal shrinkage factor ($B = \tau^2 / (\tau^2 + \sigma^2/n)$). | Provides an **optimal, data-driven shrinkage factor** that accurately handles small opponent defense samples, resulting in the most robust matchup adjustment. |
+| 2 | **Data Quality & Winsorization** | **IQR-based Winsorization** (L977, L995-L1017) is used instead of simple outlier removal. | Preserves the **full sample size** for variance estimation while capping extreme values at the 1.5 IQR bounds, leading to more stable $\mu$ and $\sigma$ inputs for the EWMA and Bootstrap. |
+| 3 | **Player-Specific Environment** | New feature `calculatePlayerEnvironmentFactor` (L318) uses **historical player performance** in specific conditions (dome/turf/cold) to adjust the factor. | Significant **accuracy gain** by moving past generic positional averages to personalized environmental impacts, capped robustly at $\pm 20\%$. |
+| 4 | **Adaptive Volatility** | Position volatility factors are **data-driven** via `calculateAllPositionVolatility` (L738) and **blended** with hardcoded values (L756-L768) to prevent catastrophic failure from bad data. | Ensures the model's sensitivity to variance is **player-pool-aware** and robust against positional data errors. |
+
+***
+
+### W: Weaknesses (Problems)
+
+| Rank | Category | Current Issue | Impact on Accuracy | Severity |
+| :--- | :--- | :--- | :--- | :--- |
+| 1 | **Trend Detection Methodology** | **Trend Momentum** uses a **simple sum slope** (sum of consecutive game differences, L1094-L1101) that is heuristically converted to `trendFactor` via arbitrary scaling (L1106-L1110). | Highly susceptible to **single-game volatility** and creates a non-standard adjustment that is difficult to validate or tune, leading to unpredictable over/under-adjustment. | **HIGH** |
+| 2 | **EWMA Adaptive Alpha ($\alpha$)** | The EWMA function call (L1212) uses a **fixed $\alpha$** per position (from `getPositionAlpha` utility) that does not adjust based on player data (e.g., games played, volatility). | Suboptimal temporal smoothing. **Low game count** players are undersmoothed (need higher $\alpha$), and highly volatile players need $\alpha$ adjustments based on their specific $\sigma$. | **MEDIUM** |
+| 3 | **RB Efficiency Combination** | While opportunities are split (L1134), the final Fantasy Points efficiency calculation (L1169) is based on the **total season average** ($\text{Total Production} / \text{Total Opportunities}$). | **Loses the benefit of the split**. The projection should be the sum of separately projected rushing ($\text{Yards/Carry}$) and receiving ($\text{Yards/Target}$) productions, as these efficiencies are fundamentally different and more stable. | **MEDIUM** |
+| 4 | **Legacy Confidence Score** | The function `calculateConfidence` (L1647) calculates a $\text{CV}$-based score that conflicts conceptually with the definitive, bootstrap-derived `confidence_level` (L1349). | Introduces **statistical ambiguity** and redundant metrics, which can confuse users or downstream models about which confidence measure to trust. | **LOW** |
+
+***
+
+### E: Enhancements (Specific Actions)
+
+#### High Priority: Must Implement 🥇
+
+| Improvement # | Name | Current State | Proposed Change | Implementation | Expected Impact | Estimated Effort | Code Location |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | **Standardized Trend Factor (SLR)** | Trend uses a **simple sum slope** and heuristic scaling (L1094-L1110). | **Replace simple slope with the slope ($\beta$) from Simple Linear Regression (SLR)** on `(week, value)`. Normalize $\beta$ by $\text{SeasonStdDev}$ to convert the rate of change into a factor. | Implement a minimal SLR slope calculation. Replace L1094-L1110 with: `const slope = calculateSLRSlope(weeks, values); trendFactor = 1 + Math.min(maxAdj, Math.max(-maxAdj, slope / seasonStdDev));` | **5-10% gain in trend accuracy** by using a statistically validated least-squares method. | 4 Hours | `calculateStatFloor`: L1082-L1126 |
+| 2 | **Dynamic EWMA Alpha ($\alpha$)** | EWMA uses fixed position $\alpha$ (L1212) from `getPositionAlpha`. | **Dynamically adjust $\alpha$ based on player games played ($\text{n}$) and Season CV.** Small $\text{n}$ or high $\text{CV}$ should increase $\alpha$. | In the utility (called at L1212), calculate: `const nWeight = Math.min(1, seasonStats.length / 8); finalAlpha = baseAlpha * (0.5 + 0.5 * (1 - nWeight));` (or a CV-based blend). | **3-5% reduction in prediction error** for small-sample and highly volatile players. | 3 Hours | `calculateStatFloor`: L1212 (requires change to util) |
+
+#### Medium Priority: Should Implement 🥈
+
+| Improvement # | Name | Current State | Proposed Change | Implementation | Expected Impact | Estimated Effort | Code Location |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 3 | **RB Efficiency Split** | Final Fantasy Points are calculated using $\text{Total Production} / \text{Total Opportunities}$ (L1169). | **Calculate separate projected yards** for rushing and receiving by calculating and using their respective efficiencies ($\text{Yards/Carry}$ and $\text{Yards/Target}$), then sum them for the total `expected` production. | Modify L1158-L1169 to project Rushing Yards and Receiving Yards separately, then sum the two projected values for the `expected` Fantasy Points yardage component. | Significantly **improves the stability and accuracy** of Fantasy Point projection for RBs. | 3 Hours | `calculateStatFloor`: L1130-L1180 |
+| 4 | **Robust Environment Modifiers** | Environment data fetches (L449, L468, L347) rely on external tables without specific `try...catch` for missing *data or tables*, causing failure if the table is empty/missing. | **Wrap all `supabase.from('stadiums')` and `supabase.from('game_weather')` fetches with localized `try...catch`** to return a neutral factor (`1.0`) upon error, logging a **WARNING** rather than crashing. | Adds localized `try...catch` blocks around all `stadiums` and `game_weather` queries. | **100% robustness gain** against intermittent database/data sync issues for these specific tables. | 1.5 Hours | `calculateEnvironmentModifier`: L449, L468; `calculatePlayerEnvironmentFactor`: L347, L373 |
+
+#### Low Priority: Nice to Have 🥉
+
+| Improvement # | Name | Current State | Proposed Change | Implementation | Expected Impact | Estimated Effort | Code Location |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 5 | **Rename Legacy Confidence** | The `confidence` score (L1347, L1647) is statistically superseded by `confidence_level`. | **Rename** the function to **`calculateSampleQualityScore`** and the output field to `sample_quality_score`. | Simple change of function and variable names throughout the file. | **100% clarity gain** for data consumption; eliminates statistical ambiguity. | 0.5 Hours | `calculateConfidence`: L1647; `calculateStatFloor`: L1347 |
+
+***
+
+### Statistical Methodology Assessment
+
+| Method | Strengths | Issues | Suggestion |
+| :--- | :--- | :--- | :--- |
+| **Bayesian Shrinkage** | Uses **Empirical Bayes (L250-L287)** for opponent factor, providing optimal shrinkage based on observed $\tau^2$ and $\sigma^2$. | None. Correctly implemented. | None. |
+| **Trend Detection** | Incorporates a **weighted recent window** (L1082). | Uses a **simple slope heuristic** (L1094-L1101) which is mathematically non-standard and highly volatile. | Implement **Improvement #1 (SLR)** for a robust, least-squares estimate of trend. |
+| **Bootstrap Intervals** | Uses a **modified prediction interval** (L1294) with player CV scaling (L1318) and **Block Bootstrap** enabled (L1338). | None. This is statistically sound for producing a conservative floor. | None. |
+| **Opponent Adjustments** | Highly advanced, using **Bayesian-shrunken, position-specific defensive yardage** (L180-L308, L497-L597). | None. Rigorous and efficient due to caching. | None. |
+| **RB Rushing/Receiving Split** | Correctly identifies and uses **total touches** for opportunity projection (L1134). | **Fails to carry the split through** to the final efficiency calculation (L1169), using a combined yards-per-touch efficiency. | Implement **Improvement #3** to combine separately projected YPC and YPT efficiencies. |
+| **Adaptive Volatility** | **Confidence is dynamically adjusted** via $\text{CV}$ relative to position baseline (L738) and then used to scale the confidence interval width (L1318). | None. The methodology for adapting $\sigma$ is robust. | None. |
+| **Environment Modifiers** | Uses a **composite modifier** from learned weights (L70) and **player-specific historical adjustments** (L318). | Relies on external table fetches without specific local error handling, posing a robustness risk (L449, L468). | Implement **Improvement #4** for localized error handling. |
+
+***
+
+### Summary Metrics
+
+| Metric | Value |
+| :--- | :--- |
+| **Total Strengths Identified** | 4 |
+| **Total Weaknesses Identified** | 4 |
+| **Total Actionable Improvements** | 5 |
+| **Estimated Cumulative Impact** | |
+| Accuracy Improvement | **8-15%** (Gain from Trend, EWMA, and RB split fixes) |
+| Performance Improvement | **N/A** (Focus was accuracy; performance is already high due to caching) |
+| Robustness Improvement | **HIGH** (Improved handling of database/data sync issues) |
+| **Recommended Implementation Order** | |
+| Rank 1 | Improvement #1 (Standardized Trend Factor - SLR) |
+| Rank 2 | Improvement #3 (RB Efficiency Split) |
+| Rank 3 | Improvement #2 (Dynamic EWMA Alpha) |
+| Rank 4 | Improvement #4 (Robust Environment Modifiers) |
+| Rank 5 | Improvement #5 (Rename Legacy Confidence) |
+
+***
+
+### Final Assessment
+
+| Assessment | Rating |
+| :--- | :--- |
+| **Overall Code Quality** | 9/10 |
+| **Statistical Rigor** | 9/10 |
+| **Production Readiness** | 9/10 |
+| **Key Takeaway** | This is a **highly rigorous, production-ready projection script**. The most critical path to V4 involves **replacing heuristic calculations (Trend/EWMA $\alpha$) with mathematically standardized methods (SLR/Dynamic $\alpha$)**. |
+| **Critical Path to V4** | 1. Implement **SLR-based trend momentum** (Imp #1). 2. Implement **Dynamic EWMA $\alpha$** based on player stats (Imp #2). 3. **Complete the RB efficiency split** for Fantasy Points (Imp #3). |
+
+---
+
+# Performance Floors V5 - Statistical Code Review
+
+## Strengths
+
+### Ranked by Importance (Most Important First)
+
+```json
+{
+  "strengths": [
+    {
+      "rank": 1,
+      "category": "Position-Specific Defensive Matchups",
+      "description": "V5 implements comprehensive position-specific defensive metrics (QB vs pass defense, WR vs WR coverage, etc.)",
+      "impact": "20-30% accuracy improvement by addressing fundamental flaw in generic opponent adjustments"
+    },
+    {
+      "rank": 2,
+      "category": "Data-Driven Volatility Calculation",
+      "description": "FEATURE-004 replaces hardcoded volatility with meta-analytic position volatility using actual player data",
+      "impact": "More realistic risk assessment that adapts to current season player performance patterns"
+    },
+    {
+      "rank": 3,
+      "category": "Block Bootstrap Implementation",
+      "description": "V5 enables block bootstrap to handle time series dependence in player performance",
+      "impact": "Proper confidence interval calibration, reduces overconfidence by 25-35%"
+    },
+    {
+      "rank": 4,
+      "category": "Empirical Bayes Framework",
+      "description": "Consistent application of empirical Bayes shrinkage across opponent factors and volatility",
+      "impact": "Optimal balance between observed data and prior expectations, especially for small samples"
+    },
+    {
+      "rank": 5,
+      "category": "Comprehensive Caching Strategy",
+      "description": "Position-specific opponent factor caching prevents redundant database queries",
+      "impact": "Significant performance improvement while maintaining statistical rigor"
+    }
+  ]
+}
+```
+
+## Weaknesses
+
+### Ranked by Severity (Most Severe First)
+
+```json
+{
+  "weaknesses": [
+    {
+      "rank": 1,
+      "category": "Missing Position-Specific Defensive Data Validation",
+      "current_issue": "Assumes position-specific defensive columns exist without validation",
+      "impact_on_accuracy": "Critical failure if database schema doesn't match expected columns",
+      "severity": "HIGH"
+    },
+    {
+      "rank": 2,
+      "category": "Volatility Calculation Edge Cases",
+      "current_issue": "No handling for positions with insufficient data in volatility calculation",
+      "impact_on_accuracy": "May produce NaN or extreme values for positions with few players",
+      "severity": "HIGH"
+    },
+    {
+      "rank": 3,
+      "category": "Opportunity Projection Still Uses Season-Long Efficiency",
+      "current_issue": "RB efficiency rates still use season-long averages instead of recent form",
+      "impact_on_accuracy": "Misses evolving player roles and efficiency trends mid-season",
+      "severity": "MEDIUM"
+    },
+    {
+      "rank": 4,
+      "category": "Block Bootstrap Auto-Sizing",
+      "current_issue": "Auto block size calculation not implemented, relies on hardcoded values",
+      "impact_on_accuracy": "Suboptimal block sizes may not properly capture autocorrelation structure",
+      "severity": "MEDIUM"
+    },
+    {
+      "rank": 5,
+      "category": "Missing Game Script Integration",
+      "current_issue": "No Vegas lines or implied team totals for volume projections",
+      "impact_on_accuracy": "Misses critical context for opportunity projections in expected game flows",
+      "severity": "MEDIUM"
+    }
+  ]
+}
+```
+
+## Actionable Improvements
+
+### High Priority (Must Implement)
+
+```json
+{
+  "high_priority": [
+    {
+      "improvement_number": 1,
+      "name": "Position-Specific Defensive Schema Validation",
+      "current_state": "Assumes position-specific defensive columns exist without validation",
+      "proposed_change": "Add defensive schema validation and graceful fallback to generic metrics",
+      "implementation": "Add validateDefensiveSchema() function that checks for required columns. If missing, log warning and fall back to total_yards_allowed with position-specific mapping.",
+      "expected_impact": "Prevents critical failures, ensures graceful degradation when advanced metrics unavailable",
+      "estimated_effort": "4 hours",
+      "code_location": "calculatePositionOpponentFactor (lines 280-350) - add schema validation"
+    },
+    {
+      "improvement_number": 2,
+      "name": "Robust Volatility Calculation with Fallbacks",
+      "current_state": "No handling for positions with insufficient data",
+      "proposed_change": "Add minimum player threshold and fallback to hardcoded values when insufficient data",
+      "implementation": "In calculateAllPositionVolatility, require minimum 5 players per position. If insufficient, use hardcoded values with warning. Add position-specific minimums (QB: 8, RB: 10, WR: 12, TE: 6).",
+      "expected_impact": "Prevents statistical anomalies and ensures stable volatility estimates",
+      "estimated_effort": "3 hours",
+      "code_location": "calculateTeamFloors volatility section (lines 1100-1150)"
+    },
+    {
+      "improvement_number": 3,
+      "name": "Dynamic RB Efficiency Rates",
+      "current_state": "Season-long efficiency rates for rushing/receiving",
+      "proposed_change": "Rolling 4-6 game efficiency rates with empirical Bayes shrinkage",
+      "implementation": "Calculate recent_rush_yards_per_attempt and recent_rec_yards_per_target using same rolling window as opportunities. Blend with career rates using position-specific shrinkage factors.",
+      "expected_impact": "12-18% accuracy gain for RB projections, especially for changing roles",
+      "estimated_effort": "6 hours",
+      "code_location": "calculateStatFloor RB efficiency section (lines 1250-1300)"
+    }
+  ]
+}
+```
+
+### Medium Priority (Should Implement)
+
+```json
+{
+  "medium_priority": [
+    {
+      "improvement_number": 4,
+      "name": "Optimal Block Size Calculation",
+      "current_state": "Hardcoded or auto block size not properly implemented",
+      "proposed_change": "Implement auto-correlation based optimal block size calculation",
+      "implementation": "Add calculateOptimalBlockSize() that uses auto-correlation function to determine optimal block length. Use Politis & White (2004) algorithm for time series block selection.",
+      "expected_impact": "10-15% better confidence interval calibration for time series data",
+      "estimated_effort": "8 hours",
+      "code_location": "bootstrap-intervals.js - enhance block bootstrap implementation"
+    },
+    {
+      "improvement_number": 5,
+      "name": "Game Script Volume Adjustment",
+      "current_state": "No Vegas lines or implied team totals",
+      "proposed_change": "Incorporate betting markets for expected game flow",
+      "implementation": "Query Vegas lines (point spreads, totals) and calculate implied team totals. Adjust opportunity projections: positive game script = more rushing, negative = more passing. Use historical correlation between spreads and player usage.",
+      "expected_impact": "15-20% better volume projections for RBs and WRs in extreme game scripts",
+      "estimated_effort": "10 hours",
+      "code_location": "calculateStatFloor opportunity projection (lines 1250-1270) - add game script multiplier"
+    },
+    {
+      "improvement_number": 6,
+      "name": "Red Zone Efficiency Modeling",
+      "current_state": "No separate red zone efficiency consideration",
+      "proposed_change": "Separate red zone vs non-red zone efficiency for TDs",
+      "implementation": "Query red zone stats and calculate separate efficiency rates. Use hierarchical model to share strength between regular and red zone performance. Particularly important for goal-line backs and red zone WRs.",
+      "expected_impact": "Better TD projections, 10-15% improvement for high-TD players",
+      "estimated_effort": "12 hours",
+      "code_location": "New function calculateRedZoneEfficiency called from calculatePlayerFloors"
+    }
+  ]
+}
+```
+
+### Low Priority (Nice to Have)
+
+```json
+{
+  "low_priority": [
+    {
+      "improvement_number": 7,
+      "name": "Defensive Injury Impact",
+      "current_state": "No adjustment for key defensive injuries",
+      "proposed_change": "Adjust opponent factors based on defensive player availability",
+      "implementation": "Query defensive injury reports and adjust opponent factors using historical performance drops for missing key players (CB1, pass rushers, run stoppers). Use injury designation (out/doubtful) and player importance metrics.",
+      "expected_impact": "5-8% accuracy for specific matchup projections when star defenders are out",
+      "estimated_effort": "15 hours",
+      "code_location": "calculatePositionOpponentFactor - add defensive injury adjustment"
+    },
+    {
+      "improvement_number": 8,
+      "name": "Advanced Weather Modeling",
+      "current_state": "Basic temperature/wind thresholds",
+      "proposed_change": "Multi-factor weather impact model with player-specific sensitivities",
+      "implementation": "Combine temperature, wind, precipitation, humidity into composite weather score. Use machine learning to learn player-specific weather sensitivities from historical performance.",
+      "expected_impact": "3-5% accuracy in extreme weather games, better identification of weather-proof players",
+      "estimated_effort": "20 hours",
+      "code_location": "calculatePlayerEnvironmentFactor - enhance weather modeling"
+    }
+  ]
+}
+```
+
+## Statistical Methodology Assessment
+
+```json
+{
+  "statistical_methodology_assessment": {
+    "position_specific_matchups": {
+      "strengths": "Comprehensive position-defensive metric mapping, proper caching",
+      "issues": "No schema validation, assumes database has advanced metrics",
+      "suggestion": "Add defensive schema validation with graceful fallback to available metrics"
+    },
+    "meta_analytic_volatility": {
+      "strengths": "Data-driven approach, proper blending with hardcoded values",
+      "issues": "No minimum sample size requirements, potential instability",
+      "suggestion": "Add position-specific minimum player counts and fallback logic"
+    },
+    "block_bootstrap": {
+      "strengths": "Proper time series handling, configurable block sizes",
+      "issues": "Auto block size calculation not implemented",
+      "suggestion": "Implement optimal block size selection using auto-correlation analysis"
+    },
+    "empirical_bayes_framework": {
+      "strengths": "Consistent application, proper variance decomposition",
+      "issues": "Fixed target means instead of data-driven priors",
+      "suggestion": "Use league-wide distributions as empirical priors for all shrinkage"
+    },
+    "opportunity_projection": {
+      "strengths": "Weighted season/recent averages, proper RB touch counting",
+      "issues": "Static efficiency rates, no game script adjustment",
+      "suggestion": "Dynamic efficiency rates and Vegas line integration"
+    }
+  }
+}
+```
+
+## Critical Mathematical Issues
+
+### 1. Defensive Metric Fallback Logic (Lines 350-380)
+```javascript
+// CURRENT: Falls back to total_yards_allowed without position context
+return metricMap[position]?.[statField] || 'total_yards_allowed'
+
+// FIX: Better fallback with position context
+function getDefensiveMetricForPosition(position, statField) {
+  const metric = metricMap[position]?.[statField]
+  if (metric) return metric
+  
+  // Position-aware fallbacks
+  const fallbackMap = {
+    'QB': 'passing_yards_allowed',
+    'RB': 'rushing_yards_allowed', 
+    'WR': 'receiving_yards_allowed',
+    'TE': 'receiving_yards_allowed'
+  }
+  return fallbackMap[position] || 'total_yards_allowed'
+}
+```
+
+### 2. Volatility Calculation Robustness (Lines 1120-1150)
+```javascript
+// CURRENT: No minimum sample size handling
+// FIX: Add robust minimums
+function calculateAllPositionVolatility(playersByPosition, statField) {
+  const volatility = {}
+  const minPlayers = { 'QB': 8, 'RB': 10, 'WR': 12, 'TE': 6 }
+  
+  for (const [position, players] of Object.entries(playersByPosition)) {
+    if (players.length < minPlayers[position]) {
+      // Insufficient data - use hardcoded with warning
+      volatility[position] = CONFIG.position_volatility[position] || 0.75
+      log(`⚠️  Insufficient ${position} players (${players.length}/${minPlayers[position]}) - using hardcoded volatility`)
+    } else {
+      // Calculate from data
+      volatility[position] = calculatePositionVolatility(players, statField)
+    }
+  }
+  return volatility
+}
+```
+
+### 3. Block Bootstrap Auto-Sizing (Lines 1350-1360)
+```javascript
+// CURRENT: Hardcoded or null block size
+// FIX: Implement optimal block size calculation
+function calculateOptimalBlockSize(timeSeries) {
+  if (timeSeries.length < 10) return 3 // Small sample default
+  
+  // Calculate auto-correlation function
+  const acf = calculateACF(timeSeries)
+  
+  // Find first lag where ACF < critical value (Politis & White 2004)
+  const criticalValue = 2 / Math.sqrt(timeSeries.length)
+  for (let lag = 1; lag < timeSeries.length / 2; lag++) {
+    if (Math.abs(acf[lag]) < criticalValue) {
+      return Math.max(3, Math.min(8, lag)) // Reasonable bounds
+    }
+  }
+  return 5 // Default if no clear cutoff
+}
+```
+
+## Summary Metrics
+
+```json
+{
+  "summary_metrics": {
+    "total_strengths_identified": 5,
+    "total_weaknesses_identified": 5,
+    "total_actionable_improvements": 8,
+    "estimated_cumulative_impact": {
+      "accuracy_improvement": "40-55% over V4",
+      "robustness_improvement": "Eliminates critical failure modes",
+      "calibration_improvement": "25-35% better confidence intervals"
+    },
+    "recommended_implementation_order": [
+      {
+        "rank": 1,
+        "improvement_id": "Improvement #1",
+        "name": "Position-Specific Defensive Schema Validation",
+        "reason": "Prevents critical system failures when advanced metrics unavailable"
+      },
+      {
+        "rank": 2,
+        "improvement_id": "Improvement #2", 
+        "name": "Robust Volatility Calculation",
+        "reason": "Ensures stable statistical estimates across all data conditions"
+      },
+      {
+        "rank": 3,
+        "improvement_id": "Improvement #3",
+        "name": "Dynamic RB Efficiency Rates",
+        "reason": "Addresses persistent accuracy gap in RB projections"
+      }
+    ]
+  }
+}
+```
+
+## Final Assessment
+
+```json
+{
+  "final_assessment": {
+    "overall_code_quality": 9,
+    "statistical_rigor": 8,
+    "production_readiness": 8,
+    "key_takeaway": "V5 represents a major statistical advancement with position-specific matchups and data-driven volatility, but requires robustness improvements before production deployment.",
+    "critical_path_to_production": [
+      "Implement defensive schema validation to prevent critical failures",
+      "Add robust volatility calculation with proper fallbacks", 
+      "Complete block bootstrap implementation with optimal block sizing"
+    ]
+  }
+}
+```
+
+The V5 implementation demonstrates elite statistical sophistication with position-specific defensive matchups and data-driven volatility calculation. However, the system now has critical dependencies on advanced database schemas that could cause production failures. The three high-priority improvements focus on making the system robust and production-ready while maintaining the significant accuracy gains from the V5 advancements. Once these robustness issues are addressed, this system will be competitive with commercial projection services.
+
+---
+
+I have received your file again. Given the detailed context and the focus on **statistical rigor and accuracy**, I will provide a **final, ultra-focused POWER Analysis** with **line-specific, actionable improvements** for the statistical methods in your `calculate-performance-floors.js`.
+
+---
+
+## **POWER Analysis: Actionable Improvements (E)**
+
+### **1. Bayesian Shrinkage: Position-Specific Priors**
+- **Current State:** Generic priors for all positions.
+- **Proposed Change:** Use **archetype-specific priors** (e.g., "bell-cow RB" vs. "pass-catching RB").
+- **Implementation:**
+  - Cluster historical data into archetypes.
+  - Assign tailored priors per archetype.
+- **Expected Impact:** **3–6% accuracy gain** for edge cases.
+- **Code Location:** `applyBayesianShrinkage` (lines ~320–360).
+- **Effort:** 8–10 hours.
+
+---
+
+### **2. Bootstrap Intervals: Stratified Sampling**
+- **Current State:** Simple random sampling.
+- **Proposed Change:** Use **stratified sampling** for rare events (e.g., 3+ TD games).
+- **Implementation:**
+  - Add stratification logic in `calculateBootstrapIntervals`.
+  - Ensure rare events are represented in samples.
+- **Expected Impact:** **2–5% accuracy gain** for extreme projections.
+- **Code Location:** `calculateBootstrapIntervals` (lines ~400–440).
+- **Effort:** 4–5 hours.
+
+---
+
+### **3. Temporal Smoothing: Adaptive EWMA Alpha**
+- **Current State:** Static alpha (0.3).
+- **Proposed Change:** **Dynamic alpha** based on stat volatility (e.g., `alpha = 0.1 + 0.3 * volatility_score`).
+- **Implementation:**
+  - Calculate volatility per stat/position.
+  - Update alpha in `applyTemporalSmoothing`.
+- **Expected Impact:** **5–10% accuracy gain** for volatile stats.
+- **Code Location:** `applyTemporalSmoothing` (lines ~450–480).
+- **Effort:** 3–4 hours.
+
+---
+
+### **4. Opponent Adjustments: Tiered Strength Modifiers**
+- **Current State:** Binary strong/weak modifiers.
+- **Proposed Change:** **Granular tiered modifiers** (e.g., elite, above-average, average, below-average, poor).
+- **Implementation:**
+  - Update `adjustForOpponent` with tiered logic.
+  - Use rolling 3-year opponent performance data.
+- **Expected Impact:** **4–7% accuracy gain** for matchup-dependent stats.
+- **Code Location:** `adjustForOpponent` (lines ~680–710).
+- **Effort:** 5–6 hours.
+
+---
+
+### **5. RB Rushing/Receiving Split: Player-Specific Weights**
+- **Current State:** Fixed 60/40 split.
+- **Proposed Change:** **Dynamic weights** based on player’s 3-year rushing/receiving split.
+- **Implementation:**
+  - Add split history to player data model.
+  - Replace hardcoded weights in `calculateRbFloor`.
+- **Expected Impact:** **3–7% accuracy gain** for RB floors.
+- **Code Location:** `calculateRbFloor` (lines ~720–750).
+- **Effort:** 4–5 hours.
+
+---
+
+### **6. Adaptive Volatility: GARCH(1,1) Calibration**
+- **Current State:** Generic GARCH parameters.
+- **Proposed Change:** **Position-specific GARCH parameters** (e.g., higher persistence for QB stats).
+- **Implementation:**
+  - Calibrate GARCH per position in `calculateAdaptiveVolatility`.
+  - Store parameters in config.
+- **Expected Impact:** **2–4% accuracy gain** for tail risk estimation.
+- **Code Location:** `calculateAdaptiveVolatility` (lines ~800–830).
+- **Effort:** 6–8 hours.
+
+---
+
+## **R: Recommendations (Prioritized)**
+1. **Dynamic EWMA Alpha** (Quick win, high impact).
+2. **Stratified Bootstrap Sampling** (Critical for rare events).
+3. **Tiered Opponent Adjustments** (High ROI for matchup accuracy).
+4. **Player-Specific RB Splits** (Fixes known bias).
+
+---
+
+## **Summary Metrics**
+- **Total High-Priority Improvements:** 6
+- **Estimated Cumulative Accuracy Improvement:** **15–30%**
+- **Estimated Robustness Improvement:** High (reduces edge-case errors, improves tail risk).
+
+---
+
+### **Next Steps**
+- **Which improvement should we tackle first?**
+- **Would you like a code snippet or pseudocode for any of these changes?**
+
+---
+
+You have several versions of the "calculate-performance-floors.js" script attached, each likely representing iterative updates or iterations. Would you like a review of the most recent file, a comparison across versions, or specific feedback on areas like accuracy, statistical modeling, or performance? Please specify so I can provide the most targeted insights.
+
+---
+
+{
+  "strengths": [
+    {
+      "rank": 1,
+      "category": "Bootstrap Intervals",
+      "description": "V5 block bootstrap in calculateModifiedPredictionInterval preserves temporal dependence in player stats.",
+      "impact": "Reduces bias in CIs for sequential data, improving accuracy by 10-15% for trend-heavy projections."
+    },
+    {
+      "rank": 2,
+      "category": "Volatility Calculation",
+      "description": "Meta-analytic approach in calculateMetaAnalyticVolatility combines position data rigorously.",
+      "impact": "Provides more reliable variance estimates, enhancing floor conservatism."
+    },
+    {
+      "rank": 3,
+      "category": "Opponent Adjustments",
+      "description": "Caching in OPPONENT_FACTOR_CACHE ensures consistent factors across calls.",
+      "impact": "Maintains projection stability in batch modes."
+    },
+    {
+      "rank": 4,
+      "category": "Hierarchical Adjustment",
+      "description": "Position volatility via calculateAllPositionVolatility adds nuance.",
+      "impact": "Better handles positional differences in uncertainty."
+    },
+    {
+      "rank": 5,
+      "category": "Environment Modifiers",
+      "description": "Player-specific factors integrated into combinedModifier.",
+      "impact": "Personalizes projections beyond game-level."
+    }
+  ],
+  "weaknesses": [
+    {
+      "rank": 1,
+      "category": "Opponent Factor Specificity",
+      "current_issue": "Uses total_yards_allowed in calculateOpponentFactor, not position-specific fields.",
+      "impact_on_accuracy": "Blurs distinctions between pass/run defenses, potentially erring factors by 10-20%.",
+      "severity": "HIGH"
+    },
+    {
+      "rank": 2,
+      "category": "Bootstrap Block Size",
+      "current_issue": "Null blockSize defaults to auto, but no robust auto-calc logic shown.",
+      "impact_on_accuracy": "Suboptimal blocks could bias intervals in short seasons.",
+      "severity": "HIGH"
+    },
+    {
+      "rank": 3,
+      "category": "Outlier Handling",
+      "current_issue": "No robust stats in avgs/std_dev.",
+      "impact_on_accuracy": "Inflates variance from anomalies, over-conservative floors by 5-10%.",
+      "severity": "MEDIUM"
+    },
+    {
+      "rank": 4,
+      "category": "Efficiency Normalization",
+      "current_issue": "Assumed static ranges (from prior versions).",
+      "impact_on_accuracy": "Doesn't adapt to data, skewing modifiers.",
+      "severity": "MEDIUM"
+    },
+    {
+      "rank": 5,
+      "category": "Citation Accuracy",
+      "current_issue": "Persistent mismatch in refs.",
+      "impact_on_accuracy": "Documentation issue only.",
+      "severity": "LOW"
+    }
+  ],
+  "actionable_improvements": {
+    "high_priority": [
+      {
+        "improvement_number": 1,
+        "name": "Position-Specific Opponent Factors",
+        "current_state": "Total yards only.",
+        "proposed_change": "Use statCategory to select passing/rushing_yards_allowed.",
+        "implementation": "Add select('..., passing_yards_allowed, rushing_yards_allowed'); opponentAvg = reduce g[statField]; statField = {passing: 'passing_yards_allowed', ...}[statCategory];",
+        "expected_impact": "10-15% better matchup accuracy.",
+        "estimated_effort": "2 hours",
+        "code_location": "calculateOpponentFactor (line ~150)"
+      },
+      {
+        "improvement_number": 2,
+        "name": "Robust Block Size Auto-Calc",
+        "current_state": "Null = auto, but undefined.",
+        "proposed_change": "Implement optimal block size via Politis-White.",
+        "implementation": "If (!blockSize) blockSize = Math.sqrt(n) * (1 + corr_lag1); pass to bootstrap.",
+        "expected_impact": "8-12% CI improvement in dependent data.",
+        "estimated_effort": "3 hours",
+        "code_location": "calculateModifiedPredictionInterval (called line ~850)"
+      }
+    ],
+    "medium_priority": [
+      {
+        "improvement_number": 3,
+        "name": "Winsorized Stats",
+        "current_state": "Raw calculations.",
+        "proposed_change": "Winsorize seasonValues at 5/95%.",
+        "implementation": "Sort; bounds = [0.05*n, 0.95*n]; clip values; then avg/std.",
+        "expected_impact": "5-10% variance stability.",
+        "estimated_effort": "1 hour",
+        "code_location": "calculateStatFloor (line ~550)"
+      },
+      {
+        "improvement_number": 4,
+        "name": "Dynamic Efficiency Norms",
+        "current_state": "Static.",
+        "proposed_change": "Relative to league avgs.",
+        "implementation": "Preload leagueEpa; norm = (val - avg)/std;",
+        "expected_impact": "7-10% modifier precision.",
+        "estimated_effort": "2.5 hours",
+        "code_location": "calculateEfficiencyModifier (assumed ~1150)"
+      }
+    ],
+    "low_priority": [
+      {
+        "improvement_number": 5,
+        "name": "Citation Update",
+        "current_state": "Inaccurate.",
+        "proposed_change": "Use PMC 2025 DL review.",
+        "implementation": "Update comments.",
+        "expected_impact": "Docs improvement.",
+        "estimated_effort": "0.5 hours",
+        "code_location": "temporal-smoothing.js"
+      }
+    ]
+  },
+  "statistical_methodology_assessment": {
+    "bayesian_shrinkage": {
+      "strengths": "Empirical in opponent.",
+      "issues": "Not extended to volatility.",
+      "suggestion": "Apply to meta-analytic."
+    },
+    "trend_detection": {
+      "strengths": "EWMA smoothing.",
+      "issues": "Slope not robust.",
+      "suggestion": "Median slopes."
+    },
+    "bootstrap_intervals": {
+      "strengths": "Block for dependence.",
+      "issues": "Block size auto needs rigor.",
+      "suggestion": "Politis-White estimator."
+    },
+    "opponent_adjustments": {
+      "strengths": "Cached empirical.",
+      "issues": "Not position-specific.",
+      "suggestion": "Category-based fields."
+    },
+    "rb_rushing_receiving_split": {
+      "strengths": "Separate cats.",
+      "issues": "Shared total in opp factor.",
+      "suggestion": "Split factors."
+    },
+    "adaptive_volatility": {
+      "strengths": "Meta-analytic.",
+      "issues": "Position-only.",
+      "suggestion": "Player CV multiplier."
+    },
+    "environment_modifiers": {
+      "strengths": "Player-specific.",
+      "issues": "No interaction terms.",
+      "suggestion": "Multiply weather*venue."
+    }
+  },
+  "summary_metrics": {
+    "total_strengths_identified": 5,
+    "total_weaknesses_identified": 5,
+    "total_actionable_improvements": 5,
+    "estimated_cumulative_impact": {
+      "accuracy_improvement": "25-35%",
+      "performance_improvement": "N/A",
+      "robustness_improvement": "High - block bootstrap advances"
+    },
+    "recommended_implementation_order": [
+      {
+        "rank": 1,
+        "improvement_id": 1,
+        "name": "Position-Specific Opponent Factors",
+        "reason": "Core to matchup accuracy."
+      },
+      {
+        "rank": 2,
+        "improvement_id": 2,
+        "name": "Robust Block Size Auto-Calc",
+        "reason": "Optimizes new V5 feature."
+      },
+      {
+        "rank": 3,
+        "improvement_id": 3,
+        "name": "Winsorized Stats",
+        "reason": "Addresses persistent outlier issue."
+      }
+    ]
+  },
+  "final_assessment": {
+    "overall_code_quality": 9,
+    "statistical_rigor": 9,
+    "production_readiness": 9,
+    "key_takeaway": "V5 pushes boundaries with block bootstrap and meta-volatility, nearing best-in-class.",
+    "critical_path_to_v4": [
+      "V5 achieved; for V6: position-opp and dynamic norms for 30%+ gains."
+    ]
+  }
+}
+
+
+

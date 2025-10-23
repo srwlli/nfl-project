@@ -4,10 +4,9 @@
  * Orchestrates all data scrapers using cron jobs for automated data collection.
  *
  * Schedule Overview:
- * - Daily 6:00 AM ET: Injuries scraper
  * - Daily 7:00 AM ET: Standings scraper
  * - Daily 10:00 AM ET: Betting odds scraper
- * - Daily 5:00 PM ET: Roster updates scraper
+ * - Daily 5:00 PM ET: Roster updates + injury status scraper
  * - Game Days: Live games scraper (30-second intervals during game windows)
  * - Weekly Monday 3:00 AM ET: Schedule refresh
  * - Weekly Tuesday 6:00 AM ET: Advanced analytics scraper (EPA, WP)
@@ -153,23 +152,6 @@ function isGameTimeWindow() {
   }
 
   return false
-}
-
-/**
- * Schedule: Daily injuries scraper at 6:00 AM ET
- */
-function scheduleInjuriesScraper() {
-  // Cron: 0 6 * * * (6 AM daily)
-  const schedule = MODE === 'development' ? '*/5 * * * *' : '0 6 * * *'
-
-  cron.schedule(schedule, async () => {
-    logger.info('⏰ Scheduled task: Injuries scraper')
-    await runScript('injuries-scraper.js')
-  }, {
-    timezone: TIMEZONE
-  })
-
-  logger.info(`✓ Scheduled: Injuries scraper (${MODE === 'development' ? 'every 5 min' : 'daily 6 AM ET'})`)
 }
 
 /**
@@ -366,7 +348,6 @@ async function main() {
   logger.info('')
 
   // Initialize all schedulers
-  scheduleInjuriesScraper()
   scheduleRosterUpdatesScraper()
   scheduleLiveGamesScraper()
   scheduleWeeklyScheduleRefresh()
@@ -404,8 +385,7 @@ async function main() {
   // Initial status in development mode
   if (MODE === 'development') {
     logger.info('⚠️  DEVELOPMENT MODE')
-    logger.info('   - Injuries: Every 5 minutes')
-    logger.info('   - Roster: Every 10 minutes')
+    logger.info('   - Roster + Injuries: Every 10 minutes')
     logger.info('   - Live Games: Every 30 seconds (if game window)')
     logger.info('   - Schedule: Every 15 minutes')
     logger.info('')
