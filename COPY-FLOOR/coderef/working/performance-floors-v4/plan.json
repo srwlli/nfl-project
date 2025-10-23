@@ -1,0 +1,1565 @@
+{
+  "feature_name": "performance-floors-v4",
+  "version": "4.0.0",
+  "created": "2025-10-22",
+  "status": "planned",
+  "estimated_effort": "60-85 hours",
+  "expected_impact": "25-40% accuracy improvement over V3",
+
+  "overview": {
+    "summary": "Performance Floors V4 represents a major statistical enhancement to the V3 calculator, implementing 25 improvements identified through multi-agent AI review. V3 achieved 8.5/10 quality with Bayesian shrinkage, EWMA smoothing, and bootstrap intervals. V4 targets 9.5/10 rigor by fixing critical time series assumptions, implementing position-specific matchup analysis, and adding adaptive statistical methods.",
+    "business_value": "Increase fantasy football projection accuracy by 25-40%, reducing MAE and improving floor reliability for weekly lineup decisions. More accurate floors translate to better DFS ROI and season-long waiver wire decisions.",
+    "key_objectives": [
+      "Fix time series bootstrap assumption (IID → block bootstrap with autocorrelation)",
+      "Implement position-specific opponent matchups (WR vs CB, RB vs Front-7, TE vs LB/Safety)",
+      "Replace heuristic trend scaling with statistically-grounded normalization",
+      "Add time-aware trend detection with exponential decay for bye weeks",
+      "Normalize EPA ranges dynamically per season instead of hardcoded values",
+      "Implement regime change detection (CUSUM) to detect player state changes",
+      "Decompose RB fantasy scoring into rushing/receiving/TD components",
+      "Add adaptive EWMA alpha, dynamic efficiency rates, and probabilistic injury modeling"
+    ],
+    "success_criteria": [
+      "Tier 1 implementation: 15-20% accuracy gain (25-35 hours)",
+      "Tier 1+2 implementation: 25-30% accuracy gain (40-55 hours)",
+      "Full V4 implementation: 25-40% accuracy gain (60-85 hours)",
+      "Statistical rigor: 9.5/10 (up from 8/10 in V3)",
+      "All V3 strengths preserved (Bayesian, EWMA, data quality, performance)",
+      "Zero regression in production readiness (maintain 9/10)",
+      "Comprehensive test coverage for all new statistical methods"
+    ]
+  },
+
+  "technical_approach": {
+    "architecture": {
+      "core_principle": "Preserve V3's single-file architecture (skip modularization per user request) while enhancing statistical methods",
+      "key_components": [
+        "scripts/calculate-performance-floors.js (main script, currently 1,753 lines)",
+        "scripts/utils/bootstrap-intervals.js (bootstrap confidence intervals)",
+        "scripts/utils/temporal-smoothing.js (EWMA smoothing)",
+        "scripts/utils/hierarchical-stats.js (Bayesian shrinkage)",
+        "scripts/utils/query-retry.js (database resilience, added in V3)",
+        "performance-floors-config.json (feature flags and parameters)"
+      ],
+      "design_patterns": [
+        "Statistical ensemble: Combine multiple methods (Bayesian + EWMA + Bootstrap + Trends) for robust estimates",
+        "Adaptive methods: Use player/position/game-specific parameters instead of static values",
+        "Graceful degradation: Fall back to simpler methods when sample size insufficient",
+        "Feature flags: Toggle algorithmic layers via config for A/B testing"
+      ]
+    },
+    "statistical_methods": {
+      "time_series": {
+        "current": "Standard bootstrap assumes IID (independent, identically distributed) observations",
+        "v4_enhancement": "Block bootstrap with 2-3 game blocks to preserve autocorrelation structure",
+        "impact": "5-12% improvement in calibration, intervals 20-30% more accurate"
+      },
+      "trend_detection": {
+        "current": "Weighted linear regression with heuristic scaling (trendFactor × length × maxAdjustment)",
+        "v4_enhancement": "Normalize slope by seasonStdDev + exponential time decay for bye weeks",
+        "impact": "5-15% gain in post-bye week accuracy, statistically interpretable coefficients"
+      },
+      "opponent_matchups": {
+        "current": "Total yards allowed per position with Bayesian shrinkage",
+        "v4_enhancement": "Position-specific matchups (WR vs CB rankings, RB vs Front-7, TE vs LB/Safety)",
+        "impact": "15-25% gain - biggest single improvement opportunity"
+      },
+      "efficiency_normalization": {
+        "current": "Hardcoded EPA range (-0.1 to 0.3)",
+        "v4_enhancement": "Normalize to league average per season dynamically",
+        "impact": "5-10% gain via season-adaptive calibration"
+      },
+      "regime_detection": {
+        "current": "No detection - resamples entire history including stale periods",
+        "v4_enhancement": "CUSUM algorithm to detect state changes, weight recent data 80%",
+        "impact": "4-9% post-injury MAE reduction"
+      },
+      "rb_decomposition": {
+        "current": "Pooled season-long efficiency rates",
+        "v4_enhancement": "Separate component models for rushing yards, receiving yards, TDs",
+        "impact": "5-10% RB floor accuracy"
+      }
+    },
+    "technology_stack": {
+      "language": "Node.js (ES modules)",
+      "database": "Supabase (PostgreSQL)",
+      "statistics": "Custom implementations (no heavy ML libraries)",
+      "testing": "Manual validation + historical backtesting",
+      "deployment": "Single script execution via npm run floors"
+    }
+  },
+
+  "implementation_phases": [
+    {
+      "phase": "A",
+      "name": "Quick Wins",
+      "duration": "5-10 hours",
+      "expected_gain": "10-15%",
+      "objective": "Implement high-ROI, low-effort improvements to build momentum",
+      "tasks": [3, 5, 6, 10, 20],
+      "deliverables": [
+        "Standardized trend factor (normalize by σ)",
+        "Dynamic efficiency normalization (per-season EPA ranges)",
+        "Bootstrap percentile fallback for n<5 samples",
+        "Refined IQR outlier detection (full season calculation)",
+        "Rename legacy 'confidence' variable for clarity"
+      ],
+      "validation": [
+        "Compare trend factors before/after normalization (should be interpretable)",
+        "Verify EPA ranges adapt per season (check 2024 vs 2025 ranges)",
+        "Test small-sample bootstrap (n=3,4,5 game players)",
+        "Outlier detection comparison (old vs new IQR method)",
+        "Code readability audit (variable naming)"
+      ]
+    },
+    {
+      "phase": "B",
+      "name": "Core Statistical Enhancements",
+      "duration": "25-35 hours",
+      "expected_gain": "20-30%",
+      "objective": "Fix critical statistical flaws identified in V3 review",
+      "tasks": [1, 2, 4, 7, 8],
+      "deliverables": [
+        "Position-specific opponent matchups (WR vs CB, RB vs Front-7, TE vs LB/Safety)",
+        "Block bootstrap for time series (2-3 game blocks)",
+        "Time-aware trend detection (exponential decay by actual days)",
+        "Regime change detection (CUSUM algorithm)",
+        "RB fantasy point decomposition (rush/rec/TD components)"
+      ],
+      "validation": [
+        "Backtest WR floors vs actual with CB rankings (expect 15-25% MAE reduction)",
+        "Bootstrap interval coverage test (should hit 80% target ±2%)",
+        "Post-bye week projection accuracy (should improve 10-15%)",
+        "Regime detection on known injury cases (Jordan Mason, Christian McCaffrey)",
+        "RB floor accuracy by component (rushing vs receiving separately)"
+      ]
+    },
+    {
+      "phase": "C",
+      "name": "Advanced Refinements",
+      "duration": "20-30 hours",
+      "expected_gain": "5-10%",
+      "objective": "Add adaptive and context-aware enhancements",
+      "tasks": [9, 11, 12, 13, 18, 19],
+      "deliverables": [
+        "Dynamic EWMA alpha (adaptive based on CV + game count)",
+        "Dynamic RB efficiency (rolling 4-6 game window with Bayesian blend)",
+        "Player-specific environment modifiers (historical performance by condition)",
+        "Game script awareness (Vegas implied totals for volume)",
+        "Probabilistic injury modeling (snap counts + participation rate)",
+        "Enhanced opportunity metrics (air yards, routes, red zone targets)"
+      ],
+      "validation": [
+        "EWMA alpha adaptation test (high-CV vs low-CV players)",
+        "RB efficiency rolling window validation (mid-season accuracy)",
+        "Weather performance correlation (players with 10+ weather games)",
+        "Volume projection accuracy with Vegas context",
+        "Injury discount validation (snap count correlation)",
+        "WR/TE opportunity metric correlation with actual production"
+      ]
+    },
+    {
+      "phase": "D",
+      "name": "Polish & Production Hardening",
+      "duration": "15-25 hours",
+      "expected_gain": "1-5%",
+      "objective": "Production-ready refinements and edge case handling",
+      "tasks": [14, 15, 16, 17, 21, 22, 23, 24, 25],
+      "deliverables": [
+        "Dynamic opponent trend recalibration (weekly rolling)",
+        "Environment modifier calibration (isotonic regression)",
+        "Empirical Bayes opponent factors (τ² from variance)",
+        "CV-scaled bootstrap width (scale deviations directly)",
+        "Winsorize IQR for small samples (n=5-8)",
+        "Defensive injury impact on matchups",
+        "Red zone efficiency tracking",
+        "Probabilistic weather forecasts",
+        "Feature flag feedback in JSON output"
+      ],
+      "validation": [
+        "Mid-season opponent factor drift analysis",
+        "Historical error calibration (isotonic fit quality)",
+        "Early-season Bayesian shrinkage convergence",
+        "Bootstrap coverage across CV ranges",
+        "Small-sample stability (n=5-8 games)",
+        "Defensive injury correlation with matchup factors",
+        "Red zone target correlation with TD scoring",
+        "Weather forecast integration testing",
+        "Feature flag audit trail verification"
+      ]
+    }
+  ],
+
+  "tasks": [
+    {
+      "id": 1,
+      "name": "Position-Specific Opponent Matchups",
+      "phase": "B",
+      "priority": "HIGH",
+      "effort": "8-12h",
+      "impact": "15-25% gain",
+      "description": "Replace generic total yards allowed with position-specific defensive rankings. WR floors use CB rankings, RB floors use Front-7 rankings, TE floors use LB/Safety rankings.",
+      "current_issue": "Uses total yards allowed for all positions, missing nuanced matchup advantages",
+      "solution": "Query defensive stats by sub-position. Map WR routes to CB coverage, RB attempts to front-7 run defense, TE targets to LB/Safety coverage. Apply position-specific shrinkage.",
+      "location": "calculateOpponentFactor() L280-380",
+      "dependencies": [],
+      "subtasks": [
+        "Add defensive player stats tables (CB, LB, Safety rankings)",
+        "Implement WR vs CB matchup algorithm (target share vs coverage rating)",
+        "Implement RB vs Front-7 algorithm (rush attempts vs front-7 yards/attempt)",
+        "Implement TE vs LB/Safety algorithm (target share vs coverage rating)",
+        "Update Bayesian shrinkage per sub-position (separate pools)",
+        "Cache preloaded defensive rankings",
+        "Backtest on 2024 season WR/RB/TE data",
+        "Add position-specific opponent factor to JSON output"
+      ],
+      "testing": [
+        "Validate CB rankings vs actual WR performance (expect stronger correlation than total defense)",
+        "Backtest 2024 WR floors with CB matchups (target 15-25% MAE reduction)",
+        "Test edge cases: backup CBs, injury replacements, slot vs outside WRs",
+        "Verify shrinkage prevents extreme matchup factors (cap at 0.7-1.3 range)"
+      ],
+      "success_metrics": [
+        "WR floor MAE reduction: 15-25%",
+        "RB floor MAE reduction: 10-15%",
+        "TE floor MAE reduction: 8-12%",
+        "Correlation improvement: matchup factor vs actual performance"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Block Bootstrap (Time Series)",
+      "phase": "B",
+      "priority": "HIGH",
+      "effort": "6-8h",
+      "impact": "5-12% calibration",
+      "description": "Replace IID bootstrap assumption with moving block bootstrap to preserve autocorrelation in player performance time series.",
+      "current_issue": "Standard bootstrap assumes independence, but player stats exhibit autocorrelation (hot/cold streaks). Intervals are 20-30% too narrow.",
+      "solution": "Implement moving block bootstrap with 2-3 game blocks. Resample blocks instead of individual games to preserve within-block correlation structure.",
+      "location": "scripts/utils/bootstrap-intervals.js",
+      "dependencies": [],
+      "subtasks": [
+        "Implement block selection algorithm (overlapping 2-3 game windows)",
+        "Update bootstrap resample logic to use blocks instead of individual observations",
+        "Add autocorrelation detection (decide block size adaptively)",
+        "Preserve modifier integration (environment, opponent, trend)",
+        "Test block bootstrap vs standard bootstrap on known autocorrelated series",
+        "Validate interval coverage (target 80% ±2%)",
+        "Update calculateStatFloor() to call block bootstrap",
+        "Document autocorrelation handling in comments"
+      ],
+      "testing": [
+        "Simulate autocorrelated time series, verify block bootstrap intervals contain true value at expected rate",
+        "Compare coverage rates: block bootstrap vs IID bootstrap (expect 5-12% improvement)",
+        "Test on high-variance players with known streakiness (Ja'Marr Chase, Tyreek Hill)",
+        "Edge case: n<6 games (fall back to standard bootstrap)"
+      ],
+      "success_metrics": [
+        "Interval coverage: 80% target ±2% (currently ~65-70%)",
+        "Calibration improvement: 5-12% better coverage",
+        "Autocorrelation detection: Correctly identify streak players"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Standardized Trend Factor",
+      "phase": "A",
+      "priority": "HIGH",
+      "effort": "2h",
+      "impact": "5-10% gain",
+      "description": "Replace heuristic trend scaling with statistically-grounded normalization by seasonStdDev.",
+      "current_issue": "Trend factor scaled by (slope × maxAdjustment × gameCount) is hard to tune and lacks statistical interpretation.",
+      "solution": "Normalize slope by seasonStdDev to get interpretable effect sizes. A slope of +5 yds/game for a player with σ=20 → 0.25σ trend, scaled appropriately.",
+      "location": "calculateStatFloor() L1082-1126 (weighted linear regression section)",
+      "dependencies": [],
+      "subtasks": [
+        "Calculate seasonStdDev before trend detection",
+        "Normalize slope: normalizedSlope = slope / seasonStdDev",
+        "Replace heuristic scaling with: trendFactor = 1 + (normalizedSlope × trendSensitivity)",
+        "Add trendSensitivity config parameter (default 0.5)",
+        "Cap trend adjustment at ±30% (prevent extreme swings)",
+        "Log trend factor with interpretation (e.g., '+0.3σ uptrend')",
+        "Backtest on trending players (Puka Nacua 2024, Kyren Williams 2024)"
+      ],
+      "testing": [
+        "Verify trend factors are interpretable (σ-based effect sizes)",
+        "Test on known uptrends (rookies breaking out mid-season)",
+        "Test on known downtrends (aging RBs losing volume)",
+        "Edge case: stdDev = 0 (prevent division by zero)"
+      ],
+      "success_metrics": [
+        "Trend detection accuracy: 5-10% MAE reduction on trending players",
+        "Interpretability: Effect sizes in σ units",
+        "Stability: No extreme trend factors (verify ±30% cap works)"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Time-Aware Trend Detection",
+      "phase": "B",
+      "priority": "HIGH",
+      "effort": "6h",
+      "impact": "10-15% post-bye",
+      "description": "Replace equal game spacing with exponential time decay based on actual days between games. Bye weeks and injuries create unequal time gaps that affect trend relevance.",
+      "current_issue": "Weighted regression assumes equal spacing (game 1, 2, 3...) but bye weeks create 14-day gaps vs 7-day normal gaps. Recent games after bye should be weighted more heavily.",
+      "solution": "Calculate days between games, apply exponential decay: weight_i = exp(-lambda × days_since_i). Recent games get higher weight, stale games decay faster.",
+      "location": "calculateStatFloor() L1082-1126 (trend section)",
+      "dependencies": [3],
+      "subtasks": [
+        "Query game dates from games table",
+        "Calculate days_since for each game in recent window",
+        "Implement exponential decay: weight = exp(-lambda × days / 7) where lambda=0.1 (configurable)",
+        "Update weighted regression to use time-based weights instead of linear weights",
+        "Add lambda config parameter for decay rate tuning",
+        "Test on post-bye scenarios (expect higher recent game weight)",
+        "Backtest on 2024 bye weeks (weeks 5-14)"
+      ],
+      "testing": [
+        "Verify exponential weights: game from 7 days ago vs 14 days ago (should have 2x+ weight difference)",
+        "Post-bye accuracy test: compare time-aware vs equal spacing (expect 10-15% gain)",
+        "Test injury returns (Christian McCaffrey return from IR)",
+        "Edge case: condensed schedule (Thursday games)"
+      ],
+      "success_metrics": [
+        "Post-bye week MAE: 10-15% reduction",
+        "Time-decay validation: Weights follow exponential curve",
+        "Injury return accuracy improvement"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Dynamic Efficiency Normalization",
+      "phase": "A",
+      "priority": "HIGH",
+      "effort": "2-4h",
+      "impact": "5-10% modifier gain",
+      "description": "Replace hardcoded EPA range (-0.1 to 0.3) with dynamic normalization to league average per season.",
+      "current_issue": "EPA ranges shift year-over-year due to rule changes, officiating, meta shifts. Hardcoded values cause 5-10% miscalibration.",
+      "solution": "Query league-wide EPA distribution per season, normalize player EPA to z-score or percentile rank. Efficiency modifier adapts to current season context.",
+      "location": "calculateEfficiencyModifier() L1200",
+      "dependencies": [],
+      "subtasks": [
+        "Preload league-wide EPA stats per season (mean, stdDev, p25, p75)",
+        "Calculate player EPA z-score: (playerEPA - leagueMean) / leagueStdDev",
+        "Map z-score to efficiency modifier: z=+1 → 1.10, z=-1 → 0.90 (configurable scale)",
+        "Cache season EPA distributions",
+        "Add efficiency_normalization config section",
+        "Backtest 2024 vs 2023 EPA ranges (verify they differ)",
+        "Update efficiency modifier to use z-score method"
+      ],
+      "testing": [
+        "Verify EPA ranges differ across seasons (2024 vs 2023 mean/stdDev)",
+        "Test high-efficiency players (z > 1.5): Josh Allen, Lamar Jackson",
+        "Test low-efficiency players (z < -1.0): struggling offenses",
+        "Edge case: missing EPA data (fall back to hardcoded range)"
+      ],
+      "success_metrics": [
+        "Efficiency modifier calibration: 5-10% MAE reduction",
+        "Season adaptation: EPA distributions update correctly per year",
+        "Correlation: EPA z-score vs actual performance improvement"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Bootstrap Fallback (n<5)",
+      "phase": "A",
+      "priority": "HIGH",
+      "effort": "1-2h",
+      "impact": "15-20% bias cut",
+      "description": "Use percentile bootstrap method for small samples (n<5) instead of parametric assumption (assumes normality).",
+      "current_issue": "Parametric bootstrap assumes normal distribution, which fails for n=2-4 games. Creates biased intervals.",
+      "solution": "When n<5, use percentile method: resample, calculate floor, take 15th percentile of resampled floors. No normality assumption.",
+      "location": "scripts/utils/bootstrap-intervals.js",
+      "dependencies": [],
+      "subtasks": [
+        "Detect sample size in bootstrap function",
+        "Branch: if n<5 → percentile method, else → parametric method",
+        "Implement percentile bootstrap: resample 1000 times, calculate floor each time, return 15th percentile",
+        "Test on small-sample players (rookies with 2-3 games)",
+        "Compare parametric vs percentile intervals for n=3,4",
+        "Add warning log for small-sample cases",
+        "Document percentile method in code comments"
+      ],
+      "testing": [
+        "Simulate small samples (n=2,3,4) from known distributions, verify percentile method is unbiased",
+        "Compare coverage: parametric vs percentile for small n (expect 15-20% improvement)",
+        "Test on 2024 rookies with limited games (Marvin Harrison Jr. first 3 games)",
+        "Edge case: n=1 (fall back to single observation, wide interval)"
+      ],
+      "success_metrics": [
+        "Small-sample bias reduction: 15-20%",
+        "Interval coverage for n<5: closer to 80% target",
+        "Robustness: No normality assumption violations"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Regime Change Detection",
+      "phase": "B",
+      "priority": "HIGH",
+      "effort": "6-10h",
+      "impact": "4-9% post-injury MAE",
+      "description": "Implement CUSUM algorithm to detect when player performance regime changes (injury, role change, scheme change). Weight recent data 80% after regime shift.",
+      "current_issue": "Bootstrap resamples entire history including stale pre-injury or pre-role-change periods. Causes 4-9% error for players with state changes.",
+      "solution": "Run CUSUM test on recent 8-10 games to detect significant mean shifts. If detected, weight recent 80%, old 20%. Prevents stale history contamination.",
+      "location": "calculateStatFloor() pre-L1294 (before bootstrap call)",
+      "dependencies": [],
+      "subtasks": [
+        "Implement CUSUM algorithm (cumulative sum of deviations from mean)",
+        "Set CUSUM threshold for regime detection (5σ shift)",
+        "Detect regime change point (which game marks the shift)",
+        "Partition data: pre-regime (weight 20%) vs post-regime (weight 80%)",
+        "Pass weights to bootstrap function (modify to accept observation weights)",
+        "Test on known regime changes (Jordan Mason week 1 vs week 2-7, CMC return)",
+        "Add regime detection flag to JSON output",
+        "Document CUSUM threshold tuning in config"
+      ],
+      "testing": [
+        "Validate CUSUM on synthetic regime shifts (simulate mean change at game 5)",
+        "Test on Jordan Mason 2024 (week 1 backup role → week 2-7 starter role)",
+        "Test on Christian McCaffrey IR return",
+        "False positive rate test (stable players should not trigger regime detection)",
+        "Edge case: n<8 games (skip regime detection)"
+      ],
+      "success_metrics": [
+        "Post-injury MAE reduction: 4-9%",
+        "Regime detection accuracy: TP rate >80%, FP rate <10%",
+        "Weight distribution: Pre-regime 20%, post-regime 80%"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "RB Fantasy Decomposition",
+      "phase": "B",
+      "priority": "HIGH",
+      "effort": "10-14h",
+      "impact": "5-10% RB floors",
+      "description": "Replace pooled RB fantasy scoring with separate component models for rushing yards, receiving yards, and TDs. Each component gets independent floor projection, then combined.",
+      "current_issue": "Season-long efficiency rates ignore mid-season shifts in role (pass-catching back vs early-down back). Causes 5-10% error for RBs.",
+      "solution": "Model rushing fantasy = f(rushAttempts × rushYds/Att × modifier), receiving fantasy = f(targets × recYds/Target × modifier), TD fantasy = f(redZoneOpportunities × TDrate). Sum components with covariance adjustment.",
+      "location": "calculateStatFloor() L1288-1356 (RB efficiency section)",
+      "dependencies": [],
+      "subtasks": [
+        "Split RB stats into components: rushing (attempts, yds/att), receiving (targets, yds/tgt), TDs (RZ opportunities, TD rate)",
+        "Calculate component floors separately using opportunity-based projections",
+        "Implement covariance matrix for component correlation (rushing TDs vs receiving TDs)",
+        "Combine component floors: fantasyFloor = rushFloor + recFloor + tdFloor - covarianceAdjustment",
+        "Add rolling 4-6 game efficiency windows for each component",
+        "Test on dual-threat RBs (Alvin Kamara, Austin Ekeler)",
+        "Test on early-down specialists (Derrick Henry)",
+        "Add component breakdown to JSON output"
+      ],
+      "testing": [
+        "Validate component correlation matrix (expect negative correlation: rush-heavy weeks → fewer targets)",
+        "Backtest dual-threat RBs: component model vs pooled model (expect 5-10% improvement)",
+        "Test early-down backs: component model should isolate rushing variance",
+        "Edge case: receiving-only backs (James White type players)"
+      ],
+      "success_metrics": [
+        "RB floor MAE reduction: 5-10%",
+        "Component accuracy: Each component within ±15% of actual",
+        "Role adaptation: Mid-season role changes reflected in components"
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Dynamic EWMA Alpha",
+      "phase": "C",
+      "priority": "MEDIUM",
+      "effort": "3h",
+      "impact": "3-5% error cut",
+      "description": "Replace fixed EWMA alpha per position with adaptive alpha based on player CV (coefficient of variation) and game count.",
+      "current_issue": "High-variance players (boom/bust WRs) benefit from more smoothing (lower alpha), but fixed alpha treats all players equally. Causes 3-5% suboptimal weighting.",
+      "solution": "Calculate player CV, adjust alpha: high CV → lower alpha (more smoothing), low CV → higher alpha (more responsive). Also increase alpha as game count grows (more data = less smoothing needed).",
+      "location": "scripts/utils/temporal-smoothing.js + calculateStatFloor() L1212",
+      "dependencies": [],
+      "subtasks": [
+        "Calculate player CV: stdDev / mean",
+        "Implement alpha adaptation: alpha_base × (1 - CV/2) × (1 + log(gameCount)/10)",
+        "Add alpha_adaptation config parameters (base, CV_scale, game_scale)",
+        "Test on high-CV players (DeSean Jackson type boom/bust)",
+        "Test on low-CV players (consistent target share WRs)",
+        "Validate EWMA smoothing quality (compare to rolling average)",
+        "Update temporal-smoothing.js to accept adaptive alpha"
+      ],
+      "testing": [
+        "Verify alpha adapts correctly: high CV → lower alpha, more games → higher alpha",
+        "Backtest high-variance players: adaptive vs fixed alpha (expect 3-5% MAE reduction)",
+        "Test on consistent players: adaptive alpha should allow higher responsiveness",
+        "Edge case: CV undefined (mean=0)"
+      ],
+      "success_metrics": [
+        "High-variance player MAE: 3-5% reduction",
+        "Alpha correlation: Negative with CV, positive with game count",
+        "Smoothing quality: EWMA closer to true underlying mean"
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Refined IQR Outlier Detection",
+      "phase": "A",
+      "priority": "MEDIUM",
+      "effort": "2h",
+      "impact": "Better judgment",
+      "description": "Calculate IQR on full season dataset only, then apply same thresholds to both season and recent datasets. Currently mixes datasets causing inconsistent outlier removal.",
+      "current_issue": "Calculates IQR on mixed season+recent dataset, then applies to both. Can remove valid recent spikes as 'outliers' even if they're legitimate role changes.",
+      "solution": "Calculate IQR(season), get Q1/Q3/fences, apply fences to season data AND recent data separately. Prevents recent regime changes from being flagged as outliers.",
+      "location": "validateAndCleanStats() L977",
+      "dependencies": [],
+      "subtasks": [
+        "Separate season and recent datasets in validation function",
+        "Calculate IQR bounds on season data only: Q1, Q3, fences = Q1 - 1.5×IQR, Q3 + 1.5×IQR",
+        "Apply fences to season data (remove outliers)",
+        "Apply same fences to recent data (flag but preserve legitimate spikes)",
+        "Add outlier flag to recent data (mark but don't remove)",
+        "Log outlier removal counts (season vs recent)",
+        "Test on players with recent role explosions (Puka Nacua week 1-3)"
+      ],
+      "testing": [
+        "Verify IQR calculated on season data only",
+        "Test on role change players (backup → starter): recent spikes should NOT be removed as outliers",
+        "Test on true outliers (1-game injury performance): should be removed from season data",
+        "Edge case: n<4 games (IQR undefined, skip outlier removal)"
+      ],
+      "success_metrics": [
+        "Outlier removal accuracy: True outliers removed, regime changes preserved",
+        "Recent data integrity: Role changes not flagged as outliers",
+        "Judgment improvement: Better distinction between noise and signal"
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Dynamic RB Efficiency",
+      "phase": "C",
+      "priority": "MEDIUM",
+      "effort": "5h",
+      "impact": "8-12% RB gain",
+      "description": "Replace season-long RB efficiency rates with rolling 4-6 game window blended with Bayesian prior.",
+      "current_issue": "Season-long yds/attempt and yds/target rates don't capture mid-season O-line changes, scheme shifts, or injury impacts. Causes 8-12% error for RBs.",
+      "solution": "Calculate rolling 4-6 game efficiency rates, blend with Bayesian prior (position average). Recent games get 70% weight, prior gets 30%.",
+      "location": "calculateStatFloor() L1288-1356 (RB efficiency calculation)",
+      "dependencies": [8],
+      "subtasks": [
+        "Implement rolling window function (last 4-6 games)",
+        "Calculate rolling yds/attempt and yds/target",
+        "Load position-level Bayesian priors (league average RB efficiency)",
+        "Blend rolling efficiency with prior: blendedEfficiency = 0.7 × rolling + 0.3 × prior",
+        "Add blend_weight config parameter",
+        "Test on RBs with mid-season O-line changes (injuries to OL)",
+        "Test on scheme changes (new OC, play-caller changes)",
+        "Add rolling efficiency to JSON output"
+      ],
+      "testing": [
+        "Verify rolling window updates correctly (drops old games, adds new games)",
+        "Backtest mid-season O-line injuries: rolling vs static efficiency (expect 8-12% gain)",
+        "Test early-season RBs (n<6 games): Bayesian prior should dominate blend",
+        "Edge case: n<4 games (use prior only)"
+      ],
+      "success_metrics": [
+        "Mid-season RB MAE: 8-12% reduction",
+        "Rolling window validation: Captures efficiency shifts",
+        "Bayesian blend: Stabilizes small-sample estimates"
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Player-Specific Environment Modifiers",
+      "phase": "C",
+      "priority": "MEDIUM",
+      "effort": "12h",
+      "impact": "5-8% weather games",
+      "description": "Replace static environment modifiers (turf, dome, wind, rain) with player-specific historical performance by condition.",
+      "current_issue": "Static modifiers apply same adjustment to all players, but some players thrive in adverse conditions (cold weather backs, dome WRs). Causes 5-8% miscalibration in weather games.",
+      "solution": "Query player's historical performance in each condition (dome games, turf games, wind >15mph, rain games, cold <32F). Calculate player-specific modifier as historical avg vs overall avg.",
+      "location": "calculateEnvironmentModifier() L410-480",
+      "dependencies": [],
+      "subtasks": [
+        "Query game_weather table for historical conditions per game",
+        "Group player stats by condition: dome, turf, wind, precipitation, temperature",
+        "Calculate player's avg performance in each condition",
+        "Calculate player's overall avg performance",
+        "Player-specific modifier = (conditionAvg / overallAvg) - 1",
+        "Blend with static modifier: 70% player-specific, 30% static (for small samples)",
+        "Require minimum 5 games per condition for player-specific modifier",
+        "Add player environment profile to JSON output"
+      ],
+      "testing": [
+        "Test dome specialists (players with 10+ dome games, check if modifier is positive)",
+        "Test cold-weather players (northern teams, winter months)",
+        "Test wind-sensitive players (QBs, kickers in high-wind games)",
+        "Edge case: n<5 games in condition (fall back to static modifier)"
+      ],
+      "success_metrics": [
+        "Weather game MAE: 5-8% reduction",
+        "Player-specific correlation: Historical condition performance vs modifier",
+        "Sample size threshold: 5+ games required for player-specific adjustment"
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Game Script Awareness (Vegas Context)",
+      "phase": "C",
+      "priority": "MEDIUM",
+      "effort": "8h",
+      "impact": "10-15% volume",
+      "description": "Integrate Vegas implied team totals to adjust volume projections. High totals → more plays → more opportunities.",
+      "current_issue": "No awareness of game script (blowout vs shootout). High-scoring games produce 10-15% more volume, but floors don't account for this.",
+      "solution": "Query betting_lines table for implied team totals (from over/under and spread). High total (>27) → increase volume 10%, low total (<20) → decrease volume 10%. Apply to opportunity-based projections.",
+      "location": "calculateStatFloor() L1380-1400 (opportunity calculation section)",
+      "dependencies": [],
+      "subtasks": [
+        "Query game_betting_lines table for over/under and spread",
+        "Calculate implied team total: (O/U / 2) + (spread / 2)",
+        "Map total to volume modifier: total >27 → 1.10, total 20-27 → 1.00, total <20 → 0.90",
+        "Add script_sensitivity config parameter (default 0.10 for ±10%)",
+        "Apply volume modifier to projected attempts/targets",
+        "Test on high-total shootouts (Chiefs vs Bills type games)",
+        "Test on low-total defensive games",
+        "Add game script factor to JSON output"
+      ],
+      "testing": [
+        "Verify implied total calculation: O/U=50, spread=-3 → home 26.5, away 23.5",
+        "Backtest high-total games: volume modifier vs actual volume correlation",
+        "Test extreme totals: O/U >55 (should see significant volume boost)",
+        "Edge case: missing betting lines (fall back to season average total ~45)"
+      ],
+      "success_metrics": [
+        "Volume projection MAE: 10-15% reduction in games with extreme totals",
+        "Game script correlation: Implied total vs actual plays run",
+        "Modifier validation: High totals increase opportunities, low totals decrease"
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Dynamic Opponent Trend Recalibration",
+      "phase": "D",
+      "priority": "MEDIUM",
+      "effort": "2-3h",
+      "impact": "2-3% mid-season",
+      "description": "Replace static preloaded opponent factors with weekly rolling recalibration to capture mid-season defensive improvement/decline.",
+      "current_issue": "Opponent factors preloaded at start, don't update as defenses improve/decline. Causes 2-3% drift by mid-season.",
+      "solution": "Recalculate opponent defensive stats weekly using rolling 4-6 game window. Update caps and shrinkage targets dynamically.",
+      "location": "calculateOpponentFactor() + preloadOpponentDefensiveStats()",
+      "dependencies": [1],
+      "subtasks": [
+        "Modify preloadOpponentDefensiveStats() to accept week parameter",
+        "Implement rolling window: last 4-6 games for defensive stats",
+        "Update opponent factor cache weekly (clear old cache, reload new)",
+        "Add weekly_recalibration config flag (default true)",
+        "Test on defenses with mid-season changes (injuries, scheme shifts)",
+        "Log opponent factor drift (week 1 vs week 10 values)",
+        "Add recalibration timestamp to cache"
+      ],
+      "testing": [
+        "Verify opponent factors update weekly (week 1 vs week 10 comparison)",
+        "Test on improving defenses (new DC, healthy roster)",
+        "Test on declining defenses (injuries to star players)",
+        "Edge case: early season (n<4 games, use season-long average)"
+      ],
+      "success_metrics": [
+        "Mid-season MAE reduction: 2-3%",
+        "Opponent factor drift tracking: Captures defensive changes",
+        "Recalibration frequency: Weekly updates during season"
+      ]
+    },
+    {
+      "id": 15,
+      "name": "Calibrate Environment Modifiers",
+      "phase": "D",
+      "priority": "MEDIUM",
+      "effort": "8-12h",
+      "impact": "1-3% accuracy",
+      "description": "Use isotonic regression on historical errors to calibrate environment modifier effect sizes instead of hardcoded values.",
+      "current_issue": "Uncalibrated effect sizes (e.g., wind -5%, rain -8%) are guesses, not empirically derived. Causes 1-3% miscalibration.",
+      "solution": "Collect historical data: environment conditions vs actual errors. Fit isotonic regression (monotonic fit) to map conditions → error adjustments. Use fitted curve for modifiers.",
+      "location": "calculateEnvironmentModifier()",
+      "dependencies": [12],
+      "subtasks": [
+        "Collect historical game data: conditions (wind, rain, temp, dome, turf) + actual vs predicted errors",
+        "Implement isotonic regression (monotonic least squares)",
+        "Fit curve: condition value → error adjustment",
+        "Replace hardcoded modifiers with isotonic fit predictions",
+        "Add calibration_mode config flag (use fitted vs hardcoded)",
+        "Require minimum 50 games per condition for calibration",
+        "Test calibration on 2023-2024 data, validate on 2025",
+        "Store calibration curves in config file"
+      ],
+      "testing": [
+        "Validate isotonic fit is monotonic (higher wind → lower performance)",
+        "Backtest calibrated modifiers vs hardcoded (expect 1-3% MAE improvement)",
+        "Test on extreme conditions (wind >25mph, temp <10F)",
+        "Edge case: insufficient calibration data (fall back to hardcoded)"
+      ],
+      "success_metrics": [
+        "Environment modifier accuracy: 1-3% MAE reduction",
+        "Calibration quality: Isotonic fit R² >0.8",
+        "Sample size: 50+ games per condition for reliable calibration"
+      ]
+    },
+    {
+      "id": 16,
+      "name": "Empirical Bayes Opponent Factors",
+      "phase": "D",
+      "priority": "MEDIUM",
+      "effort": "6-8h",
+      "impact": "2-5% early-season",
+      "description": "Replace linear Bayesian shrinkage heuristic with empirical Bayes using τ² (between-team variance) from actual defensive stats.",
+      "current_issue": "Shrinkage strength is guessed (e.g., shrink 30% toward mean). Empirical Bayes derives optimal shrinkage from data, improving early-season estimates 2-5%.",
+      "solution": "Calculate between-team variance τ² and within-team variance σ² from defensive stats. Optimal shrinkage = τ² / (τ² + σ²/n). Apply data-driven shrinkage.",
+      "location": "calculateOpponentFactor() L239 (Bayesian shrinkage section)",
+      "dependencies": [1],
+      "subtasks": [
+        "Calculate between-team variance τ² (variance of team defensive means)",
+        "Calculate within-team variance σ² (pooled variance within teams)",
+        "Compute optimal shrinkage: B = τ² / (τ² + σ²/n) where n = games per team",
+        "Apply shrinkage: shrunkFactor = B × observedFactor + (1-B) × pooledMean",
+        "Add empirical_bayes config flag (default true)",
+        "Test on early-season data (weeks 1-4, low n)",
+        "Compare shrinkage strength: empirical vs heuristic",
+        "Log shrinkage factor B in JSON output"
+      ],
+      "testing": [
+        "Verify τ² and σ² calculations match statistical definitions",
+        "Test early-season shrinkage (n=2-4 games): should shrink heavily toward mean",
+        "Test late-season shrinkage (n>10 games): should shrink minimally",
+        "Edge case: τ²=0 (all teams identical, full shrinkage to mean)"
+      ],
+      "success_metrics": [
+        "Early-season MAE reduction: 2-5%",
+        "Shrinkage validation: B adapts correctly with sample size",
+        "Optimal shrinkage: Data-driven vs heuristic comparison"
+      ]
+    },
+    {
+      "id": 17,
+      "name": "CV-Scaled Bootstrap Width",
+      "phase": "D",
+      "priority": "MEDIUM",
+      "effort": "4-6h",
+      "impact": "1-3% coverage",
+      "description": "Instead of adjusting confidence level only, scale resampled deviations directly by player CV for better interval calibration.",
+      "current_issue": "Adaptive confidence (0.70-0.90) adjusts which percentile to use, but doesn't adjust spread of resampled distribution. Better to scale deviations directly.",
+      "solution": "In bootstrap resampling, scale deviations from mean by CV factor: highCV → widen deviations by 10-20%, lowCV → narrow deviations by 10-20%. Then take percentile.",
+      "location": "calculateStatFloor() L1250 + bootstrap call",
+      "dependencies": [2, 6],
+      "subtasks": [
+        "Calculate player CV before bootstrap",
+        "In bootstrap resample loop, calculate deviation from mean for each observation",
+        "Scale deviation by CV factor: scaledDeviation = deviation × (1 + CV/2)",
+        "Resample using scaled deviations",
+        "Take 15th percentile of resampled distribution",
+        "Add cv_scaling config parameter (default 0.5 for CV/2)",
+        "Test on high-CV vs low-CV players",
+        "Validate interval coverage (should improve 1-3%)"
+      ],
+      "testing": [
+        "Verify deviation scaling: high CV → wider spread, low CV → narrower spread",
+        "Test interval coverage: scaled vs unscaled (expect 1-3% improvement)",
+        "Test on extreme CV players (boom/bust vs consistent)",
+        "Edge case: CV=0 (no scaling, use unscaled deviations)"
+      ],
+      "success_metrics": [
+        "Interval coverage improvement: 1-3%",
+        "Scaling validation: Deviations proportional to CV",
+        "Calibration: Intervals contain true value at expected rate"
+      ]
+    },
+    {
+      "id": 18,
+      "name": "Probabilistic Injury Modeling",
+      "phase": "C",
+      "priority": "MEDIUM",
+      "effort": "3-5h",
+      "impact": "7-12% injured players",
+      "description": "Replace fixed injury status discounts (OUT=-100%, QUESTIONABLE=-30%) with probabilistic model using snap counts and participation rates.",
+      "current_issue": "Fixed discounts are crude. QUESTIONABLE players have wide range of actual participation (10%-90%). Snap count data provides better estimates.",
+      "solution": "Query player_injury_status + recent snap counts. Model participation probability from injury status + recent snap trend. Apply probabilistic discount.",
+      "location": "calculateTeamFloors() (injury handling section)",
+      "dependencies": [],
+      "subtasks": [
+        "Query player_injury_status table for current injury status",
+        "Query recent 3 games snap counts (if available)",
+        "Model participation probability: OUT=0%, DOUBTFUL=25%, QUESTIONABLE=70%, PROBABLE=95%",
+        "Adjust probability based on snap trend (increasing vs decreasing)",
+        "Apply probabilistic floor: expectedFloor = floor × participationProbability",
+        "Add snap_count integration to data validation",
+        "Test on questionable players with known outcomes (did they play? at what snap %?)",
+        "Add participation probability to JSON output"
+      ],
+      "testing": [
+        "Verify participation probabilities match historical rates (QUESTIONABLE → 70% play rate)",
+        "Test snap trend adjustment (increasing snaps → higher probability)",
+        "Backtest injured players: probabilistic vs fixed discount (expect 7-12% MAE reduction)",
+        "Edge case: missing snap data (fall back to fixed discounts)"
+      ],
+      "success_metrics": [
+        "Injured player MAE reduction: 7-12%",
+        "Participation probability calibration: Match historical play rates",
+        "Snap trend correlation: Snap count trend vs actual participation"
+      ]
+    },
+    {
+      "id": 19,
+      "name": "Enhanced Opportunity Metrics",
+      "phase": "C",
+      "priority": "MEDIUM",
+      "effort": "4-6h",
+      "impact": "3-7% WR/TE gain",
+      "description": "Expand opportunity metrics beyond targets to include air yards, routes run, and red zone targets for WR/TE projections.",
+      "current_issue": "Target share alone misses quality of opportunity. Deep threat WRs get fewer targets but higher air yards. Red zone specialists get TD-heavy opportunities.",
+      "solution": "Query air yards (from play-by-play), routes run (from participation data), red zone targets. Weight opportunity score: 50% targets, 30% air yards, 20% RZ targets.",
+      "location": "calculateStatFloor() (WR/TE opportunity calculation)",
+      "dependencies": [],
+      "subtasks": [
+        "Query play_by_play table for air yards per target",
+        "Query player participation data for routes run %",
+        "Query red zone targets (plays inside opponent 20-yard line)",
+        "Calculate composite opportunity score: 0.5×targets + 0.3×(airYards/target) + 0.2×RZtargets",
+        "Apply opportunity score to yds/target efficiency projection",
+        "Add opportunity weights to config (targets_weight, air_yards_weight, rz_weight)",
+        "Test on deep threat WRs (Tyreek Hill, DK Metcalf)",
+        "Test on red zone specialists (Mike Evans, Davante Adams)",
+        "Add opportunity breakdown to JSON output"
+      ],
+      "testing": [
+        "Verify opportunity weights sum to 1.0 (0.5 + 0.3 + 0.2)",
+        "Test deep threat correlation: air yards vs actual yardage performance",
+        "Test red zone correlation: RZ targets vs TD scoring",
+        "Backtest WR/TE floors: composite opportunity vs targets-only (expect 3-7% gain)",
+        "Edge case: missing air yards data (fall back to targets only)"
+      ],
+      "success_metrics": [
+        "WR/TE floor MAE reduction: 3-7%",
+        "Opportunity correlation: Composite score vs actual fantasy points",
+        "Deep threat accuracy: Air yards improve projection for vertical WRs"
+      ]
+    },
+    {
+      "id": 20,
+      "name": "Rename Legacy Confidence Variable",
+      "phase": "A",
+      "priority": "LOW",
+      "effort": "0.5h",
+      "impact": "100% clarity",
+      "description": "Rename confusing 'confidence' variable to 'bootstrapPercentile' for code clarity.",
+      "current_issue": "Variable named 'confidence' actually stores percentile value (0.80), confusing for developers.",
+      "solution": "Find-replace 'confidence' → 'bootstrapPercentile' throughout codebase. Update comments to reflect percentile interpretation.",
+      "location": "L1647 (and all references)",
+      "dependencies": [],
+      "subtasks": [
+        "Search codebase for all 'confidence' variable usages",
+        "Replace with 'bootstrapPercentile' (ensure semantic correctness)",
+        "Update config file: confidence → bootstrap_percentile",
+        "Update comments explaining percentile interpretation",
+        "Test script execution (no logic changes, only naming)",
+        "Update documentation to use new variable name"
+      ],
+      "testing": [
+        "Verify script runs identically before/after rename",
+        "Confirm no variable name collisions",
+        "Code readability audit (check if clarity improved)"
+      ],
+      "success_metrics": [
+        "Code clarity: 100% improved naming",
+        "Zero logic changes: Output identical before/after",
+        "Developer experience: Easier to understand percentile concept"
+      ]
+    },
+    {
+      "id": 21,
+      "name": "Winsorize IQR for Small Samples (n=5-8)",
+      "phase": "D",
+      "priority": "LOW",
+      "effort": "2-3h",
+      "impact": "Small stability",
+      "description": "For small samples (n=5-8), winsorize outliers instead of removing them to preserve sample size.",
+      "current_issue": "Removing outliers from small samples reduces n further, destabilizing estimates. Better to cap outliers at fence value.",
+      "solution": "When n=5-8, detect outliers via IQR, but instead of removing, winsorize: cap at lower/upper fence values. Preserves sample size.",
+      "location": "validateAndCleanStats() L977",
+      "dependencies": [10],
+      "subtasks": [
+        "Detect sample size: if n=5-8 → winsorize mode, else → remove mode",
+        "Calculate IQR fences (Q1 - 1.5×IQR, Q3 + 1.5×IQR)",
+        "For outliers: cap at fence value instead of removing",
+        "Log winsorization (which values capped, at what level)",
+        "Test on small-sample players with outliers (rookies with 1 explosive game)",
+        "Compare winsorized vs removed: sample size preservation",
+        "Add winsorize_threshold config parameter (default n=8)"
+      ],
+      "testing": [
+        "Verify winsorization preserves sample size (n before = n after)",
+        "Test outlier capping: extreme value → fence value",
+        "Compare stability: winsorized vs removed for n=5-8",
+        "Edge case: n<5 (skip outlier handling entirely)"
+      ],
+      "success_metrics": [
+        "Sample size preservation: n unchanged after winsorization",
+        "Small-sample stability: Reduced variance in estimates",
+        "Outlier handling: Extreme values capped, not removed"
+      ]
+    },
+    {
+      "id": 22,
+      "name": "Defensive Injury Impact on Matchups",
+      "phase": "D",
+      "priority": "LOW",
+      "effort": "10h",
+      "impact": "3-5% matchups",
+      "description": "Account for defensive injuries (star CB out, LB injuries) when calculating opponent matchup factors.",
+      "current_issue": "Opponent factors use season-long defensive stats, don't account for week-specific injuries (e.g., top CB on IR). Causes 3-5% matchup errors.",
+      "solution": "Query defensive player_injury_status for upcoming game. If key defenders OUT/DOUBTFUL, adjust opponent factor (easier matchup). Weight by player importance.",
+      "location": "calculateOpponentFactor()",
+      "dependencies": [1, 14],
+      "subtasks": [
+        "Identify key defensive players per team (CB1, LB1, edge rusher)",
+        "Query defensive injuries for upcoming game",
+        "Calculate injury impact score: CB1 out → +15% easier matchup, LB1 out → +10%",
+        "Adjust opponent factor: factor × (1 + injuryImpact)",
+        "Add defensive_injury_weights to config (CB1=0.15, LB1=0.10, etc.)",
+        "Test on games with known defensive injuries (e.g., Jalen Ramsey out)",
+        "Add defensive injury context to JSON output"
+      ],
+      "testing": [
+        "Verify injury impact calculation: multiple injuries additive",
+        "Backtest games with defensive injuries: adjusted vs non-adjusted factors",
+        "Test on WR vs injured CB matchups (expect easier matchup boost)",
+        "Edge case: missing defensive injury data (fall back to baseline factor)"
+      ],
+      "success_metrics": [
+        "Matchup-adjusted MAE reduction: 3-5%",
+        "Injury correlation: Defensive injuries vs offensive performance boost",
+        "Adjustment validation: Key injuries improve opponent matchup factor"
+      ]
+    },
+    {
+      "id": 23,
+      "name": "Red Zone Efficiency Tracking",
+      "phase": "D",
+      "priority": "LOW",
+      "effort": "15h",
+      "impact": "Better TD proj",
+      "description": "Add red zone efficiency metrics (targets, attempts, TDs inside 20-yard line) for better TD floor projections.",
+      "current_issue": "TD projections based on overall opportunity, but red zone specialists (Mike Evans, Rob Gronkowski types) score TDs at higher rates. Missing this context reduces TD floor accuracy.",
+      "solution": "Query play_by_play for red zone plays (field position <20 yards). Calculate RZ target share, RZ attempt share, RZ TD rate. Apply RZ multiplier to TD floors.",
+      "location": "New function: calculateRedZoneEfficiency()",
+      "dependencies": [],
+      "subtasks": [
+        "Query play_by_play for plays with yardline_100 ≤ 20",
+        "Calculate red zone metrics: RZ targets, RZ rushes, RZ TDs",
+        "Calculate RZ TD rate: RZ_TDs / RZ_opportunities",
+        "Compare player RZ rate to position average",
+        "Apply RZ multiplier to TD floor projection: tdFloor × (playerRZrate / posAvgRZrate)",
+        "Add red_zone_multiplier to config (default enabled)",
+        "Test on RZ specialists (Mike Evans, Davante Adams, Alvin Kamara)",
+        "Add RZ efficiency to JSON output"
+      ],
+      "testing": [
+        "Verify RZ opportunity calculation (plays inside 20-yard line)",
+        "Test RZ TD rate correlation with actual TD scoring",
+        "Backtest RZ specialists: RZ-adjusted vs non-adjusted TD floors",
+        "Edge case: n<5 RZ opportunities (fall back to overall TD rate)"
+      ],
+      "success_metrics": [
+        "TD floor accuracy improvement: 5-10% for RZ specialists",
+        "RZ correlation: RZ target share vs actual TD scoring",
+        "Specialist detection: High RZ rate players identified correctly"
+      ]
+    },
+    {
+      "id": 24,
+      "name": "Probabilistic Weather Forecasts",
+      "phase": "D",
+      "priority": "LOW",
+      "effort": "5-8h",
+      "impact": "1-2% accuracy",
+      "description": "Integrate probabilistic weather forecasts (% chance of rain, wind gust ranges) instead of binary conditions.",
+      "current_issue": "Weather modifiers assume certainty (rain = -8%), but forecasts are probabilistic (40% chance of rain). Expected value should account for uncertainty.",
+      "solution": "Query weather forecast API for probabilities. Calculate expected modifier: E[modifier] = P(rain) × (-0.08) + P(no_rain) × 0. Weight by forecast confidence.",
+      "location": "calculateEnvironmentModifier()",
+      "dependencies": [12, 15],
+      "subtasks": [
+        "Integrate weather forecast API (weather.gov or similar)",
+        "Query forecast: precipitation probability, wind speed range, temperature range",
+        "Calculate expected modifiers: E[wind] = ∫ P(windSpeed) × modifier(windSpeed) d(windSpeed)",
+        "For discrete probabilities: sum P_i × modifier_i",
+        "Add forecast_confidence weighting (high confidence = full weight, low = discount)",
+        "Test on games with uncertain weather forecasts",
+        "Add forecast probabilities to JSON output"
+      ],
+      "testing": [
+        "Verify expected value calculation: matches probability-weighted average",
+        "Test on uncertain forecasts (50% rain): modifier should be half of certain rain modifier",
+        "Test on certain forecasts (95% rain): modifier should approach full rain modifier",
+        "Edge case: missing forecast (fall back to static historical average)"
+      ],
+      "success_metrics": [
+        "Weather forecast accuracy: 1-2% MAE improvement",
+        "Expected value validation: Probabilistic modifiers match forecast uncertainty",
+        "Forecast integration: API reliability and latency"
+      ]
+    },
+    {
+      "id": 25,
+      "name": "Feature Flag Feedback in JSON Output",
+      "phase": "D",
+      "priority": "LOW",
+      "effort": "1-2h",
+      "impact": "Auditability",
+      "description": "Add active feature flags to JSON output for auditability and A/B testing transparency.",
+      "current_issue": "No way to know which algorithmic layers were active for a given projection. Makes debugging and A/B testing difficult.",
+      "solution": "Append features object to JSON output showing which flags were enabled: {opponent_factor: true, trend_detection: true, block_bootstrap: false, ...}",
+      "location": "JSON output metadata section (existing L45-56)",
+      "dependencies": [],
+      "subtasks": [
+        "Read feature flags from config at runtime",
+        "Create features object mapping flag names to boolean values",
+        "Append features to JSON_OUTPUT.metadata",
+        "Add feature flag version number (track config changes)",
+        "Test JSON output includes features section",
+        "Validate features match actual config state",
+        "Document feature flag meanings in output"
+      ],
+      "testing": [
+        "Verify features object matches config file",
+        "Toggle flags, confirm JSON output updates correctly",
+        "Test with all flags enabled vs all disabled",
+        "Validate JSON structure (no syntax errors)"
+      ],
+      "success_metrics": [
+        "Auditability: 100% transparency of active features",
+        "A/B testing: Can compare outputs with different flag configurations",
+        "Debugging: Easier to identify which features affected projection"
+      ]
+    }
+  ],
+
+  "files": {
+    "modified": [
+      {
+        "path": "scripts/calculate-performance-floors.js",
+        "reason": "Core script - implements 18 of 25 improvements (tasks 1-11, 13-14, 18-20)",
+        "estimated_changes": "500-800 lines modified/added",
+        "critical_sections": [
+          "calculateOpponentFactor() - tasks 1, 14, 16, 22",
+          "calculateStatFloor() - tasks 3, 4, 7, 8, 11, 13, 18, 19",
+          "calculateEfficiencyModifier() - tasks 5, 15, 24",
+          "calculateEnvironmentModifier() - tasks 12",
+          "validateAndCleanStats() - tasks 10, 21",
+          "main execution - task 20 (variable rename)"
+        ]
+      },
+      {
+        "path": "scripts/utils/bootstrap-intervals.js",
+        "reason": "Bootstrap method enhancements - tasks 2, 6, 17",
+        "estimated_changes": "150-250 lines modified/added",
+        "critical_sections": [
+          "Block bootstrap implementation (task 2)",
+          "Percentile method for small samples (task 6)",
+          "CV-scaled deviation method (task 17)"
+        ]
+      },
+      {
+        "path": "scripts/utils/temporal-smoothing.js",
+        "reason": "Adaptive EWMA alpha - task 9",
+        "estimated_changes": "50-100 lines modified",
+        "critical_sections": [
+          "Alpha calculation function - make CV-adaptive"
+        ]
+      },
+      {
+        "path": "performance-floors-config.json",
+        "reason": "Add config parameters for all new features",
+        "estimated_changes": "100-150 lines added",
+        "new_sections": [
+          "position_matchups (task 1)",
+          "block_bootstrap (task 2)",
+          "trend_normalization (task 3)",
+          "time_aware_trend (task 4)",
+          "efficiency_normalization (task 5)",
+          "regime_detection (task 7)",
+          "rb_decomposition (task 8)",
+          "dynamic_ewma (task 9)",
+          "environment_calibration (task 15)",
+          "game_script (task 13)",
+          "injury_modeling (task 18)",
+          "feature_flags updates (task 25)"
+        ]
+      }
+    ],
+    "new": [
+      {
+        "path": "scripts/utils/regime-detection.js",
+        "reason": "CUSUM algorithm for task 7 (optional modularization)",
+        "estimated_size": "100-150 lines",
+        "exports": ["detectRegimeChange(gameStats, threshold)"]
+      },
+      {
+        "path": "scripts/utils/red-zone-efficiency.js",
+        "reason": "Red zone metrics for task 23",
+        "estimated_size": "150-200 lines",
+        "exports": ["calculateRedZoneEfficiency(playerId, season)"]
+      }
+    ]
+  },
+
+  "dependencies": {
+    "existing": [
+      {
+        "package": "supabase",
+        "version": "current",
+        "usage": "Database queries for all statistics"
+      },
+      {
+        "package": "winston",
+        "version": "current",
+        "usage": "Logging for new statistical methods"
+      }
+    ],
+    "new": [
+      {
+        "package": "None required",
+        "reason": "All statistical methods implemented from scratch using native JavaScript (no heavy ML libraries per project philosophy)"
+      }
+    ],
+    "internal": [
+      {
+        "module": "scripts/utils/bootstrap-intervals.js",
+        "dependents": ["calculate-performance-floors.js"],
+        "changes": "Enhanced with block bootstrap, percentile method, CV scaling"
+      },
+      {
+        "module": "scripts/utils/temporal-smoothing.js",
+        "dependents": ["calculate-performance-floors.js"],
+        "changes": "Enhanced with adaptive EWMA alpha"
+      },
+      {
+        "module": "scripts/utils/hierarchical-stats.js",
+        "dependents": ["calculate-performance-floors.js"],
+        "changes": "Enhanced with empirical Bayes (task 16)"
+      },
+      {
+        "module": "scripts/utils/query-retry.js",
+        "dependents": ["calculate-performance-floors.js"],
+        "changes": "No changes needed (already implemented in V3)"
+      }
+    ]
+  },
+
+  "testing_strategy": {
+    "unit_tests": [
+      {
+        "component": "Block Bootstrap",
+        "tests": [
+          "Test block selection algorithm (verify 2-3 game blocks)",
+          "Test autocorrelation preservation (simulate AR(1) series)",
+          "Test interval coverage on known distributions",
+          "Edge case: n<6 games (verify fallback to standard bootstrap)"
+        ],
+        "validation": "Coverage rate should hit 80% ±2% on simulated data"
+      },
+      {
+        "component": "Position-Specific Matchups",
+        "tests": [
+          "Test WR vs CB matchup algorithm (verify correlation with actual)",
+          "Test RB vs Front-7 matchup algorithm",
+          "Test TE vs LB/Safety matchup algorithm",
+          "Test Bayesian shrinkage per sub-position",
+          "Edge case: missing defensive data (verify fallback to total defense)"
+        ],
+        "validation": "Matchup factors should correlate 0.4-0.6 with actual performance"
+      },
+      {
+        "component": "Standardized Trend Factor",
+        "tests": [
+          "Test normalization by stdDev (verify σ-based effect sizes)",
+          "Test trend capping (verify ±30% limit)",
+          "Test on synthetic uptrends and downtrends",
+          "Edge case: stdDev=0 (prevent division by zero)"
+        ],
+        "validation": "Trend factors should be interpretable in σ units"
+      },
+      {
+        "component": "Time-Aware Trend",
+        "tests": [
+          "Test exponential decay calculation (verify weights)",
+          "Test bye week handling (14-day gap vs 7-day gap)",
+          "Test weighted regression with time-based weights",
+          "Edge case: condensed schedule (Thursday games)"
+        ],
+        "validation": "Post-bye predictions should improve 10-15% vs equal spacing"
+      },
+      {
+        "component": "CUSUM Regime Detection",
+        "tests": [
+          "Test CUSUM on synthetic regime shifts (mean change at game 5)",
+          "Test threshold sensitivity (5σ shift detection)",
+          "Test partition weighting (80% recent, 20% old)",
+          "Edge case: n<8 games (skip regime detection)"
+        ],
+        "validation": "TP rate >80%, FP rate <10% on known regime changes"
+      }
+    ],
+    "integration_tests": [
+      {
+        "scenario": "Full V4 Pipeline",
+        "description": "Run complete floor calculation with all 25 enhancements enabled",
+        "test_data": "2024 season weeks 1-7 (106 games, 6,842 player stats)",
+        "validation": [
+          "No errors or crashes",
+          "JSON output includes all new fields (matchup factors, trend factors, regime flags, etc.)",
+          "Feature flags correctly reflected in output",
+          "Execution time <5 seconds per game (performance regression check)"
+        ]
+      },
+      {
+        "scenario": "Feature Flag Toggle",
+        "description": "Test all feature flags individually (enable one at a time)",
+        "test_data": "Single week (week 7, 16 games)",
+        "validation": [
+          "Each flag produces expected output changes",
+          "Disabling all flags produces V3-equivalent output",
+          "No feature interactions cause errors"
+        ]
+      },
+      {
+        "scenario": "Edge Case Gauntlet",
+        "description": "Test on edge case players (rookies, injuries, regime changes, small samples)",
+        "test_data": "Curated set of 50 edge case player-games",
+        "validation": [
+          "Small samples (n<5): Percentile bootstrap used",
+          "Regime changes: CUSUM detection fires correctly",
+          "Injuries: Probabilistic discounts applied",
+          "Missing data: Graceful fallbacks to simpler methods"
+        ]
+      }
+    ],
+    "validation_tests": [
+      {
+        "type": "Historical Backtest",
+        "description": "Compare V4 floors to actual outcomes on 2024 season",
+        "metrics": [
+          "MAE (Mean Absolute Error) - target 25-40% reduction vs V3",
+          "Interval coverage - target 80% ±2%",
+          "Calibration - floors should be 15th percentile of actuals",
+          "Position-specific accuracy (QB, RB, WR, TE separately)"
+        ],
+        "passing_criteria": "MAE reduction ≥20% overall, coverage 78-82%, position accuracy improvement across all positions"
+      },
+      {
+        "type": "A/B Comparison",
+        "description": "Compare V3 vs V4 Tier 1 vs V4 Full on holdout data (2025 weeks 8-18)",
+        "metrics": [
+          "Tier 1 accuracy gain (expect 15-20%)",
+          "Full V4 accuracy gain (expect 25-40%)",
+          "Statistical significance (paired t-test, p<0.05)"
+        ],
+        "passing_criteria": "Tier 1 significantly better than V3, Full significantly better than Tier 1"
+      },
+      {
+        "type": "Statistical Rigor Audit",
+        "description": "Validate statistical methods against known ground truth",
+        "tests": [
+          "Bootstrap intervals on simulated data (known true distribution)",
+          "Bayesian shrinkage convergence (verify shrinks toward true mean)",
+          "Trend detection on synthetic trends (verify slope accuracy)",
+          "CUSUM regime detection on simulated regime shifts (TP/FP rates)"
+        ],
+        "passing_criteria": "All methods perform within 5% of theoretical expectations"
+      }
+    ],
+    "performance_tests": [
+      {
+        "metric": "Execution Time",
+        "target": "≤5 seconds per game (same as V3)",
+        "test": "Run floors for full week (16 games), measure total time",
+        "passing_criteria": "Total time ≤80 seconds for 16 games"
+      },
+      {
+        "metric": "Database Queries",
+        "target": "≤10 queries per game (V3 achieved 3 via consolidation)",
+        "test": "Count Supabase calls during single game floor calculation",
+        "passing_criteria": "Query count ≤10 (some increase acceptable for new data sources)"
+      },
+      {
+        "metric": "Memory Usage",
+        "target": "≤500MB peak memory",
+        "test": "Monitor Node.js heap size during full week calculation",
+        "passing_criteria": "Peak heap ≤500MB"
+      }
+    ]
+  },
+
+  "rollout_plan": {
+    "phase_1": {
+      "name": "Quick Wins Deployment (Phase A)",
+      "duration": "Week 1",
+      "tasks": [3, 5, 6, 10, 20],
+      "deployment": [
+        "Implement all 5 Quick Win tasks",
+        "Run backtest on 2024 season (weeks 1-7)",
+        "Validate 10-15% accuracy gain",
+        "Deploy to production with feature flags enabled",
+        "Monitor execution time and errors"
+      ],
+      "rollback_plan": "Disable Quick Win feature flags if errors occur, revert to V3 baseline"
+    },
+    "phase_2": {
+      "name": "Core Statistical Enhancements (Phase B)",
+      "duration": "Weeks 2-4",
+      "tasks": [1, 2, 4, 7, 8],
+      "deployment": [
+        "Implement Core Statistical tasks sequentially (test each before next)",
+        "Run incremental backtests (add one feature at a time)",
+        "Validate cumulative 20-30% gain by end of Phase B",
+        "Deploy to production with phased feature flag rollout",
+        "A/B test: 50% traffic to V4 Phase B, 50% to V3 baseline"
+      ],
+      "rollback_plan": "Granular feature flag rollback - disable problematic feature only, keep working features enabled"
+    },
+    "phase_3": {
+      "name": "Advanced Refinements (Phase C)",
+      "duration": "Weeks 5-7",
+      "tasks": [9, 11, 12, 13, 18, 19],
+      "deployment": [
+        "Implement Advanced Refinement tasks",
+        "Run holdout validation on 2025 weeks 8-10",
+        "Validate incremental 5-10% gain over Phase B",
+        "Deploy to production with optional feature flags (user-configurable)",
+        "Collect user feedback on accuracy improvements"
+      ],
+      "rollback_plan": "Disable Phase C features individually if regressions detected"
+    },
+    "phase_4": {
+      "name": "Polish & Production Hardening (Phase D)",
+      "duration": "Weeks 8-10",
+      "tasks": [14, 15, 16, 17, 21, 22, 23, 24, 25],
+      "deployment": [
+        "Implement Polish tasks",
+        "Run full season backtest (2024 weeks 1-18)",
+        "Validate full 25-40% gain target achieved",
+        "Deploy all features to production",
+        "Monitor for 2 weeks, collect accuracy metrics",
+        "Document final V4 performance report"
+      ],
+      "rollback_plan": "Full V4 rollback to V3 baseline if critical errors occur (unlikely at this stage)"
+    },
+    "monitoring": {
+      "metrics": [
+        "MAE per position (QB, RB, WR, TE)",
+        "Interval coverage rate (target 80%)",
+        "Execution time per game",
+        "Error rate (should be 0%)",
+        "Feature flag usage (which features most impactful)"
+      ],
+      "alerts": [
+        "MAE increases >5% vs V3 baseline → investigate immediately",
+        "Execution time >10 seconds per game → performance regression",
+        "Any errors in production → disable affected feature flag"
+      ]
+    }
+  },
+
+  "risks": [
+    {
+      "risk": "Block Bootstrap Too Slow",
+      "likelihood": "MEDIUM",
+      "impact": "MEDIUM",
+      "description": "Block bootstrap with 1000 resamples may be slower than standard bootstrap, potentially increasing execution time 2-3x.",
+      "mitigation": [
+        "Reduce bootstrap iterations from 1000 to 500 if needed",
+        "Parallelize bootstrap resampling (use worker threads)",
+        "Cache bootstrap results for repeated calculations",
+        "Profile code to identify bottlenecks"
+      ],
+      "contingency": "Fall back to standard bootstrap if execution time exceeds 10 seconds per game"
+    },
+    {
+      "risk": "Position-Specific Defensive Data Incomplete",
+      "likelihood": "HIGH",
+      "impact": "HIGH",
+      "description": "CB rankings, Front-7 stats, LB/Safety coverage data may not be available in current database schema. May require new data sources (PFF, ESPN advanced stats).",
+      "mitigation": [
+        "Audit database schema for available defensive sub-position stats",
+        "If missing, scrape from ESPN advanced defense API",
+        "Implement fallback to total defense stats if sub-position data unavailable",
+        "Plan data backfill for historical seasons (2023-2024)"
+      ],
+      "contingency": "Use total defense stats with position-specific weights as approximation if sub-position data unavailable"
+    },
+    {
+      "risk": "CUSUM Regime Detection False Positives",
+      "likelihood": "MEDIUM",
+      "impact": "LOW",
+      "description": "CUSUM may detect false regime changes from natural variance, causing incorrect data partitioning and worse projections.",
+      "mitigation": [
+        "Tune CUSUM threshold conservatively (5σ shift, high bar for detection)",
+        "Validate on known regime changes (injury returns, role changes)",
+        "Add minimum games requirement (n≥8) before regime detection activates",
+        "Provide feature flag to disable if false positive rate too high"
+      ],
+      "contingency": "Disable regime detection feature flag if FP rate >15%"
+    },
+    {
+      "risk": "Small Sample Instability",
+      "likelihood": "MEDIUM",
+      "impact": "MEDIUM",
+      "description": "Many enhancements (rolling windows, regime detection, player-specific environment) require sufficient sample size. Early-season and backup players may have unstable estimates.",
+      "mitigation": [
+        "Implement minimum sample size checks throughout (n≥5 for most features)",
+        "Graceful fallback to simpler methods when sample insufficient",
+        "Use Bayesian priors to stabilize small-sample estimates",
+        "Clear warnings in JSON output when sample size is borderline"
+      ],
+      "contingency": "Disable sample-intensive features for players with <5 games played"
+    },
+    {
+      "risk": "Weather API Reliability",
+      "likelihood": "LOW",
+      "impact": "LOW",
+      "description": "Probabilistic weather forecasts (task 24) depend on external API which may have downtime or rate limits.",
+      "mitigation": [
+        "Use reliable API (weather.gov has 99%+ uptime)",
+        "Implement caching for forecast data (refresh every 6 hours)",
+        "Fallback to historical average weather conditions if API unavailable",
+        "Make weather feature optional via feature flag"
+      ],
+      "contingency": "Disable probabilistic weather if API unavailable, use static historical averages"
+    },
+    {
+      "risk": "Red Zone Data Incomplete",
+      "likelihood": "MEDIUM",
+      "impact": "LOW",
+      "description": "play_by_play table may have missing or inconsistent yardline data for red zone plays.",
+      "mitigation": [
+        "Validate play_by_play data completeness (check yardline_100 field coverage)",
+        "Backfill missing yardline data from ESPN game summaries if needed",
+        "Implement fallback to overall TD rate if RZ data insufficient",
+        "Require minimum 5 RZ opportunities before using RZ-specific rate"
+      ],
+      "contingency": "Fall back to overall TD rate if RZ data <5 opportunities"
+    },
+    {
+      "risk": "Complexity Increases Debugging Difficulty",
+      "likelihood": "HIGH",
+      "impact": "MEDIUM",
+      "description": "V4 adds 25 new features to single 1,750-line script. Debugging interactions and errors becomes harder.",
+      "mitigation": [
+        "Comprehensive logging at each algorithmic layer (log inputs/outputs)",
+        "Feature flag system allows isolating problematic features",
+        "JSON output includes full audit trail (which features active, intermediate values)",
+        "Unit tests for each feature catch regressions early"
+      ],
+      "contingency": "Use feature flags to bisect: disable half of features, test, re-enable half, repeat until issue isolated"
+    }
+  ],
+
+  "success_metrics": [
+    {
+      "metric": "Overall Accuracy (MAE Reduction)",
+      "target": "25-40% improvement over V3 baseline",
+      "measurement": "Mean absolute error between floor projections and actual fantasy points",
+      "baseline": "V3 MAE (measured on 2024 season)",
+      "v4_tier1_target": "15-20% reduction (Phase A + B complete)",
+      "v4_tier2_target": "25-30% reduction (Phase A + B + C complete)",
+      "v4_full_target": "25-40% reduction (all phases complete)",
+      "validation": "Backtest on 2024 season, validate on 2025 weeks 8-18 (holdout data)"
+    },
+    {
+      "metric": "Statistical Rigor Score",
+      "target": "9.5/10 (up from V3's 8/10)",
+      "measurement": "Multi-agent AI review scoring (same methodology as V3 review)",
+      "criteria": [
+        "Correct statistical assumptions (IID → time series)",
+        "Empirically-grounded parameters (not heuristics)",
+        "Robust to edge cases (small samples, regime changes)",
+        "Interpretable effect sizes (σ-based, not arbitrary scaling)"
+      ],
+      "validation": "Submit V4 code for multi-agent statistical review, compare scores to V3"
+    },
+    {
+      "metric": "Bootstrap Interval Coverage",
+      "target": "80% ±2% (currently ~65-70% in V3)",
+      "measurement": "% of actual outcomes falling within predicted floor-ceiling interval",
+      "baseline": "V3 coverage rate (65-70% due to IID assumption)",
+      "v4_target": "78-82% coverage (block bootstrap + CV scaling)",
+      "validation": "Calculate coverage rate on 2024 season, stratify by position"
+    },
+    {
+      "metric": "Position-Specific Accuracy",
+      "target": "Improvement across all 4 major positions (QB, RB, WR, TE)",
+      "measurement": "MAE reduction by position",
+      "targets": {
+        "QB": "10-15% MAE reduction (trend detection, efficiency normalization)",
+        "RB": "15-25% MAE reduction (decomposition, dynamic efficiency, Front-7 matchups)",
+        "WR": "20-30% MAE reduction (WR vs CB matchups, opportunity metrics)",
+        "TE": "15-20% MAE reduction (TE vs LB/Safety matchups, RZ efficiency)"
+      },
+      "validation": "Backtest each position separately, verify all positions improve"
+    },
+    {
+      "metric": "Production Readiness Score",
+      "target": "Maintain 9/10 (no regression from V3)",
+      "measurement": "Error rate, execution time, code quality",
+      "criteria": [
+        "Zero errors in production (100% uptime)",
+        "Execution time ≤5 seconds per game (same as V3)",
+        "Graceful degradation on edge cases (no crashes)",
+        "Comprehensive logging and monitoring"
+      ],
+      "validation": "Run V4 in production for 2 weeks, monitor errors and performance"
+    },
+    {
+      "metric": "User-Facing Accuracy",
+      "target": "Fantasy lineup decisions improve by 20-30%",
+      "measurement": "% of floor projections within 20% of actual outcome",
+      "baseline": "V3 accuracy-within-20% rate",
+      "v4_target": "20-30% increase in accuracy-within-20% rate",
+      "validation": "Weekly tracking during 2025 season (weeks 8-18)"
+    },
+    {
+      "metric": "Feature Flag Utilization",
+      "target": "All 25 features enabled in production (0% rollback rate)",
+      "measurement": "% of features enabled after rollout complete",
+      "success_criteria": "≥23/25 features enabled (92%+), ≤2 features disabled due to issues",
+      "validation": "Monitor feature flag state over 4-week production period"
+    }
+  ],
+
+  "next_steps": [
+    {
+      "step": 1,
+      "action": "Validate plan with stakeholders",
+      "description": "Review this plan.json with user, confirm priorities and approach",
+      "owner": "Lloyd (AI Coordinator)",
+      "deliverable": "Approved plan.json with any user-requested modifications"
+    },
+    {
+      "step": 2,
+      "action": "Set up development environment",
+      "description": "Create feature branch, back up V3 code, set up testing infrastructure",
+      "owner": "Developer",
+      "deliverable": "performance-floors-v4 branch, V3 baseline backup, test harness ready"
+    },
+    {
+      "step": 3,
+      "action": "Begin Phase A (Quick Wins)",
+      "description": "Implement tasks 3, 5, 6, 10, 20 (estimated 5-10 hours)",
+      "owner": "Developer",
+      "deliverable": "Phase A code complete, backtested, ready for deployment"
+    },
+    {
+      "step": 4,
+      "action": "Phase A Validation",
+      "description": "Run backtest on 2024 season, validate 10-15% gain, deploy to production",
+      "owner": "Developer + Lloyd",
+      "deliverable": "Phase A deployed, accuracy metrics confirmed"
+    },
+    {
+      "step": 5,
+      "action": "Continue with Phase B, C, D sequentially",
+      "description": "Follow rollout_plan phases, validate after each phase",
+      "owner": "Developer + Lloyd",
+      "deliverable": "Full V4 implementation deployed and validated"
+    }
+  ]
+}

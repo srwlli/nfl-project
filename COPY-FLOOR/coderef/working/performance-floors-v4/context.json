@@ -1,0 +1,472 @@
+{
+  "metadata": {
+    "title": "Performance Floors V4 - Statistical Improvements (Post-V3 Review)",
+    "generated": "2025-10-22",
+    "basedOn": "Multi-agent statistical review of V3 (1,753 lines)",
+    "reviewers": "5+ AI systems analyzing statistical rigor",
+    "keyInsight": "V3 is near best-in-class; V4 needs targeted fixes in time series, matchups, trends"
+  },
+  "summary": {
+    "totalImprovements": 25,
+    "expectedGain": "25-40% accuracy over V3",
+    "v3Rating": {
+      "quality": 8.5,
+      "rigor": 8,
+      "productionReady": 9
+    }
+  },
+  "highPriority": {
+    "count": 8,
+    "cumulativeGain": "20-30%",
+    "improvements": [
+      {
+        "id": 1,
+        "name": "Position-Specific Opponent Matchups",
+        "issue": "Uses total yards for all positions",
+        "fix": "WR vs CB, RB vs Front-7, TE vs LB/Safety rankings",
+        "impact": "15-25% gain",
+        "effort": "8-12h",
+        "location": "calculateOpponentFactor L280-380"
+      },
+      {
+        "id": 2,
+        "name": "Block Bootstrap (Time Series)",
+        "issue": "Assumes IID, ignores autocorrelation",
+        "fix": "Moving block bootstrap (2-3 game blocks)",
+        "impact": "5-12% calibration",
+        "effort": "6-8h",
+        "location": "bootstrap-intervals.js"
+      },
+      {
+        "id": 3,
+        "name": "Standardized Trend Factor",
+        "issue": "Heuristic scaling (×length×maxAdj)",
+        "fix": "Normalize by seasonStdDev",
+        "impact": "5-10% gain",
+        "effort": "2h",
+        "location": "calculateStatFloor L1082-1126"
+      },
+      {
+        "id": 4,
+        "name": "Time-Aware Trend",
+        "issue": "Equal spacing ignores bye weeks",
+        "fix": "Exponential decay by actual days",
+        "impact": "10-15% post-bye",
+        "effort": "6h",
+        "location": "calculateStatFloor L1082-1126"
+      },
+      {
+        "id": 5,
+        "name": "Dynamic Efficiency Normalization",
+        "issue": "Hardcoded EPA range (-0.1, 0.3)",
+        "fix": "Normalize to league avg per season",
+        "impact": "5-10% modifier gain",
+        "effort": "2-4h",
+        "location": "calculateEfficiencyModifier L1200"
+      },
+      {
+        "id": 6,
+        "name": "Bootstrap Fallback (n<5)",
+        "issue": "Parametric assumes normality",
+        "fix": "Percentile method for small samples",
+        "impact": "15-20% bias cut",
+        "effort": "1-2h",
+        "location": "bootstrap-intervals.js"
+      },
+      {
+        "id": 7,
+        "name": "Regime Change Detection",
+        "issue": "Resamples stale history",
+        "fix": "CUSUM detection, weight recent 80%",
+        "impact": "4-9% post-injury MAE",
+        "effort": "6-10h",
+        "location": "calculateStatFloor pre-L1294"
+      },
+      {
+        "id": 8,
+        "name": "RB Fantasy Decomposition",
+        "issue": "Pooled season efficiency",
+        "fix": "Component model: rush/rec/TD separate",
+        "impact": "5-10% RB floors",
+        "effort": "10-14h",
+        "location": "calculateStatFloor L1288-1356"
+      }
+    ],
+    "quickWins": [
+      { "id": 3, "effort": "2h" },
+      { "id": 5, "effort": "2-4h" },
+      { "id": 6, "effort": "1-2h" }
+    ]
+  },
+  "mediumPriority": {
+    "count": 11,
+    "cumulativeGain": "10-15%",
+    "improvements": [
+      {
+        "id": 9,
+        "name": "Dynamic EWMA Alpha",
+        "issue": "Fixed α per position",
+        "fix": "Adaptive based on CV + game count",
+        "impact": "3-5% error cut",
+        "effort": "3h",
+        "location": "temporal-smoothing.js + L1212"
+      },
+      {
+        "id": 10,
+        "name": "Refined IQR Outlier",
+        "issue": "Mixed season+recent dataset",
+        "fix": "Calculate on full season, apply to both",
+        "impact": "Better judgment",
+        "effort": "2h",
+        "location": "validateAndCleanStats L977"
+      },
+      {
+        "id": 11,
+        "name": "Dynamic RB Efficiency",
+        "issue": "Season-long rates",
+        "fix": "Rolling 4-6 game with Bayesian blend",
+        "impact": "8-12% RB gain",
+        "effort": "5h",
+        "location": "calculateStatFloor L1288-1356"
+      },
+      {
+        "id": 12,
+        "name": "Player-Specific Environment",
+        "issue": "Static modifiers for all",
+        "fix": "Historical performance by condition",
+        "impact": "5-8% weather games",
+        "effort": "12h",
+        "location": "calculateEnvironmentModifier L410-480"
+      },
+      {
+        "id": 13,
+        "name": "Game Script",
+        "issue": "No Vegas context",
+        "fix": "Implied totals for volume projections",
+        "impact": "10-15% volume",
+        "effort": "8h",
+        "location": "calculateStatFloor L1380-1400"
+      },
+      {
+        "id": 14,
+        "name": "Dynamic Opponent Trends",
+        "issue": "Static caps/shrinkage",
+        "fix": "Weekly rolling recalibration",
+        "impact": "2-3% mid-season",
+        "effort": "2-3h",
+        "location": "calculateOpponentFactor + preload"
+      },
+      {
+        "id": 15,
+        "name": "Calibrate Environment",
+        "issue": "Uncalibrated effect sizes",
+        "fix": "Isotonic regression on historical errors",
+        "impact": "1-3% accuracy",
+        "effort": "8-12h",
+        "location": "calculateEnvironmentModifier"
+      },
+      {
+        "id": 16,
+        "name": "Empirical Bayes Opponent",
+        "issue": "Linear shrinkage heuristic",
+        "fix": "τ² from between-team variance",
+        "impact": "2-5% early-season",
+        "effort": "6-8h",
+        "location": "calculateOpponentFactor L239"
+      },
+      {
+        "id": 17,
+        "name": "CV-Scaled Bootstrap Width",
+        "issue": "Adjusts confidence only",
+        "fix": "Scale resampled deviations directly",
+        "impact": "1-3% coverage",
+        "effort": "4-6h",
+        "location": "L1250 + bootstrap call"
+      },
+      {
+        "id": 18,
+        "name": "Probabilistic Injury",
+        "issue": "Fixed status discounts",
+        "fix": "Snap counts + participation rate",
+        "impact": "7-12% injured players",
+        "effort": "3-5h",
+        "location": "calculateTeamFloors"
+      },
+      {
+        "id": 19,
+        "name": "Enhanced Opportunity",
+        "issue": "Targets only for WR/TE",
+        "fix": "Air yards, routes, red zone targets",
+        "impact": "3-7% WR/TE gain",
+        "effort": "4-6h",
+        "location": "calculateStatFloor"
+      }
+    ]
+  },
+  "lowPriority": {
+    "count": 6,
+    "cumulativeGain": "<5%",
+    "improvements": [
+      {
+        "id": 20,
+        "name": "Rename Legacy Confidence",
+        "impact": "100% clarity",
+        "effort": "0.5h",
+        "location": "L1647"
+      },
+      {
+        "id": 21,
+        "name": "Winsorize IQR (n=5-8)",
+        "impact": "Small stability",
+        "effort": "2-3h",
+        "location": "validateAndCleanStats"
+      },
+      {
+        "id": 22,
+        "name": "Defensive Injury Impact",
+        "impact": "3-5% matchups",
+        "effort": "10h",
+        "location": "calculateOpponentFactor"
+      },
+      {
+        "id": 23,
+        "name": "Red Zone Efficiency",
+        "impact": "Better TD proj",
+        "effort": "15h",
+        "location": "New function"
+      },
+      {
+        "id": 24,
+        "name": "Probabilistic Weather",
+        "impact": "1-2% accuracy",
+        "effort": "5-8h",
+        "location": "calculateEnvironmentModifier"
+      },
+      {
+        "id": 25,
+        "name": "Feature Flag Feedback",
+        "impact": "Auditability",
+        "effort": "1-2h",
+        "location": "JSON output"
+      }
+    ]
+  },
+  "v3Strengths": {
+    "preserve": [
+      {
+        "category": "Ensemble Rigor",
+        "strength": "Bayesian + EWMA + Bootstrap integrated"
+      },
+      {
+        "category": "Data Quality",
+        "strength": "IQR outliers + minimum floors + validation tiers"
+      },
+      {
+        "category": "Opponent Adjustment",
+        "strength": "Preloaded position-specific + Bayesian shrinkage"
+      },
+      {
+        "category": "Adaptive Confidence",
+        "strength": "CV-based player-specific intervals"
+      },
+      {
+        "category": "Performance",
+        "strength": "Preloading, caching, retry logic, query consolidation"
+      },
+      {
+        "category": "Position Logic",
+        "strength": "RB rushing/receiving split, position volatility"
+      }
+    ]
+  },
+  "v3Weaknesses": {
+    "fixInV4": [
+      {
+        "issue": "Bootstrap assumes IID (time series)",
+        "severity": "HIGH",
+        "impact": "Intervals 20-30% too narrow"
+      },
+      {
+        "issue": "Trend scaling heuristic",
+        "severity": "HIGH",
+        "impact": "Hard to tune, lacks statistical basis"
+      },
+      {
+        "issue": "Missing WR vs CB, RB vs Front-7 matchups",
+        "severity": "HIGH",
+        "impact": "15-25% matchup errors"
+      },
+      {
+        "issue": "Hardcoded EPA normalization",
+        "severity": "HIGH",
+        "impact": "5-10% miscalibration"
+      },
+      {
+        "issue": "RB season-long efficiency",
+        "severity": "MEDIUM",
+        "impact": "8-12% accuracy loss mid-season"
+      },
+      {
+        "issue": "Static EWMA alpha",
+        "severity": "MEDIUM",
+        "impact": "Suboptimal for high-σ players"
+      },
+      {
+        "issue": "No game script awareness",
+        "severity": "MEDIUM",
+        "impact": "10-15% volume errors"
+      }
+    ]
+  },
+  "implementationPriority": {
+    "tier1": {
+      "name": "Critical Path",
+      "effort": "25-35h",
+      "gain": "20-30%",
+      "tasks": [
+        { "id": 1, "effort": "8-12h", "gain": "15-25%" },
+        { "id": 2, "effort": "6-8h", "gain": "5-12%" },
+        { "id": 3, "effort": "2h", "gain": "5-10%" },
+        { "id": 4, "effort": "6h", "gain": "10-15%" }
+      ]
+    },
+    "tier2": {
+      "name": "High ROI",
+      "effort": "15-20h",
+      "gain": "10-15%",
+      "tasks": [
+        { "id": 5, "effort": "2-4h", "gain": "5-10%" },
+        { "id": 6, "effort": "1-2h", "gain": "15-20% for n<5" },
+        { "id": 7, "effort": "6-10h", "gain": "4-9%" },
+        { "id": 8, "effort": "10-14h", "gain": "5-10%" }
+      ]
+    },
+    "tier3": {
+      "name": "Refinements",
+      "effort": "20-30h",
+      "gain": "5-10%",
+      "tasks": [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+    },
+    "quickWins": {
+      "totalEffort": "<5h",
+      "goodROI": true,
+      "tasks": [
+        { "id": 3, "effort": "2h" },
+        { "id": 6, "effort": "1-2h" },
+        { "id": 5, "effort": "2-4h" },
+        { "id": 10, "effort": "2h" },
+        { "id": 20, "effort": "0.5h" }
+      ]
+    }
+  },
+  "expectedCumulativeImpact": {
+    "metrics": [
+      {
+        "metric": "Accuracy",
+        "v3": "Baseline",
+        "v4Tier1": "+15-20%",
+        "v4Tier1And2": "+25-30%",
+        "v4Full": "+25-40%"
+      },
+      {
+        "metric": "Statistical Rigor",
+        "v3": "8/10",
+        "v4Tier1": "9/10",
+        "v4Tier1And2": "9.5/10",
+        "v4Full": "9.5/10"
+      },
+      {
+        "metric": "Production Ready",
+        "v3": "9/10",
+        "v4Tier1": "9/10",
+        "v4Tier1And2": "9.5/10",
+        "v4Full": "9.5/10"
+      },
+      {
+        "metric": "Total Implementation",
+        "v3": "-",
+        "v4Tier1": "25-35h",
+        "v4Tier1And2": "40-55h",
+        "v4Full": "60-85h"
+      }
+    ]
+  },
+  "top5MustImplement": {
+    "totalEffort": "24-36 hours",
+    "expectedGain": "20-30% accuracy improvement",
+    "tasks": [
+      { "rank": 1, "name": "Position-Specific Opponent Matchups", "effort": "8-12h", "reason": "Biggest single accuracy gain (15-25%)" },
+      { "rank": 2, "name": "Block Bootstrap", "effort": "6-8h", "reason": "Fixes critical time series assumption flaw" },
+      { "rank": 3, "name": "Standardized Trend Factor", "effort": "2h", "reason": "Quick win, makes trend statistically sound" },
+      { "rank": 4, "name": "Time-Aware Trend", "effort": "6h", "reason": "Major improvement in trend detection" },
+      { "rank": 5, "name": "Dynamic Efficiency Normalization", "effort": "2-4h", "reason": "Quick fix for season adaptation" }
+    ]
+  },
+  "statisticalMethodAssessment": [
+    {
+      "method": "Bayesian Shrinkage",
+      "v3Strength": "Position-level pooling, opponent factors",
+      "v3Issue": "Linear heuristic, static target",
+      "v4Fix": "Empirical Bayes with τ², dynamic target"
+    },
+    {
+      "method": "Trend Detection",
+      "v3Strength": "Weighted regression, capped adjustment",
+      "v3Issue": "Heuristic scaling, equal spacing",
+      "v4Fix": "Normalize by σ, exponential time decay"
+    },
+    {
+      "method": "Bootstrap Intervals",
+      "v3Strength": "Large samples, modifier integration",
+      "v3Issue": "IID assumption, parametric for n<5",
+      "v4Fix": "Block bootstrap, percentile for small n"
+    },
+    {
+      "method": "Opponent Adjustments",
+      "v3Strength": "Preload, position stats, shrinkage",
+      "v3Issue": "Total yards fallback, static caps",
+      "v4Fix": "WR vs CB, dynamic weekly recalibration"
+    },
+    {
+      "method": "RB Split",
+      "v3Strength": "Separate rush/rec opportunities",
+      "v3Issue": "Season-long efficiency",
+      "v4Fix": "Rolling 4-6 game efficiency rates"
+    },
+    {
+      "method": "Adaptive Volatility",
+      "v3Strength": "CV-based, position baselines",
+      "v3Issue": "Confidence-only adjustment",
+      "v4Fix": "Scale deviations directly"
+    },
+    {
+      "method": "Environment",
+      "v3Strength": "Composite modifiers, caching",
+      "v3Issue": "Static, uncalibrated",
+      "v4Fix": "Player-specific, historical calibration"
+    }
+  ],
+  "implementationPhases": {
+    "phaseA": {
+      "name": "Quick Wins",
+      "effort": "5-10h",
+      "tasks": [3, 5, 6, 10, 20]
+    },
+    "phaseB": {
+      "name": "Core Statistical",
+      "effort": "25-35h",
+      "tasks": [1, 2, 4, 7, 8]
+    },
+    "phaseC": {
+      "name": "Advanced Refinements",
+      "effort": "20-30h",
+      "tasks": [9, 11, 12, 13, 18, 19]
+    },
+    "phaseD": {
+      "name": "Polish",
+      "effort": "15-25h",
+      "tasks": [14, 15, 16, 17, 21, 22, 23, 24, 25]
+    },
+    "recommendedPath": "Phase A → Phase B (stop at 30% gain) → Evaluate → Phase C if needed"
+  }
+}
