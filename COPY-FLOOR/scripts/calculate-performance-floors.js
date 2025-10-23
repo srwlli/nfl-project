@@ -51,6 +51,9 @@ const JSON_OUTPUT = {
 // Phase 3.3 (V2): League average cache (key: "season-week-statCategory")
 const LEAGUE_AVG_CACHE = new Map()
 
+// Task 5 (V4): League-wide EPA statistics cache for dynamic normalization
+const LEAGUE_EPA_CACHE = new Map()
+
 /**
  * Get modifier value (learned weights if available, otherwise default config)
  * Phase 4A (Academic): Random Forest feature importance
@@ -120,6 +123,81 @@ function logError(...args) {
  */
 function getOpponent(game, teamId) {
   return game.home_team_id === teamId ? game.away_team_id : game.home_team_id
+}
+
+/**
+ * Task 5 (V4): Calculate dynamic efficiency modifier based on league-wide EPA distribution
+ *
+ * Replaces hardcoded EPA range (-0.1 to 0.3) with dynamic per-season normalization.
+ * Player EPA is converted to z-score relative to league average, then mapped to efficiency modifier.
+ *
+ * @param {number} playerEPA - Player's EPA per play (if available)
+ * @param {string} position - Player position (QB, RB, WR, TE)
+ * @param {number} season - Current season
+ * @returns {Promise<number>} Efficiency modifier (0.85-1.15 range based on z-score)
+ */
+async function calculateEfficiencyModifier(playerEPA, position, season) {
+  // If no EPA data, return neutral modifier
+  if (playerEPA === null || playerEPA === undefined) {
+    return 1.0
+  }
+
+  try {
+    // Check cache first
+    const cacheKey = `${season}-${position}`
+    let leagueEPA = LEAGUE_EPA_CACHE.get(cacheKey)
+
+    if (!leagueEPA) {
+      // Query league-wide EPA distribution for this position and season
+      // Note: This requires play_by_play table with EPA data from advanced-analytics-scraper
+      const { data: epaData, error } = await supabase
+        .from('player_game_stats')
+        .select('epa_per_play')
+        .eq('season', season)
+        .eq('primary_position', position)
+        .not('epa_per_play', 'is', null)
+
+      if (error || !epaData || epaData.length === 0) {
+        // Fallback: no EPA data available, return neutral
+        return 1.0
+      }
+
+      // Calculate league mean and stdDev for this position
+      const epaValues = epaData.map(d => d.epa_per_play).filter(v => v !== null)
+      if (epaValues.length < 10) {
+        // Insufficient data, return neutral
+        return 1.0
+      }
+
+      const mean = epaValues.reduce((sum, v) => sum + v, 0) / epaValues.length
+      const variance = epaValues.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / epaValues.length
+      const stdDev = Math.sqrt(variance)
+
+      leagueEPA = { mean, stdDev }
+      LEAGUE_EPA_CACHE.set(cacheKey, leagueEPA)
+    }
+
+    // Calculate z-score: (playerEPA - leagueMean) / leagueStdDev
+    const zScore = leagueEPA.stdDev > 0
+      ? (playerEPA - leagueEPA.mean) / leagueEPA.stdDev
+      : 0
+
+    // Map z-score to efficiency modifier
+    // z = +1 → 1.10 (10% boost for high-efficiency)
+    // z = -1 → 0.90 (10% penalty for low-efficiency)
+    // z = 0 → 1.00 (neutral for league average)
+    const efficiencyScale = CONFIG.efficiency_normalization?.scale || 0.10
+    const modifier = 1 + (zScore * efficiencyScale)
+
+    // Cap between 0.85 and 1.15
+    const minModifier = CONFIG.efficiency_normalization?.min || 0.85
+    const maxModifier = CONFIG.efficiency_normalization?.max || 1.15
+    return Math.min(maxModifier, Math.max(minModifier, modifier))
+
+  } catch (err) {
+    console.error('Error calculating efficiency modifier:', err)
+    return 1.0 // Neutral fallback on error
+  }
 }
 
 /**
@@ -921,9 +999,16 @@ async function calculateStatFloor(seasonStats, recentGames, statField, opportuni
     expected = expected * opponentFactor
   }
 
+  // Task 5 (V4): Apply dynamic efficiency modifier (EPA-based if available)
+  // Note: Requires epa_per_play field in player_game_stats (from advanced-analytics-scraper)
+  // Gracefully falls back to 1.0 if EPA data not available
+  const playerEPA = seasonStats.length > 0 ? seasonStats[0].epa_per_play : null
+  const efficiencyMod = await calculateEfficiencyModifier(playerEPA, position, season)
+  expected = expected * efficiencyMod
+
   // Phase 3 (Academic V2): Bootstrap Prediction Intervals
-  // Calculate combined modifier for bootstrap (opponent × environment)
-  const combinedModifier = opponentFactor * environmentMod.modifier
+  // Calculate combined modifier for bootstrap (opponent × environment × efficiency)
+  const combinedModifier = opponentFactor * environmentMod.modifier * efficiencyMod
 
   // Generate bootstrap prediction interval with modifiers applied
   const bootstrapInterval = calculateModifiedPredictionInterval(
