@@ -13,51 +13,105 @@
  */
 
 import { getSupabaseClient } from './utils/supabase-client.js'
+import { readFileSync } from 'fs'
+import { fileURLToPath } from 'url'
+import { dirname, join } from 'path'
+import {
+  calculatePositionStats,
+  applyHierarchicalAdjustment
+} from './utils/hierarchical-stats.js'
+import {
+  calculateModifiedPredictionInterval,
+  assessConfidenceLevel,
+  formatInterval
+} from './utils/bootstrap-intervals.js'
+import {
+  calculateEWMAProjection,
+  getPositionAlpha
+} from './utils/temporal-smoothing.js'
 
 const supabase = getSupabaseClient()
 
-// Configuration
-const CONFIG = {
-  rolling_window_weeks: 3,      // Recent form window
-  volatility_factor: 0.75,       // Floor conservatism (0.5-1.0)
-  current_season: 2025,
-  min_games_played: 2,           // Minimum games for reliability
+// Phase 3.1 (V2): Load configuration from external JSON file
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+const configPath = join(__dirname, 'performance-floors-config.json')
+const CONFIG = JSON.parse(readFileSync(configPath, 'utf-8'))
 
-  // Position-specific volatility (Phase 1.4)
-  position_volatility: {
-    QB: 0.6,   // Most consistent
-    RB: 0.8,   // Medium variance
-    WR: 0.9,   // Highest variance
-    TE: 0.75   // Medium-high
-  },
+// Phase 3.2 (V2): JSON logging mode flag
+let JSON_MODE = false
+const JSON_OUTPUT = {
+  games: [],
+  metadata: {
+    timestamp: new Date().toISOString(),
+    config: CONFIG
+  }
+}
 
-  // Venue modifiers (Phase 2.1)
-  venue_modifiers: {
-    turf: 1.03,      // Faster surface
-    grass: 1.00,     // Baseline
-    dome: 1.02,      // Controlled environment
-    outdoor: 1.00    // Baseline
-  },
+// Phase 3.3 (V2): League average cache (key: "season-week-statCategory")
+const LEAGUE_AVG_CACHE = new Map()
 
-  // Weather penalties (Phase 2.1)
-  weather_penalties: {
-    high_wind: 0.95,       // >15 mph
-    precipitation: 0.92,   // Rain/snow
-    extreme_cold: 0.94     // <25°F
-  },
+/**
+ * Get modifier value (learned weights if available, otherwise default config)
+ * Phase 4A (Academic): Random Forest feature importance
+ *
+ * @param {string} modifierType - Type of modifier (venue, weather, home)
+ * @param {string} specificKey - Specific key within type (e.g., 'turf', 'high_wind')
+ * @returns {number} Modifier value
+ */
+function getModifierValue(modifierType, specificKey) {
+  // Check if learned weights exist
+  if (CONFIG.learned_feature_weights?.importances) {
+    const importances = CONFIG.learned_feature_weights.importances
 
-  // Opportunity-based projection weights (Phase 2.2)
-  opportunity_weights: {
-    season: 0.4,
-    recent: 0.6
-  },
+    // Map config keys to feature importance keys
+    const featureMap = {
+      'home_field_advantage.home_modifier': 'is_home',
+      'venue_modifiers.turf': 'is_turf',
+      'venue_modifiers.dome': 'is_dome'
+    }
 
-  // Adaptive rolling window by position (Phase 2.3)
-  rolling_window_by_position: {
-    QB: 5,   // Most stable - use more games
-    RB: 3,   // Volatile (injuries, game scripts) - use fewer games
-    WR: 4,   // Medium
-    TE: 4    // Medium
+    const featureKey = `${modifierType}.${specificKey}`
+    const importanceKey = featureMap[featureKey]
+
+    if (importanceKey && importances[importanceKey] !== undefined) {
+      // Convert importance (0-1) to modifier (0.8-1.2 range)
+      // Higher importance = stronger effect
+      const baseEffect = 0.2 // ±20% maximum effect
+      const importance = importances[importanceKey]
+      const modifier = 1.0 + ((importance - 0.25) * baseEffect)
+
+      return Math.max(0.8, Math.min(1.2, modifier))
+    }
+  }
+
+  // Fall back to config default
+  if (modifierType === 'venue_modifiers' && CONFIG[modifierType]) {
+    return CONFIG[modifierType][specificKey] || 1.0
+  } else if (modifierType === 'weather_penalties' && CONFIG[modifierType]) {
+    return CONFIG[modifierType][specificKey] || 1.0
+  } else if (modifierType === 'home_field_advantage' && CONFIG[modifierType]) {
+    return CONFIG[modifierType][specificKey] || 1.0
+  }
+
+  return 1.0
+}
+
+/**
+ * Conditional logging based on mode
+ */
+function log(...args) {
+  if (!JSON_MODE) {
+    console.log(...args)
+  }
+}
+
+function logError(...args) {
+  if (!JSON_MODE) {
+    console.error(...args)
+  } else {
+    // In JSON mode, errors go to stderr but don't pollute stdout
+    console.error(...args)
   }
 }
 
@@ -80,6 +134,10 @@ function getOpponent(game, teamId) {
  */
 async function calculateOpponentFactor(opponentId, statCategory, season, beforeWeek) {
   try {
+    // Phase 3.3 (V2): Check league average cache first
+    const cacheKey = `${season}-${beforeWeek}-${statCategory}`
+    let leagueAvg = LEAGUE_AVG_CACHE.get(cacheKey)
+
     // Get opponent's defensive stats for the season (before current week)
     const { data: opponentGames } = await supabase
       .from('team_game_stats')
@@ -111,32 +169,38 @@ async function calculateOpponentFactor(opponentId, statCategory, season, beforeW
     // Calculate opponent's average yards allowed per game
     const opponentAvg = filteredGames.reduce((sum, g) => sum + (g.total_yards_allowed || 0), 0) / filteredGames.length
 
-    // Get league-wide average for normalization
-    const { data: allTeamStats } = await supabase
-      .from('team_game_stats')
-      .select('game_id, total_yards_allowed')
-      .eq('season', season)
+    // Phase 3.3 (V2): Calculate league average only if not cached
+    if (!leagueAvg) {
+      // Get league-wide average for normalization
+      const { data: allTeamStats } = await supabase
+        .from('team_game_stats')
+        .select('game_id, total_yards_allowed')
+        .eq('season', season)
 
-    if (!allTeamStats || allTeamStats.length === 0) {
-      return 1.0
+      if (!allTeamStats || allTeamStats.length === 0) {
+        return 1.0
+      }
+
+      // Filter to completed games before current week
+      const { data: allGameWeeks } = await supabase
+        .from('games')
+        .select('game_id, week')
+        .eq('season', season)
+        .lt('week', beforeWeek)
+        .eq('status', 'final')
+
+      const validAllGameIds = new Set(allGameWeeks?.map(g => g.game_id) || [])
+      const filteredAllGames = allTeamStats.filter(g => validAllGameIds.has(g.game_id))
+
+      if (filteredAllGames.length === 0) {
+        return 1.0
+      }
+
+      leagueAvg = filteredAllGames.reduce((sum, g) => sum + (g.total_yards_allowed || 0), 0) / filteredAllGames.length
+
+      // Cache the league average
+      LEAGUE_AVG_CACHE.set(cacheKey, leagueAvg)
     }
-
-    // Filter to completed games before current week
-    const { data: allGameWeeks } = await supabase
-      .from('games')
-      .select('game_id, week')
-      .eq('season', season)
-      .lt('week', beforeWeek)
-      .eq('status', 'final')
-
-    const validAllGameIds = new Set(allGameWeeks?.map(g => g.game_id) || [])
-    const filteredAllGames = allTeamStats.filter(g => validAllGameIds.has(g.game_id))
-
-    if (filteredAllGames.length === 0) {
-      return 1.0
-    }
-
-    const leagueAvg = filteredAllGames.reduce((sum, g) => sum + (g.total_yards_allowed || 0), 0) / filteredAllGames.length
 
     if (leagueAvg === 0) {
       return 1.0
@@ -147,21 +211,21 @@ async function calculateOpponentFactor(opponentId, statCategory, season, beforeW
     const rawFactor = opponentAvg / leagueAvg
 
     // Phase 2.1 (V2): Bayesian shrinkage for small samples
-    // Regress toward league average (1.0) when sample size < 4 games
-    const minSampleSize = 4
+    // Regress toward league average when sample size < min_sample_size games
+    const minSampleSize = CONFIG.bayesian_shrinkage.min_sample_size
     let adjustedFactor = rawFactor
 
     if (filteredGames.length < minSampleSize) {
       const weight = filteredGames.length / minSampleSize
-      adjustedFactor = (rawFactor * weight) + (1.0 * (1 - weight))
+      adjustedFactor = (rawFactor * weight) + (CONFIG.bayesian_shrinkage.target_mean * (1 - weight))
     }
 
-    // Cap factor between 0.7 (tough defense) and 1.3 (weak defense)
-    const cappedFactor = Math.min(1.3, Math.max(0.7, adjustedFactor))
+    // Cap factor between configured min/max (default: 0.7-1.3)
+    const cappedFactor = Math.min(CONFIG.opponent_factor_caps.max, Math.max(CONFIG.opponent_factor_caps.min, adjustedFactor))
 
     return Math.round(cappedFactor * 100) / 100
   } catch (error) {
-    console.error('Error calculating opponent factor:', error)
+    logError('Error calculating opponent factor:', error)
     return 1.0 // Default to neutral on error
   }
 }
@@ -174,19 +238,36 @@ async function calculateOpponentFactor(opponentId, statCategory, season, beforeW
  * @param {number} season - Season year
  * @returns {Promise<Object>} Environment modifier data
  */
-async function calculateEnvironmentModifier(gameId, season) {
+async function calculateEnvironmentModifier(gameId, season, teamId = null, game = null) {
   try {
     let venueModifier = 1.0
     let weatherModifier = 1.0
+    let homeModifier = 1.0
     const details = []
 
-    // Get game stadium info
-    const { data: game } = await supabase
-      .from('games')
-      .select('stadium_id')
-      .eq('game_id', gameId)
-      .eq('season', season)
-      .single()
+    // Phase 2.2 (V2): Home field advantage
+    // Phase 4A (Academic): Use learned weights if available
+    if (teamId && game) {
+      const isHome = game.home_team_id === teamId
+      if (isHome) {
+        homeModifier = getModifierValue('home_field_advantage', 'home_modifier')
+        details.push('home advantage')
+      } else {
+        homeModifier = getModifierValue('home_field_advantage', 'away_modifier')
+        details.push('away game')
+      }
+    }
+
+    // Get game stadium info (fetch if not provided)
+    if (!game) {
+      const { data: gameData } = await supabase
+        .from('games')
+        .select('stadium_id, home_team_id, away_team_id')
+        .eq('game_id', gameId)
+        .eq('season', season)
+        .single()
+      game = gameData
+    }
 
     if (game?.stadium_id) {
       const { data: stadium } = await supabase
@@ -196,17 +277,17 @@ async function calculateEnvironmentModifier(gameId, season) {
         .single()
 
       if (stadium) {
-        // Apply surface modifier
+        // Phase 4A (Academic): Apply surface modifier (learned or default)
         if (stadium.surface_type?.toLowerCase().includes('turf')) {
-          venueModifier *= CONFIG.venue_modifiers.turf
+          venueModifier *= getModifierValue('venue_modifiers', 'turf')
           details.push(`${stadium.stadium_name} (turf)`)
         } else if (stadium.surface_type?.toLowerCase().includes('grass')) {
-          venueModifier *= CONFIG.venue_modifiers.grass
+          venueModifier *= getModifierValue('venue_modifiers', 'grass')
         }
 
-        // Apply roof modifier
+        // Phase 4A (Academic): Apply roof modifier (learned or default)
         if (stadium.roof_type?.toLowerCase() === 'dome' || stadium.roof_type?.toLowerCase() === 'retractable dome') {
-          venueModifier *= CONFIG.venue_modifiers.dome
+          venueModifier *= getModifierValue('venue_modifiers', 'dome')
           details.push('dome')
         }
       }
@@ -220,11 +301,12 @@ async function calculateEnvironmentModifier(gameId, season) {
       .eq('game_id', gameId)
       .single()
 
+    // Phase 4A (Academic): Apply weather penalties (learned or default)
     // Skip weather modifiers if table doesn't exist
     if (weather && !weatherError) {
       // High wind penalty
       if (weather.wind_speed && weather.wind_speed > 15) {
-        weatherModifier *= CONFIG.weather_penalties.high_wind
+        weatherModifier *= getModifierValue('weather_penalties', 'high_wind')
         details.push(`high wind (${weather.wind_speed}mph)`)
       }
 
@@ -233,29 +315,31 @@ async function calculateEnvironmentModifier(gameId, season) {
         weather.conditions.toLowerCase().includes('rain') ||
         weather.conditions.toLowerCase().includes('snow')
       )) {
-        weatherModifier *= CONFIG.weather_penalties.precipitation
+        weatherModifier *= getModifierValue('weather_penalties', 'precipitation')
         details.push(weather.conditions.toLowerCase())
       }
 
       // Extreme cold penalty
       if (weather.temperature && weather.temperature < 25) {
-        weatherModifier *= CONFIG.weather_penalties.extreme_cold
+        weatherModifier *= getModifierValue('weather_penalties', 'extreme_cold')
         details.push(`cold (${weather.temperature}°F)`)
       }
     }
 
-    const combinedModifier = venueModifier * weatherModifier
+    const combinedModifier = venueModifier * weatherModifier * homeModifier
 
     return {
       modifier: Math.round(combinedModifier * 100) / 100,
       venue: Math.round(venueModifier * 100) / 100,
       weather: Math.round(weatherModifier * 100) / 100,
+      home: Math.round(homeModifier * 100) / 100,
       details: details.length > 0 ? details.join(', ') : 'standard conditions'
     }
   } catch (error) {
-    console.error('Error calculating environment modifier:', error)
+    logError('Error calculating environment modifier:', error)
     return {
       modifier: 1.0,
+      home: 1.0,
       venue: 1.0,
       weather: 1.0,
       details: 'standard conditions'
@@ -307,9 +391,9 @@ function validateDataCompleteness(game, players, stats) {
  * Calculate performance floors for a specific game
  */
 async function calculateFloorsForGame(gameId, season = CONFIG.current_season) {
-  console.log(`\n${'='.repeat(80)}`)
-  console.log(`Calculating Performance Floors for Game: ${gameId}`)
-  console.log('='.repeat(80))
+  log(`\n${'='.repeat(80)}`)
+  log(`Calculating Performance Floors for Game: ${gameId}`)
+  log('='.repeat(80))
 
   // Get game details
   const { data: game, error: gameError} = await supabase
@@ -320,39 +404,40 @@ async function calculateFloorsForGame(gameId, season = CONFIG.current_season) {
     .single()
 
   if (gameError || !game) {
-    console.error('Error fetching game:', gameError?.message || 'Game not found')
+    logError('Error fetching game:', gameError?.message || 'Game not found')
     return
   }
 
   // Phase 3.3: Validate data completeness
   const validation = validateDataCompleteness(game, null, null)
   if (!validation.isValid) {
-    console.error('❌ Data validation failed:')
-    validation.errors.forEach(err => console.error(`   - ${err}`))
+    logError('❌ Data validation failed:')
+    validation.errors.forEach(err => logError(`   - ${err}`))
     return
   }
 
   if (validation.warnings.length > 0) {
-    console.log('⚠️  Data warnings:')
-    validation.warnings.forEach(warn => console.log(`   - ${warn}`))
+    log('⚠️  Data warnings:')
+    validation.warnings.forEach(warn => log(`   - ${warn}`))
   }
 
-  console.log(`\n📅 ${game.away_team_id} @ ${game.home_team_id} (Week ${game.week})`)
-  console.log(`Status: ${game.status}`)
-  console.log(`Date: ${game.game_date}`)
-
-  // Get environment modifier (Phase 2.1)
-  const environmentMod = await calculateEnvironmentModifier(gameId, season)
-  console.log(`🏟️  Environment: ${environmentMod.details} (modifier: ${environmentMod.modifier}x)`)
+  log(`\n📅 ${game.away_team_id} @ ${game.home_team_id} (Week ${game.week})`)
+  log(`Status: ${game.status}`)
+  log(`Date: ${game.game_date}`)
 
   // Get active players for both teams
   const teams = [game.home_team_id, game.away_team_id]
 
   for (const teamId of teams) {
     const opponentId = getOpponent(game, teamId)
-    console.log(`\n${'─'.repeat(80)}`)
-    console.log(`Team: ${teamId} (vs ${opponentId})`)
-    console.log('─'.repeat(80))
+
+    // Get environment modifier per team (Phase 2.1 + Phase 2.2 V2)
+    const environmentMod = await calculateEnvironmentModifier(gameId, season, teamId, game)
+
+    log(`\n${'─'.repeat(80)}`)
+    log(`Team: ${teamId} (vs ${opponentId})`)
+    log(`🏟️  Environment: ${environmentMod.details} (modifier: ${environmentMod.modifier}x)`)
+    log('─'.repeat(80))
 
     // Get ALL player stats for this team this season (up to current week)
     // Then we'll filter to most recent N games with actual data
@@ -363,7 +448,7 @@ async function calculateFloorsForGame(gameId, season = CONFIG.current_season) {
       .eq('season', season)
 
     if (!allTeamStats || allTeamStats.length === 0) {
-      console.log(`No player stats found for ${teamId} this season`)
+      log(`No player stats found for ${teamId} this season`)
       continue
     }
 
@@ -379,11 +464,11 @@ async function calculateFloorsForGame(gameId, season = CONFIG.current_season) {
       .order('week', { ascending: false })
 
     if (!gamesWithStats || gamesWithStats.length === 0) {
-      console.log(`No completed games with stats found for ${teamId} before week ${game.week}`)
+      log(`No completed games with stats found for ${teamId} before week ${game.week}`)
       continue
     }
 
-    console.log(`Found ${gamesWithStats.length} games with stats for ${teamId} before week ${game.week}`)
+    log(`Found ${gamesWithStats.length} games with stats for ${teamId} before week ${game.week}`)
 
     // Use stats from these games
     const gameIdsWithStats = gamesWithStats.map(g => g.game_id)
@@ -393,7 +478,7 @@ async function calculateFloorsForGame(gameId, season = CONFIG.current_season) {
     const uniquePlayerIds = [...new Set(players?.map(p => p.player_id) || [])]
 
     if (uniquePlayerIds.length === 0) {
-      console.log(`No players found for ${teamId} in recent games`)
+      log(`No players found for ${teamId} in recent games`)
       continue
     }
 
@@ -407,7 +492,7 @@ async function calculateFloorsForGame(gameId, season = CONFIG.current_season) {
     const playerMap = new Map(playerDetails?.map(p => [p.player_id, p]) || [])
 
     if (!players || players.length === 0 || uniquePlayerIds.length === 0) {
-      console.log(`No skill position players found for ${teamId}`)
+      log(`No skill position players found for ${teamId}`)
       continue
     }
 
@@ -416,12 +501,24 @@ async function calculateFloorsForGame(gameId, season = CONFIG.current_season) {
       .map(id => playerMap.get(id))
       .filter(p => p !== undefined)
 
-    console.log(`Processing ${enrichedPlayers.length} skill position players for ${teamId}`)
+    log(`Processing ${enrichedPlayers.length} skill position players for ${teamId}`)
 
     // Calculate floors for key positions
     const keyPlayers = await calculateTeamFloors(enrichedPlayers, teamId, opponentId, game.week, season, environmentMod)
 
-    console.log(`Generated projections for ${keyPlayers.length} players`)
+    log(`Generated projections for ${keyPlayers.length} players`)
+
+    // Phase 3.2 (V2): Add to JSON output if in JSON mode
+    if (JSON_MODE) {
+      JSON_OUTPUT.games.push({
+        game_id: game.game_id,
+        week: game.week,
+        team_id: teamId,
+        opponent_id: opponentId,
+        environment: environmentMod,
+        players: keyPlayers
+      })
+    }
 
     // Display results
     displayTeamFloors(keyPlayers, teamId)
@@ -525,9 +622,43 @@ async function calculateTeamFloors(players, teamId, opponentId, week, season, en
 
   // Log excluded players if any
   if (excludedPlayers.length > 0) {
-    console.log(`\n❌ Excluded due to injury (${excludedPlayers.length}):`)
+    log(`\n❌ Excluded due to injury (${excludedPlayers.length}):`)
     for (const player of excludedPlayers) {
-      console.log(`   ${player.name} (${player.position}) - ${player.status}${player.injury ? ` - ${player.injury}` : ''}`)
+      log(`   ${player.name} (${player.position}) - ${player.status}${player.injury ? ` - ${player.injury}` : ''}`)
+    }
+  }
+
+  // Phase 2 (Academic): Calculate position-level statistics for hierarchical modeling
+  // Group players by position for between-player variance calculation
+  const playersByPosition = {}
+  for (const player of activePlayers) {
+    const position = player.primary_position
+    if (!playersByPosition[position]) {
+      playersByPosition[position] = []
+    }
+    const seasonStats = playerStatsMap.get(player.player_id) || []
+    if (seasonStats.length >= CONFIG.min_games_played) {
+      playersByPosition[position].push({
+        player_id: player.player_id,
+        full_name: player.full_name,
+        games: seasonStats
+      })
+    }
+  }
+
+  // Calculate position-level baseline stats for each position
+  const positionStatsCache = {}
+  for (const [position, positionPlayers] of Object.entries(playersByPosition)) {
+    // For each relevant stat category for this position
+    const statCategories = getStatCategories(position)
+    positionStatsCache[position] = {}
+
+    for (const category of statCategories) {
+      const statField = category.stat
+      positionStatsCache[position][statField] = calculatePositionStats(
+        positionPlayers,
+        statField
+      )
     }
   }
 
@@ -545,8 +676,20 @@ async function calculateTeamFloors(players, teamId, opponentId, week, season, en
       .sort((a, b) => b.week - a.week)
       .slice(0, rollingWindow)
 
+    // Get position-level stats for hierarchical adjustment
+    const positionStats = positionStatsCache[player.primary_position] || {}
+
     // Calculate stats by position
-    const floorData = await calculatePlayerFloors(player, seasonStats, recentGames, opponentId, week, season, environmentMod)
+    const floorData = await calculatePlayerFloors(
+      player,
+      seasonStats,
+      recentGames,
+      opponentId,
+      week,
+      season,
+      environmentMod,
+      positionStats
+    )
 
     return floorData
   })
@@ -558,7 +701,7 @@ async function calculateTeamFloors(players, teamId, opponentId, week, season, en
 /**
  * Calculate floors for individual player
  */
-async function calculatePlayerFloors(player, seasonStats, recentGames, opponentId, week, season, environmentMod = { modifier: 1.0 }) {
+async function calculatePlayerFloors(player, seasonStats, recentGames, opponentId, week, season, environmentMod = { modifier: 1.0 }, positionStats = {}) {
   const stats = {
     player_id: player.player_id,
     player_name: player.full_name,
@@ -571,6 +714,9 @@ async function calculatePlayerFloors(player, seasonStats, recentGames, opponentI
   const statCategories = getStatCategories(player.primary_position)
 
   for (const category of statCategories) {
+    // Get position-level stats for this specific stat category
+    const statPositionStats = positionStats[category.stat] || null
+
     const projection = await calculateStatFloor(
       seasonStats,
       recentGames,
@@ -580,7 +726,8 @@ async function calculatePlayerFloors(player, seasonStats, recentGames, opponentI
       opponentId,
       week,
       season,
-      environmentMod
+      environmentMod,
+      statPositionStats
     )
 
     if (projection) {
@@ -606,7 +753,8 @@ function getStatCategories(position) {
     RB: [
       { stat: 'rushing_yards', opportunity: 'rushing_attempts', label: 'Rushing Yards' },
       { stat: 'receiving_yards', opportunity: 'receiving_targets', label: 'Receiving Yards' },
-      { stat: 'fantasy_points_ppr', opportunity: 'rushing_attempts', label: 'Fantasy Points' }
+      // Phase 2.4 (V2): Fantasy points use combined opportunities (rushing + receiving)
+      { stat: 'fantasy_points_ppr', opportunity: 'total_touches', label: 'Fantasy Points' }
     ],
     WR: [
       { stat: 'receiving_yards', opportunity: 'receiving_targets', label: 'Receiving Yards' },
@@ -624,7 +772,7 @@ function getStatCategories(position) {
 /**
  * Calculate floor for specific stat (Enhanced with Phase 1.1, 1.4, 2.1, and 2.2)
  */
-async function calculateStatFloor(seasonStats, recentGames, statField, opportunityField, position, opponentId, week, season, environmentMod = { modifier: 1.0 }) {
+async function calculateStatFloor(seasonStats, recentGames, statField, opportunityField, position, opponentId, week, season, environmentMod = { modifier: 1.0 }, positionStats = null) {
   // Filter out null values
   const seasonValues = seasonStats
     .map(g => g[statField])
@@ -647,17 +795,63 @@ async function calculateStatFloor(seasonStats, recentGames, statField, opportuni
   // Calculate recent form average
   const recentAvg = recentValues.reduce((a, b) => a + b, 0) / recentValues.length
 
+  // Phase 2.3 (V2): Calculate trend momentum (simple slope)
+  let trendFactor = 1.0
+  const minGamesForTrend = CONFIG.trend_momentum.min_games_for_trend
+  if (recentGames.length >= minGamesForTrend) {
+    // Sort recent games by week (most recent first)
+    const sortedRecentGames = [...recentGames].sort((a, b) => b.week - a.week)
+    const values = sortedRecentGames
+      .map(g => g[statField])
+      .filter(v => v !== null && v !== undefined && !isNaN(v))
+
+    if (values.length >= minGamesForTrend) {
+      // Calculate simple slope (sum of differences between consecutive games)
+      let sumSlope = 0
+      for (let i = 0; i < values.length - 1; i++) {
+        sumSlope += (values[i] - values[i + 1]) // Positive if improving (recent > older)
+      }
+
+      const avgSlope = sumSlope / (values.length - 1)
+
+      // Convert slope to percentage change relative to recent average
+      if (recentAvg > 0) {
+        const slopePercent = avgSlope / recentAvg
+        const maxAdjustment = CONFIG.trend_momentum.max_trend_adjustment
+        // Apply configured cap based on momentum
+        trendFactor = 1 + (slopePercent * maxAdjustment)
+        const maxFactor = 1 + maxAdjustment
+        const minFactor = 1 - maxAdjustment
+        trendFactor = Math.min(maxFactor, Math.max(minFactor, trendFactor))
+      }
+    }
+  }
+
   // Phase 2.2: Opportunity-based projections for volume-dependent stats
   let expected
   if (opportunityField && (statField.includes('receiving') || statField.includes('rushing') || statField.includes('passing'))) {
-    // Get opportunity data (targets, attempts)
-    const seasonOpportunities = seasonStats
-      .map(g => g[opportunityField])
-      .filter(v => v !== null && v !== undefined && !isNaN(v))
+    // Phase 2.4 (V2): Special handling for RB total touches (rushing + receiving)
+    let seasonOpportunities, recentOpportunities
 
-    const recentOpportunities = recentGames
-      .map(g => g[opportunityField])
-      .filter(v => v !== null && v !== undefined && !isNaN(v))
+    if (opportunityField === 'total_touches') {
+      // Combine rushing attempts + receiving targets for RB fantasy points
+      seasonOpportunities = seasonStats
+        .map(g => (g.rushing_attempts || 0) + (g.receiving_targets || 0))
+        .filter(v => v > 0) // At least 1 touch
+
+      recentOpportunities = recentGames
+        .map(g => (g.rushing_attempts || 0) + (g.receiving_targets || 0))
+        .filter(v => v > 0)
+    } else {
+      // Standard single opportunity field
+      seasonOpportunities = seasonStats
+        .map(g => g[opportunityField])
+        .filter(v => v !== null && v !== undefined && !isNaN(v))
+
+      recentOpportunities = recentGames
+        .map(g => g[opportunityField])
+        .filter(v => v !== null && v !== undefined && !isNaN(v))
+    }
 
     if (seasonOpportunities.length > 0 && recentOpportunities.length > 0) {
       // Step 1: Project opportunities (weighted average)
@@ -675,17 +869,36 @@ async function calculateStatFloor(seasonStats, recentGames, statField, opportuni
       if (efficiency > 0) {
         expected = projectedOpportunities * efficiency
       } else {
-        // Fallback to simple average
-        expected = (seasonAvg * 0.4) + (recentAvg * 0.6)
+        // Fallback to EWMA projection
+        const ewmaProj = calculateEWMAProjection(seasonStats, recentGames, statField, position)
+        expected = ewmaProj.projection
       }
     } else {
-      // Fallback to simple average
-      expected = (seasonAvg * 0.4) + (recentAvg * 0.6)
+      // Fallback to EWMA projection
+      const ewmaProj = calculateEWMAProjection(seasonStats, recentGames, statField, position)
+      expected = ewmaProj.projection
     }
   } else {
-    // For non-opportunity stats (like fantasy points), use simple weighted average
-    expected = (seasonAvg * 0.4) + (recentAvg * 0.6)
+    // Phase 4B (Academic): EWMA temporal smoothing for non-opportunity stats
+    // Replaces simple weighted average with exponential smoothing
+    // Citation: Zhang et al. (2025) - Deep learning applications in sports
+    const ewmaProj = calculateEWMAProjection(seasonStats, recentGames, statField, position)
+    expected = ewmaProj.projection
   }
+
+  // Phase 2 (Academic): Apply hierarchical Bayesian shrinkage
+  // Shrink player estimate toward position mean based on sample size
+  let hierarchicalAdjustment = null
+  if (positionStats && positionStats.positionMean) {
+    hierarchicalAdjustment = applyHierarchicalAdjustment(seasonValues, positionStats)
+
+    // Use shrunken estimate instead of raw expected value
+    // This pulls players with few games toward position average
+    expected = hierarchicalAdjustment.shrunkenMean
+  }
+
+  // Phase 2.3 (V2): Apply trend momentum adjustment
+  expected = expected * trendFactor
 
   // Phase 1.1: Apply opponent defensive efficiency factor
   let opponentFactor = 1.0
@@ -701,31 +914,30 @@ async function calculateStatFloor(seasonStats, recentGames, statField, opportuni
     expected = expected * opponentFactor
   }
 
-  // Phase 2.1: Apply environment modifier (venue + weather)
-  expected = expected * environmentMod.modifier
+  // Phase 3 (Academic V2): Bootstrap Prediction Intervals
+  // Calculate combined modifier for bootstrap (opponent × environment)
+  const combinedModifier = opponentFactor * environmentMod.modifier
 
-  // Phase 1.4: Use position-specific volatility
-  const volatilityFactor = CONFIG.position_volatility[position] || CONFIG.volatility_factor
+  // Generate bootstrap prediction interval with modifiers applied
+  const bootstrapInterval = calculateModifiedPredictionInterval(
+    seasonValues,
+    combinedModifier,
+    {
+      numSamples: CONFIG.bootstrap_samples || 500,
+      confidence: CONFIG.bootstrap_confidence || 0.80,
+      statistic: 'mean'
+    }
+  );
 
-  // Phase 2.4: Percentile-based floor (15th percentile of actual outcomes)
-  let floor
-  if (seasonValues.length >= 3) {
-    // Sort values and get 15th percentile
-    const sortedValues = [...seasonValues].sort((a, b) => a - b)
-    const percentileIndex = Math.floor(sortedValues.length * 0.15)
-    const percentile15 = sortedValues[percentileIndex]
+  // Use bootstrap results for floor/expected/ceiling (override previous calculations)
+  const floor = bootstrapInterval.floor;
+  expected = bootstrapInterval.expected; // Reassign (already declared above)
+  const ceiling = bootstrapInterval.ceiling;
 
-    // Use percentile-based floor (more realistic than linear)
-    floor = Math.max(0, percentile15)
-  } else {
-    // Fallback to linear calculation for small samples
-    floor = Math.max(0, expected - (seasonStdDev * volatilityFactor))
-  }
+  // Confidence level assessment (HIGH/MEDIUM/LOW)
+  const confidenceLevel = assessConfidenceLevel(bootstrapInterval);
 
-  // Ceiling calculation: Expected + (σ × position_volatility_factor)
-  const ceiling = expected + (seasonStdDev * volatilityFactor)
-
-  // Confidence score (based on sample size and consistency)
+  // Legacy confidence score for compatibility
   const confidence = calculateConfidence(seasonValues.length, seasonStdDev, seasonAvg)
 
   return {
@@ -736,7 +948,10 @@ async function calculateStatFloor(seasonStats, recentGames, statField, opportuni
     floor: Math.round(floor * 10) / 10,
     ceiling: Math.round(ceiling * 10) / 10,
     confidence: confidence,
-    opponent_factor: opponentFactor  // Show opponent matchup difficulty
+    confidence_level: confidenceLevel, // HIGH/MEDIUM/LOW (bootstrap-based)
+    opponent_factor: opponentFactor,  // Show opponent matchup difficulty
+    bootstrap_interval_width: bootstrapInterval.intervalWidth,
+    bootstrap_samples: bootstrapInterval.bootstrapSamples
   }
 }
 
@@ -765,7 +980,7 @@ function calculateConfidence(sampleSize, stdDev, mean) {
  */
 function displayTeamFloors(players, teamId) {
   if (!players || players.length === 0) {
-    console.log(`\nNo projections available for ${teamId}`)
+    log(`\nNo projections available for ${teamId}`)
     return
   }
 
@@ -795,24 +1010,29 @@ function displayTeamFloors(players, teamId) {
     const limit = positionLimits[pos] || 999
     const displayPlayers = posPlayers.slice(0, limit)
 
-    console.log(`\n${pos}${limit > 1 ? 's' : ''} (Top ${limit}):`)
-    console.log('─'.repeat(80))
+    log(`\n${pos}${limit > 1 ? 's' : ''} (Top ${limit}):`)
+    log('─'.repeat(80))
 
     for (const player of displayPlayers) {
       // Phase 3.4: Display injury warning if player is questionable
       const injuryWarning = player.injury_warning ? ` ⚠️ QUESTIONABLE (${player.injury_type || 'Injury'})` : ''
-      console.log(`\n  ${player.player_name} (${player.games_played} games)${injuryWarning}:`)
+      log(`\n  ${player.player_name} (${player.games_played} games)${injuryWarning}:`)
 
       for (const proj of player.projections) {
-        console.log(`    ${proj.stat}:`)
-        console.log(`      Expected: ${proj.expected} | Floor: ${proj.floor} | Ceiling: ${proj.ceiling}`)
-        console.log(`      Recent: ${proj.recent_avg} | Season: ${proj.season_avg} | StdDev: ${proj.std_dev}`)
+        log(`    ${proj.stat}:`)
+        log(`      ${proj.floor} ← ${proj.expected} → ${proj.ceiling} (80% CI)`)
+        log(`      Recent: ${proj.recent_avg} | Season: ${proj.season_avg} | StdDev: ${proj.std_dev}`)
 
         // Show opponent matchup difficulty
         const matchupIndicator = proj.opponent_factor > 1.05 ? '✅ Easier' :
                                 proj.opponent_factor < 0.95 ? '⚠️ Tougher' : '➖ Average'
-        console.log(`      Opponent Factor: ${proj.opponent_factor} ${matchupIndicator}`)
-        console.log(`      Confidence: ${(proj.confidence * 100).toFixed(0)}%`)
+        log(`      Opponent Factor: ${proj.opponent_factor} ${matchupIndicator}`)
+
+        // Show bootstrap-based confidence level
+        const confidenceEmoji = proj.confidence_level === 'HIGH' ? '🟢' :
+                                proj.confidence_level === 'MEDIUM' ? '🟡' : '🔴';
+        log(`      Confidence: ${confidenceEmoji} ${proj.confidence_level} (${(proj.confidence * 100).toFixed(0)}%)`)
+        log(`      Bootstrap: ${proj.bootstrap_samples} samples, ±${proj.bootstrap_interval_width} range`)
       }
     }
   }
@@ -822,7 +1042,7 @@ function displayTeamFloors(players, teamId) {
  * Calculate floors for games by week
  */
 async function calculateFloorsForWeek(week, season = CONFIG.current_season) {
-  console.log(`\nFetching games for Week ${week}...`)
+  log(`\nFetching games for Week ${week}...`)
 
   const { data: games } = await supabase
     .from('games')
@@ -832,7 +1052,7 @@ async function calculateFloorsForWeek(week, season = CONFIG.current_season) {
     .eq('status', 'scheduled')
 
   if (!games || games.length === 0) {
-    console.log(`No scheduled games found for Week ${week}`)
+    log(`No scheduled games found for Week ${week}`)
     return
   }
 
@@ -847,19 +1067,26 @@ async function calculateFloorsForWeek(week, season = CONFIG.current_season) {
 async function main() {
   const args = process.argv.slice(2)
 
+  // Phase 3.2 (V2): Check for JSON mode flag
+  if (args.includes('--json')) {
+    JSON_MODE = true
+  }
+
   if (args.includes('--help')) {
-    console.log(`
+    log(`
 Usage:
   node scripts/calculate-performance-floors.js [options]
 
 Options:
   --game=<game_id>   Calculate floors for specific game
   --week=<week>      Calculate floors for all scheduled games in week
+  --json             Output results as JSON (for programmatic use)
   --help             Show this help message
 
 Examples:
   node scripts/calculate-performance-floors.js --week=7
   node scripts/calculate-performance-floors.js --game=401772510
+  node scripts/calculate-performance-floors.js --week=7 --json > floors.json
     `)
     return
   }
@@ -874,13 +1101,18 @@ Examples:
     const week = parseInt(weekArg.split('=')[1])
     await calculateFloorsForWeek(week)
   } else {
-    console.log('Please specify --game=<game_id> or --week=<week>')
-    console.log('Run with --help for usage information')
+    log('Please specify --game=<game_id> or --week=<week>')
+    log('Run with --help for usage information')
+  }
+
+  // Phase 3.2 (V2): Output JSON if in JSON mode
+  if (JSON_MODE) {
+    log(JSON.stringify(JSON_OUTPUT, null, 2))
   }
 }
 
 main()
   .catch(error => {
-    console.error('Error:', error)
+    logError('Error:', error)
     process.exit(1)
   })
