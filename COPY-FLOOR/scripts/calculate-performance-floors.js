@@ -439,6 +439,11 @@ async function calculateOpponentFactor(opponentId, statCategory, position, seaso
     const cacheKey = `${season}-${beforeWeek}-${statCategory}-${position}`
     let leagueAvg = LEAGUE_AVG_CACHE.get(cacheKey)
 
+    // Task 14 (V4): Rolling window configuration for dynamic opponent trends
+    // Captures mid-season defensive improvement/decline (injuries, scheme changes)
+    const rollingWindowSize = 5 // Use last 5 games for opponent defensive trends
+    const minGamesForRolling = 4 // Require at least 4 games for rolling window
+
     // Task 1 (V4): Attempt position-specific defensive stats first
     // Query opponent's games and aggregate yards allowed by offensive position
     let opponentAvg = null
@@ -471,9 +476,21 @@ async function calculateOpponentFactor(opponentId, statCategory, position, seaso
         const filteredStats = opponentDefStats.filter(s => validGameIds.has(s.game_id))
 
         if (filteredStats.length >= 3) {
-          // Calculate avg yards allowed per game to this position
-          const totalYards = filteredStats.reduce((sum, s) => sum + (s.receiving_yards || 0), 0)
-          const gamesPlayed = validGameIds.size
+          // Task 14 (V4): Sort games by week descending, take last N games (rolling window)
+          const gamesWithWeeks = gameWeeks
+            .filter(gw => validGameIds.has(gw.game_id))
+            .sort((a, b) => b.week - a.week) // Descending (most recent first)
+
+          // Task 14 (V4): Apply rolling window if sufficient data (captures mid-season trends)
+          let recentGameIds = validGameIds
+          if (gamesWithWeeks.length >= minGamesForRolling) {
+            recentGameIds = new Set(gamesWithWeeks.slice(0, rollingWindowSize).map(g => g.game_id))
+          }
+
+          // Calculate avg yards allowed per game to this position (rolling window)
+          const recentStats = filteredStats.filter(s => recentGameIds.has(s.game_id))
+          const totalYards = recentStats.reduce((sum, s) => sum + (s.receiving_yards || 0), 0)
+          const gamesPlayed = recentGameIds.size
           opponentAvg = gamesPlayed > 0 ? totalYards / gamesPlayed : null
           usePositionSpecific = true
         }
@@ -501,8 +518,19 @@ async function calculateOpponentFactor(opponentId, statCategory, position, seaso
         const filteredStats = opponentDefStats.filter(s => validGameIds.has(s.game_id))
 
         if (filteredStats.length >= 3) {
-          const totalYards = filteredStats.reduce((sum, s) => sum + (s.rushing_yards || 0), 0)
-          const gamesPlayed = validGameIds.size
+          // Task 14 (V4): Apply rolling window for RB rushing yards allowed
+          const gamesWithWeeks = gameWeeks
+            .filter(gw => validGameIds.has(gw.game_id))
+            .sort((a, b) => b.week - a.week) // Descending
+
+          let recentGameIds = validGameIds
+          if (gamesWithWeeks.length >= minGamesForRolling) {
+            recentGameIds = new Set(gamesWithWeeks.slice(0, rollingWindowSize).map(g => g.game_id))
+          }
+
+          const recentStats = filteredStats.filter(s => recentGameIds.has(s.game_id))
+          const totalYards = recentStats.reduce((sum, s) => sum + (s.rushing_yards || 0), 0)
+          const gamesPlayed = recentGameIds.size
           opponentAvg = gamesPlayed > 0 ? totalYards / gamesPlayed : null
           usePositionSpecific = true
         }
@@ -537,7 +565,18 @@ async function calculateOpponentFactor(opponentId, statCategory, position, seaso
         return 1.0
       }
 
-      opponentAvg = filteredGames.reduce((sum, g) => sum + (g.total_yards_allowed || 0), 0) / filteredGames.length
+      // Task 14 (V4): Apply rolling window to team-level total yards allowed
+      const gamesWithWeeks = gameWeeks
+        .filter(gw => validGameIds.has(gw.game_id))
+        .sort((a, b) => b.week - a.week) // Descending
+
+      let recentGameIds = validGameIds
+      if (gamesWithWeeks.length >= minGamesForRolling) {
+        recentGameIds = new Set(gamesWithWeeks.slice(0, rollingWindowSize).map(g => g.game_id))
+      }
+
+      const recentGames = filteredGames.filter(g => recentGameIds.has(g.game_id))
+      opponentAvg = recentGames.reduce((sum, g) => sum + (g.total_yards_allowed || 0), 0) / recentGames.length
     }
 
     // Task 1 (V4): Calculate league average (position-specific if available)
