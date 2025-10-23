@@ -27,6 +27,7 @@ import axios from 'axios'
 import { parse } from 'csv-parse/sync'
 import { getSupabaseClient, upsertBatch } from '../utils/supabase-client.js'
 import { logger, logScriptStart, logScriptEnd } from '../utils/logger.js'
+import { normalizeTeamId } from '../utils/team-normalizer.js'
 
 const SCRIPT_NAME = 'advanced-analytics-scraper.js'
 const SEASON_YEAR = 2025
@@ -81,52 +82,75 @@ async function downloadPlayByPlayData(season) {
 /**
  * Transform nflverse play-by-play to database schema
  */
-function transformPlayByPlayData(pbpRecords, gameId = null) {
+async function transformPlayByPlayData(pbpRecords, gameId = null) {
   logger.info('Transforming play-by-play data...')
 
-  const plays = pbpRecords
-    .filter(play => {
-      // Filter by game if specified
-      if (gameId && play.game_id !== gameId) return false
-      // Only plays with EPA data
-      if (!play.epa && play.epa !== 0) return false
-      return true
-    })
-    .map(play => ({
-      // Use existing play_id if available, otherwise generate
-      play_id: play.play_id || null,
-      game_id: play.game_id,
-      season: play.season,
-      drive_id: play.fixed_drive || null,
-      play_number: play.play_id || null,
-      quarter: play.qtr || null,
-      time_remaining_seconds: play.quarter_seconds_remaining || null,
-      down: play.down || null,
-      yards_to_go: play.ydstogo || null,
-      yard_line: play.yardline_100 ? (50 - play.yardline_100) : null,
-      possession_team_id: play.posteam || null,
-      play_type: play.play_type || null,
-      play_description: play.desc || null,
-      yards_gained: play.yards_gained || 0,
+  const filteredPlays = pbpRecords.filter(play => {
+    // Filter by game if specified
+    if (gameId && play.game_id !== gameId) return false
+    // Only plays with EPA data
+    if (!play.epa && play.epa !== 0) return false
+    return true
+  })
 
-      // Advanced analytics
-      epa: play.epa || 0,
-      wpa: play.wpa || 0,
-      success: play.success === 1 || play.success === true,
+  // Normalize team IDs first (batch operation)
+  const uniqueTeams = [...new Set(filteredPlays.map(p => p.posteam).filter(Boolean))]
+  const teamMap = new Map()
 
-      // Additional context (if we add columns later)
-      // air_epa: play.air_epa || 0,
-      // yac_epa: play.yac_epa || 0,
-      // comp_air_epa: play.comp_air_epa || 0,
-      // comp_yac_epa: play.comp_yac_epa || 0,
-      // total_home_epa: play.total_home_epa || 0,
-      // total_away_epa: play.total_away_epa || 0,
-      // home_wp: play.home_wp || null,
-      // away_wp: play.away_wp || null,
-    }))
+  logger.info(`Normalizing ${uniqueTeams.length} team IDs...`)
+  for (const team of uniqueTeams) {
+    const normalized = await normalizeTeamId(team)
+    teamMap.set(team, normalized || team)
+  }
+
+  const plays = filteredPlays.map(play => ({
+    // Use existing play_id if available, otherwise generate
+    play_id: play.play_id || null,
+    game_id: play.game_id,
+    season: play.season,
+    drive_id: null,  // Skip drive FK for now (game_drives table not populated)
+    play_number: play.play_id || null,
+    quarter: play.qtr || null,
+    time_remaining_seconds: play.quarter_seconds_remaining || null,
+    down: play.down || null,
+    yards_to_go: play.ydstogo || null,
+    yard_line: play.yardline_100 ? (50 - play.yardline_100) : null,
+    possession_team_id: play.posteam ? teamMap.get(play.posteam) : null,
+    play_type: play.play_type || null,
+    play_description: play.desc || null,
+    yards_gained: play.yards_gained || 0,
+
+    // Advanced analytics
+    epa: play.epa || 0,
+    wpa: play.wpa || 0,
+    success: play.success === 1 || play.success === true,
+
+    // Additional context (if we add columns later)
+    // air_epa: play.air_epa || 0,
+    // yac_epa: play.yac_epa || 0,
+    // comp_air_epa: play.comp_air_epa || 0,
+    // comp_yac_epa: play.comp_yac_epa || 0,
+    // total_home_epa: play.total_home_epa || 0,
+    // total_away_epa: play.total_away_epa || 0,
+    // home_wp: play.home_wp || null,
+    // away_wp: play.away_wp || null,
+  }))
+
+  // Deduplicate by (play_id, season) - keep last occurrence
+  const deduped = new Map()
+  plays.forEach(play => {
+    const key = `${play.play_id}-${play.season}`
+    deduped.set(key, play)
+  })
+
+  const uniquePlays = Array.from(deduped.values())
 
   logger.info(`✓ Transformed ${plays.length.toLocaleString()} plays with analytics`)
-  return plays
+  if (plays.length !== uniquePlays.length) {
+    logger.warn(`  Removed ${plays.length - uniquePlays.length} duplicate play_ids`)
+  }
+
+  return uniquePlays
 }
 
 /**
@@ -183,7 +207,7 @@ async function scrapeAdvancedAnalytics(season, gameId = null, week = null) {
     }
 
     // Transform to database schema
-    const plays = transformPlayByPlayData(filteredData, gameId)
+    const plays = await transformPlayByPlayData(filteredData, gameId)
 
     if (plays.length === 0) {
       logger.warn('No plays to update')
@@ -212,7 +236,7 @@ async function scrapeAdvancedAnalytics(season, gameId = null, week = null) {
     logger.info('')
     logger.info('Updating play_by_play table...')
 
-    const result = await upsertBatch('play_by_play', plays, ['game_id', 'play_id'])
+    const result = await upsertBatch('play_by_play', plays, ['play_id', 'season'])
 
     logger.info(`✓ Updated ${result.success.toLocaleString()} plays with analytics`)
 
