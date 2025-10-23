@@ -1243,6 +1243,11 @@ async function calculateStatFloor(seasonStats, recentGames, statField, opportuni
   // Task 17 (V4): Calculate player CV for bootstrap width scaling
   const playerCV = seasonAvg > 0 ? seasonStdDev / seasonAvg : 0
 
+  // V5 Improvement #2: Enable block bootstrap for time series dependence
+  const useBlockBootstrap = CONFIG.v5_features?.block_bootstrap !== false &&
+                            CONFIG.block_bootstrap?.enabled !== false
+  const blockSize = CONFIG.block_bootstrap?.block_size || null
+
   // Generate bootstrap prediction interval with modifiers applied
   const bootstrapInterval = calculateModifiedPredictionInterval(
     seasonValues,
@@ -1251,7 +1256,9 @@ async function calculateStatFloor(seasonStats, recentGames, statField, opportuni
       numSamples: CONFIG.bootstrap_samples || 500,
       confidence: CONFIG.bootstrap_confidence || 0.80,
       statistic: 'mean',
-      playerCV: playerCV  // Task 17 (V4): Pass player CV for interval width scaling
+      playerCV: playerCV,  // V4: Pass player CV for interval width scaling
+      useBlockBootstrap: useBlockBootstrap,  // V5: Enable block bootstrap
+      blockSize: blockSize  // V5: Block size (null = auto-calculate)
     }
   );
 
