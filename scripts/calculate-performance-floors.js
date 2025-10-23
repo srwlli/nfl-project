@@ -231,6 +231,182 @@ async function calculateOpponentFactor(opponentId, statCategory, season, beforeW
 }
 
 /**
+ * Task 12 (V4): Calculate player-specific environment performance
+ *
+ * Tracks historical player performance in specific conditions:
+ * - Dome vs outdoor stadiums
+ * - Turf vs grass surface
+ * - Cold weather games (<32°F)
+ * - High wind games (>15mph)
+ *
+ * Theory:
+ * - Some players have proven track records in specific environments
+ * - Example: Cold-weather QBs (Josh Allen), dome-specialist WRs
+ * - Historical data more accurate than generic positional adjustments
+ *
+ * @param {string} playerId - Player's espn_id (e.g., 'espn-3139477')
+ * @param {string} statField - Stat to analyze (e.g., 'passing_yards')
+ * @param {Object} gameEnvironment - Current game environment (dome, turf, cold, wind)
+ * @param {number} season - Current season
+ * @returns {Promise<Object>} Player-specific environment adjustment
+ */
+async function calculatePlayerEnvironmentFactor(playerId, statField, gameEnvironment, season) {
+  const minGamesForPersonalization = 3; // Need 3+ games in condition for personalization
+
+  try {
+    // Fetch ALL historical games for this player across all seasons (not just current)
+    const { data: allGames, error } = await supabase
+      .from('player_game_stats')
+      .select(`
+        game_id,
+        season,
+        ${statField}
+      `)
+      .eq('player_id', playerId)
+      .not(statField, 'is', null);
+
+    if (error || !allGames || allGames.length < minGamesForPersonalization) {
+      // Not enough data - return neutral factor
+      return { factor: 1.0, source: 'insufficient_data', gamesInCondition: 0 };
+    }
+
+    // Enrich games with environment data
+    const gameIds = allGames.map(g => g.game_id);
+
+    // Batch fetch stadium/weather data for all games
+    const { data: gameData } = await supabase
+      .from('games')
+      .select('game_id, stadium_id')
+      .in('game_id', gameIds);
+
+    const gameStadiumMap = new Map(gameData?.map(g => [g.game_id, g.stadium_id]) || []);
+
+    const stadiumIds = [...new Set(gameData?.map(g => g.stadium_id).filter(Boolean) || [])];
+    const { data: stadiumData } = await supabase
+      .from('stadiums')
+      .select('stadium_id, surface_type, roof_type')
+      .in('stadium_id', stadiumIds);
+
+    const stadiumInfoMap = new Map(stadiumData?.map(s => [s.stadium_id, s]) || []);
+
+    const { data: weatherData } = await supabase
+      .from('game_weather')
+      .select('game_id, temperature, wind_speed')
+      .in('game_id', gameIds);
+
+    const weatherMap = new Map(weatherData?.map(w => [w.game_id, w]) || []);
+
+    // Categorize games by environment conditions
+    const conditionGames = {
+      dome: [],
+      outdoor: [],
+      turf: [],
+      grass: [],
+      cold: [],
+      highWind: [],
+      all: allGames
+    };
+
+    for (const game of allGames) {
+      const stadiumId = gameStadiumMap.get(game.game_id);
+      const stadium = stadiumId ? stadiumInfoMap.get(stadiumId) : null;
+      const weather = weatherMap.get(game.game_id);
+
+      if (stadium) {
+        // Dome/outdoor
+        const isDome = stadium.roof_type?.toLowerCase().includes('dome');
+        if (isDome) {
+          conditionGames.dome.push(game);
+        } else {
+          conditionGames.outdoor.push(game);
+        }
+
+        // Turf/grass
+        const isTurf = stadium.surface_type?.toLowerCase().includes('turf');
+        if (isTurf) {
+          conditionGames.turf.push(game);
+        } else {
+          conditionGames.grass.push(game);
+        }
+      }
+
+      if (weather) {
+        // Cold weather
+        if (weather.temperature && weather.temperature < 32) {
+          conditionGames.cold.push(game);
+        }
+
+        // High wind
+        if (weather.wind_speed && weather.wind_speed > 15) {
+          conditionGames.highWind.push(game);
+        }
+      }
+    }
+
+    // Determine which condition to apply based on current game environment
+    let relevantCondition = null;
+    let conditionName = '';
+
+    // Priority: Weather > Venue > Surface
+    if (gameEnvironment.cold && conditionGames.cold.length >= minGamesForPersonalization) {
+      relevantCondition = conditionGames.cold;
+      conditionName = 'cold';
+    } else if (gameEnvironment.highWind && conditionGames.highWind.length >= minGamesForPersonalization) {
+      relevantCondition = conditionGames.highWind;
+      conditionName = 'highWind';
+    } else if (gameEnvironment.dome && conditionGames.dome.length >= minGamesForPersonalization) {
+      relevantCondition = conditionGames.dome;
+      conditionName = 'dome';
+    } else if (gameEnvironment.outdoor && conditionGames.outdoor.length >= minGamesForPersonalization) {
+      relevantCondition = conditionGames.outdoor;
+      conditionName = 'outdoor';
+    } else if (gameEnvironment.turf && conditionGames.turf.length >= minGamesForPersonalization) {
+      relevantCondition = conditionGames.turf;
+      conditionName = 'turf';
+    } else if (gameEnvironment.grass && conditionGames.grass.length >= minGamesForPersonalization) {
+      relevantCondition = conditionGames.grass;
+      conditionName = 'grass';
+    }
+
+    if (!relevantCondition) {
+      // No personalization available - return neutral
+      return { factor: 1.0, source: 'insufficient_condition_data', gamesInCondition: 0 };
+    }
+
+    // Calculate player's performance in this condition vs overall average
+    const conditionValues = relevantCondition.map(g => g[statField]).filter(v => v !== null && !isNaN(v));
+    const allValues = conditionGames.all.map(g => g[statField]).filter(v => v !== null && !isNaN(v));
+
+    if (conditionValues.length < minGamesForPersonalization || allValues.length < minGamesForPersonalization) {
+      return { factor: 1.0, source: 'insufficient_sample', gamesInCondition: conditionValues.length };
+    }
+
+    const conditionAvg = conditionValues.reduce((a, b) => a + b, 0) / conditionValues.length;
+    const overallAvg = allValues.reduce((a, b) => a + b, 0) / allValues.length;
+
+    // Calculate factor as ratio of condition performance to overall performance
+    const rawFactor = overallAvg > 0 ? conditionAvg / overallAvg : 1.0;
+
+    // Task 12 (V4): Cap personalization to ±20% (0.80-1.20 range)
+    // This prevents overfitting to small samples
+    const cappedFactor = Math.min(1.20, Math.max(0.80, rawFactor));
+
+    return {
+      factor: Math.round(cappedFactor * 100) / 100,
+      source: 'player_history',
+      condition: conditionName,
+      gamesInCondition: conditionValues.length,
+      conditionAvg: Math.round(conditionAvg * 10) / 10,
+      overallAvg: Math.round(overallAvg * 10) / 10
+    };
+
+  } catch (error) {
+    logError(`Error calculating player environment factor for ${playerId}:`, error);
+    return { factor: 1.0, source: 'error', gamesInCondition: 0 };
+  }
+}
+
+/**
  * Calculate environment modifier for game (Phase 2.1)
  * Returns a combined modifier based on venue and weather conditions
  *
@@ -328,12 +504,45 @@ async function calculateEnvironmentModifier(gameId, season, teamId = null, game 
 
     const combinedModifier = venueModifier * weatherModifier * homeModifier
 
+    // Task 12 (V4): Expose environment conditions for player-specific adjustments
+    const conditions = {
+      dome: false,
+      outdoor: false,
+      turf: false,
+      grass: false,
+      cold: false,
+      highWind: false
+    };
+
+    // Determine stadium conditions
+    if (game?.stadium_id) {
+      const { data: stadium } = await supabase
+        .from('stadiums')
+        .select('surface_type, roof_type')
+        .eq('stadium_id', game.stadium_id)
+        .single();
+
+      if (stadium) {
+        conditions.dome = stadium.roof_type?.toLowerCase().includes('dome') || false;
+        conditions.outdoor = !conditions.dome;
+        conditions.turf = stadium.surface_type?.toLowerCase().includes('turf') || false;
+        conditions.grass = !conditions.turf;
+      }
+    }
+
+    // Determine weather conditions
+    if (weather && !weatherError) {
+      conditions.cold = (weather.temperature && weather.temperature < 32) || false;
+      conditions.highWind = (weather.wind_speed && weather.wind_speed > 15) || false;
+    }
+
     return {
       modifier: Math.round(combinedModifier * 100) / 100,
       venue: Math.round(venueModifier * 100) / 100,
       weather: Math.round(weatherModifier * 100) / 100,
       home: Math.round(homeModifier * 100) / 100,
-      details: details.length > 0 ? details.join(', ') : 'standard conditions'
+      details: details.length > 0 ? details.join(', ') : 'standard conditions',
+      conditions: conditions // Task 12 (V4): Environment flags for player-specific adjustments
     }
   } catch (error) {
     logError('Error calculating environment modifier:', error)
@@ -342,7 +551,8 @@ async function calculateEnvironmentModifier(gameId, season, teamId = null, game 
       home: 1.0,
       venue: 1.0,
       weather: 1.0,
-      details: 'standard conditions'
+      details: 'standard conditions',
+      conditions: { dome: false, outdoor: false, turf: false, grass: false, cold: false, highWind: false }
     }
   }
 }
@@ -727,7 +937,8 @@ async function calculatePlayerFloors(player, seasonStats, recentGames, opponentI
       week,
       season,
       environmentMod,
-      statPositionStats
+      statPositionStats,
+      player.player_id  // Task 12 (V4): Pass player_id for personalized environment
     )
 
     if (projection) {
@@ -770,9 +981,9 @@ function getStatCategories(position) {
 }
 
 /**
- * Calculate floor for specific stat (Enhanced with Phase 1.1, 1.4, 2.1, and 2.2)
+ * Calculate floor for specific stat (Enhanced with Phase 1.1, 1.4, 2.1, 2.2, and Task 12 V4)
  */
-async function calculateStatFloor(seasonStats, recentGames, statField, opportunityField, position, opponentId, week, season, environmentMod = { modifier: 1.0 }, positionStats = null) {
+async function calculateStatFloor(seasonStats, recentGames, statField, opportunityField, position, opponentId, week, season, environmentMod = { modifier: 1.0 }, positionStats = null, playerId = null) {
   // Filter out null values
   const seasonValues = seasonStats
     .map(g => g[statField])
@@ -914,9 +1125,23 @@ async function calculateStatFloor(seasonStats, recentGames, statField, opportuni
     expected = expected * opponentFactor
   }
 
+  // Task 12 (V4): Apply player-specific environment factor
+  let playerEnvironmentFactor = 1.0
+  let playerEnvironmentInfo = null
+  if (playerId && environmentMod.conditions) {
+    playerEnvironmentInfo = await calculatePlayerEnvironmentFactor(
+      playerId,
+      statField,
+      environmentMod.conditions,
+      season
+    );
+    playerEnvironmentFactor = playerEnvironmentInfo.factor;
+    expected = expected * playerEnvironmentFactor;
+  }
+
   // Phase 3 (Academic V2): Bootstrap Prediction Intervals
-  // Calculate combined modifier for bootstrap (opponent × environment)
-  const combinedModifier = opponentFactor * environmentMod.modifier
+  // Task 12 (V4): Calculate combined modifier for bootstrap (opponent × environment × player-specific)
+  const combinedModifier = opponentFactor * environmentMod.modifier * playerEnvironmentFactor
 
   // Generate bootstrap prediction interval with modifiers applied
   const bootstrapInterval = calculateModifiedPredictionInterval(
