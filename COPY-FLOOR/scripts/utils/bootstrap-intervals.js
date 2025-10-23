@@ -66,6 +66,76 @@ export function generateBootstrapSamples(observedData, numSamples = 500) {
 }
 
 /**
+ * Generate block bootstrap samples for time series data
+ *
+ * Task 2 (V4): Addresses autocorrelation in player performance by resampling
+ * in blocks instead of individual observations. This preserves temporal
+ * dependencies (hot/cold streaks) that IID bootstrap ignores.
+ *
+ * Theory:
+ * - Time series data violates IID assumption (games are correlated)
+ * - Standard bootstrap underestimates variance → intervals too narrow
+ * - Moving block bootstrap preserves autocorrelation structure
+ * - Block size ≈ 2-3 games balances bias-variance tradeoff
+ *
+ * @citation Künsch, H. R. (1989). "The Jackknife and the Bootstrap for General
+ *           Stationary Observations." The Annals of Statistics, 17(3), 1217-1241.
+ *
+ * @param {Array<number>} observedData - Time series data (ordered chronologically)
+ * @param {number} blockSize - Size of blocks to resample (default: 2 for small samples, 3 for large)
+ * @param {number} numSamples - Number of bootstrap resamples (default: 500)
+ * @returns {Array<Array<number>>} Array of block-resampled datasets
+ *
+ * @example
+ * const games = [150, 200, 180, 220, 160, 190, 210]; // QB passing yards (time-ordered)
+ * const blockSamples = generateBlockBootstrapSamples(games, 2, 500);
+ * // Returns 500 arrays, each preserving 2-game correlation structure
+ * // Example resample: [180, 220, 150, 200, 180, 220, 190] (blocks: [180,220], [150,200], [180,220], [190])
+ */
+export function generateBlockBootstrapSamples(observedData, blockSize = null, numSamples = 500) {
+  if (!observedData || observedData.length === 0) {
+    throw new Error('Cannot generate block bootstrap samples from empty data');
+  }
+
+  const n = observedData.length;
+
+  // Auto-select block size if not provided
+  // For small samples (n < 10): use blockSize = 2
+  // For larger samples: use blockSize = 3
+  // Rationale: Smaller blocks for small n to avoid excessive bias
+  if (blockSize === null) {
+    blockSize = n < 10 ? 2 : 3;
+  }
+
+  // Clamp block size to reasonable range [1, n]
+  blockSize = Math.max(1, Math.min(blockSize, n));
+
+  const bootstrapSamples = [];
+
+  for (let i = 0; i < numSamples; i++) {
+    const resample = [];
+
+    // Create blocks by sampling starting indices with replacement
+    while (resample.length < n) {
+      // Randomly select a starting index for the block
+      // Ensure we don't go out of bounds: maxStartIndex = n - blockSize
+      const maxStartIndex = n - blockSize;
+      const startIndex = Math.floor(Math.random() * (maxStartIndex + 1));
+
+      // Extract the block
+      for (let j = 0; j < blockSize && resample.length < n; j++) {
+        resample.push(observedData[startIndex + j]);
+      }
+    }
+
+    // Trim to exactly n observations (in case last block overshot)
+    bootstrapSamples.push(resample.slice(0, n));
+  }
+
+  return bootstrapSamples;
+}
+
+/**
  * Calculate statistic for a single dataset
  *
  * Supports multiple statistics. Default is mean, but can calculate
@@ -172,6 +242,8 @@ export function extractPercentile(sortedArray, percentile) {
  * @param {number} options.numSamples - Number of bootstrap samples (default: 500)
  * @param {number} options.bootstrapPercentile - Bootstrap percentile level (default: 0.80 for 80% interval)
  * @param {string|function} options.statistic - Statistic to calculate (default: 'mean')
+ * @param {boolean} options.useBlockBootstrap - Use block bootstrap for time series (default: true for n >= 5)
+ * @param {number} options.blockSize - Block size for time series (default: auto-select)
  * @returns {Object} Prediction interval with floor, expected, ceiling
  *
  * @example
@@ -183,7 +255,9 @@ export function calculatePredictionInterval(observedData, options = {}) {
   const {
     numSamples = 500,
     bootstrapPercentile = 0.80,
-    statistic = 'mean'
+    statistic = 'mean',
+    useBlockBootstrap = true, // Task 2 (V4): Enable block bootstrap by default for time series
+    blockSize = null // Auto-select based on sample size
   } = options;
 
   if (!observedData || observedData.length === 0) {
@@ -205,11 +279,12 @@ export function calculatePredictionInterval(observedData, options = {}) {
   if (n < 5) {
     // Percentile Method: Resample many times, calculate floor directly from resampled distribution
     // This is more robust for small samples (n=2,3,4)
-    const bootstrapDistribution = calculateBootstrapDistribution(
-      observedData,
-      numSamples,
-      statistic
-    );
+    // Use block bootstrap even for small samples to preserve autocorrelation
+    const bootstrapSamples = useBlockBootstrap
+      ? generateBlockBootstrapSamples(observedData, blockSize, numSamples)
+      : generateBootstrapSamples(observedData, numSamples);
+
+    const bootstrapDistribution = bootstrapSamples.map(sample => calculateStatistic(sample, statistic));
 
     // Sort for percentile extraction
     const sorted = [...bootstrapDistribution].sort((a, b) => a - b);
@@ -232,17 +307,17 @@ export function calculatePredictionInterval(observedData, options = {}) {
       bootstrapSamples: numSamples,
       intervalWidth: Math.round((ceiling - floor) * 10) / 10,
       coefficientOfVariation: expected > 0 ? Math.round((ceiling - floor) / expected * 100) / 100 : 0,
-      method: 'percentile' // Flag for small-sample method
+      method: useBlockBootstrap ? 'percentile-block' : 'percentile' // Task 2 (V4): Flag block bootstrap
     };
   }
 
-  // Standard parametric bootstrap for n >= 5
-  // Generate bootstrap distribution
-  const bootstrapDistribution = calculateBootstrapDistribution(
-    observedData,
-    numSamples,
-    statistic
-  );
+  // Task 2 (V4): Block bootstrap for n >= 5 (time series)
+  // Standard bootstrap for n >= 5 preserves temporal dependencies
+  const bootstrapSamples = useBlockBootstrap
+    ? generateBlockBootstrapSamples(observedData, blockSize, numSamples)
+    : generateBootstrapSamples(observedData, numSamples);
+
+  const bootstrapDistribution = bootstrapSamples.map(sample => calculateStatistic(sample, statistic));
 
   // Sort for percentile extraction
   const sorted = [...bootstrapDistribution].sort((a, b) => a - b);
@@ -266,7 +341,7 @@ export function calculatePredictionInterval(observedData, options = {}) {
     // Additional diagnostics
     intervalWidth: Math.round((ceiling - floor) * 10) / 10,
     coefficientOfVariation: expected > 0 ? Math.round((ceiling - floor) / expected * 100) / 100 : 0,
-    method: 'parametric' // Flag for standard method
+    method: useBlockBootstrap ? 'parametric-block' : 'parametric' // Task 2 (V4): Flag block bootstrap
   };
 }
 
@@ -294,7 +369,9 @@ export function calculateModifiedPredictionInterval(observedData, modifier = 1.0
   const {
     numSamples = 500,
     bootstrapPercentile = 0.80,
-    statistic = 'mean'
+    statistic = 'mean',
+    useBlockBootstrap = true, // Task 2 (V4): Enable block bootstrap by default
+    blockSize = null // Auto-select based on sample size
   } = options;
 
   if (!observedData || observedData.length === 0) {
@@ -310,12 +387,12 @@ export function calculateModifiedPredictionInterval(observedData, modifier = 1.0
 
   const n = observedData.length;
 
-  // Generate bootstrap distribution
-  let bootstrapDistribution = calculateBootstrapDistribution(
-    observedData,
-    numSamples,
-    statistic
-  );
+  // Task 2 (V4): Generate block bootstrap distribution for time series
+  const bootstrapSamples = useBlockBootstrap
+    ? generateBlockBootstrapSamples(observedData, blockSize, numSamples)
+    : generateBootstrapSamples(observedData, numSamples);
+
+  let bootstrapDistribution = bootstrapSamples.map(sample => calculateStatistic(sample, statistic));
 
   // Apply modifier to ENTIRE distribution
   bootstrapDistribution = bootstrapDistribution.map(val => val * modifier);
@@ -340,7 +417,10 @@ export function calculateModifiedPredictionInterval(observedData, modifier = 1.0
     sampleSize: n,
     bootstrapSamples: numSamples,
     intervalWidth: Math.round((ceiling - floor) * 10) / 10,
-    method: n < 5 ? 'percentile' : 'parametric' // Task 6 (V4): Flag small-sample method
+    // Task 2 (V4) + Task 6 (V4): Flag block bootstrap and small-sample method
+    method: useBlockBootstrap
+      ? (n < 5 ? 'percentile-block' : 'parametric-block')
+      : (n < 5 ? 'percentile' : 'parametric')
   };
 }
 
