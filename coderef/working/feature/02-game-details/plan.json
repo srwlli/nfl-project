@@ -1,0 +1,615 @@
+{
+  "plan_id": "AGENT2-GAME-DETAILS-PLAN",
+  "feature_id": "AGENT2-GAME-DETAILS",
+  "plan_version": "1.0",
+  "created": "2025-01-23",
+  "status": "waiting_for_phase1",
+
+  "overview": {
+    "agent": "Agent-2",
+    "page": "Game Details (Live, Completed, Scheduled)",
+    "phases": [
+      "Phase 2: Build components in Storybook (10 hours)",
+      "Phase 3: Integrate to Next.js page (4 hours)"
+    ],
+    "total_estimated_time": "14 hours"
+  },
+
+  "phase_2_storybook_components": {
+    "description": "Build all components in Storybook with mock data, 3 page variants, and full interactivity",
+    "estimated_hours": 10,
+
+    "tasks": [
+      {
+        "task_id": "COMP-1",
+        "component": "GameDetailsLayout",
+        "description": "Main page wrapper for all game detail pages",
+        "actions": [
+          "Generate component: npm run generate:component GameDetailsLayout",
+          "Implement responsive container (max-width: 1400px)",
+          "Add consistent header/footer slots",
+          "Add theme-aware styling hooks",
+          "Create slots for children components"
+        ],
+        "props": {
+          "gameId": "string",
+          "gameStatus": "'scheduled' | 'in_progress' | 'final'",
+          "children": "ReactNode"
+        },
+        "story_controls": ["gameId", "gameStatus"],
+        "estimated_minutes": 45
+      },
+      {
+        "task_id": "COMP-2",
+        "component": "GameHeader",
+        "description": "Top section showing teams, score, game info (3 variants)",
+        "actions": [
+          "Generate component: npm run generate:component GameHeader",
+          "Implement 3 variants: live, completed, scheduled",
+          "Live variant: Real-time score with pulsing indicators",
+          "Completed variant: Final score with winner highlight, quarter breakdown",
+          "Scheduled variant: Matchup preview with betting lines",
+          "Add team logos, records, venue info",
+          "Import GAMES and TEAMS from mock data"
+        ],
+        "props": {
+          "homeTeam": "{ name, abbreviation, logo, record, score }",
+          "awayTeam": "{ name, abbreviation, logo, record, score }",
+          "gameStatus": "{ status, quarter, timeRemaining, network }",
+          "venue": "{ name, city, state }",
+          "gameDate": "Date",
+          "variant": "'live' | 'completed' | 'scheduled'"
+        },
+        "story_examples": [
+          "LiveGame - Pulsing indicators, quarter/time",
+          "CompletedGame - Winner highlight, quarter scores",
+          "ScheduledGame - Betting lines, countdown"
+        ],
+        "estimated_minutes": 75
+      },
+      {
+        "task_id": "COMP-3",
+        "component": "TabNavigation",
+        "description": "8-tab navigation for organizing game content",
+        "actions": [
+          "Generate component: npm run generate:component TabNavigation",
+          "Implement 8 tabs: Game Summary, Box Score, Play-by-Play, Team Stats, Player Stats, Scoring Summary, Game Info, Videos",
+          "Add active tab highlighting",
+          "Add keyboard navigation",
+          "Make tabs responsive (horizontal scroll on mobile)"
+        ],
+        "props": {
+          "activeTab": "string",
+          "onTabChange": "(tab: string) => void",
+          "availableTabs": "string[]"
+        },
+        "story_controls": ["activeTab", "availableTabs"],
+        "estimated_minutes": 45
+      },
+      {
+        "task_id": "COMP-4",
+        "component": "PassingStatsTable",
+        "description": "Passing statistics table with sortable columns",
+        "actions": [
+          "Generate component: npm run generate:component PassingStatsTable",
+          "Implement 9 columns: Player, C/ATT, YDS, AVG, TD, INT, SACKS, RTG, LONG",
+          "Add sortable column headers",
+          "Add team-separated rows",
+          "Highlight 300+ yard games (green)",
+          "Highlight 3+ TD games (amber)",
+          "Color-code passer rating (>100=green, <70=red)",
+          "Import PLAYER_GAME_STATS from mock data"
+        ],
+        "props": {
+          "playerStats": "PlayerGameStat[]",
+          "teamId": "string",
+          "sortColumn": "string",
+          "sortDirection": "'asc' | 'desc'",
+          "onSort": "(column: string) => void"
+        },
+        "story_examples": [
+          "SingleQB - 1 QB with 250 yards",
+          "MultipleQBs - 2 QBs per team",
+          "300YardGame - Highlight example",
+          "PoorPerformance - Low rating example"
+        ],
+        "estimated_minutes": 60
+      },
+      {
+        "task_id": "COMP-5",
+        "component": "RushingStatsTable",
+        "description": "Rushing statistics table",
+        "actions": [
+          "Generate component",
+          "Implement 8 columns: Player, CAR, YDS, AVG, TD, LONG, FUM, 1ST",
+          "Add sortable columns",
+          "Highlight 100+ yard games",
+          "Highlight 2+ TD games",
+          "Import PLAYER_GAME_STATS from mock data"
+        ],
+        "props": {
+          "playerStats": "PlayerGameStat[]",
+          "teamId": "string",
+          "sortColumn": "string",
+          "sortDirection": "'asc' | 'desc'",
+          "onSort": "(column: string) => void"
+        },
+        "story_examples": [
+          "100YardRusher - Highlight example",
+          "MultipleTDs - 3 TD game"
+        ],
+        "estimated_minutes": 50
+      },
+      {
+        "task_id": "COMP-6",
+        "component": "ReceivingStatsTable",
+        "description": "Receiving statistics table",
+        "actions": [
+          "Generate component",
+          "Implement 8 columns: Player, REC, TAR, YDS, AVG, TD, LONG, 1ST",
+          "Add sortable columns",
+          "Highlight 100+ yard games",
+          "Highlight 10+ reception games"
+        ],
+        "props": {
+          "playerStats": "PlayerGameStat[]",
+          "teamId": "string",
+          "sortColumn": "string",
+          "sortDirection": "'asc' | 'desc'",
+          "onSort": "(column: string) => void"
+        },
+        "story_examples": [
+          "100YardReceiver - Highlight example",
+          "10Receptions - High volume game"
+        ],
+        "estimated_minutes": 50
+      },
+      {
+        "task_id": "COMP-7",
+        "component": "DefenseStatsTable",
+        "description": "Defensive statistics table",
+        "actions": [
+          "Generate component",
+          "Implement 9 columns: Player, TACK, AST, SACKS, TFL, INT, PD, FF, FR",
+          "Add sortable columns",
+          "Highlight 10+ tackles",
+          "Highlight 2+ sacks",
+          "Highlight interceptions"
+        ],
+        "props": {
+          "playerStats": "PlayerGameStat[]",
+          "teamId": "string",
+          "sortColumn": "string",
+          "sortDirection": "'asc' | 'desc'",
+          "onSort": "(column: string) => void"
+        },
+        "story_examples": [
+          "DominantDefense - 2 sacks, 1 INT",
+          "HighTackles - 12 tackles"
+        ],
+        "estimated_minutes": 50
+      },
+      {
+        "task_id": "COMP-8",
+        "component": "TeamStatsComparison",
+        "description": "Side-by-side team stats with visual bars",
+        "actions": [
+          "Generate component",
+          "Implement 9 stat comparisons: First Downs, Total Yards, Passing Yards, Rushing Yards, Penalties, Turnovers, Time of Possession, 3rd Down %, Red Zone %",
+          "Add horizontal comparison bars",
+          "Highlight winning stat (green)",
+          "Add percentage bars for efficiency stats",
+          "Auto-calculate differentials"
+        ],
+        "props": {
+          "homeTeamStats": "TeamGameStats",
+          "awayTeamStats": "TeamGameStats"
+        },
+        "story_examples": [
+          "BalancedGame - Close stats",
+          "Blowout - Dominant stats one side"
+        ],
+        "estimated_minutes": 60
+      },
+      {
+        "task_id": "COMP-9",
+        "component": "ScoringTimeline",
+        "description": "Chronological list of all scoring plays",
+        "actions": [
+          "Generate component",
+          "Implement vertical timeline with team colors",
+          "Show play description",
+          "Show score after each play",
+          "Add drive info (plays, yards, time)",
+          "Add quarter indicators",
+          "Import SCORING_PLAYS from mock data"
+        ],
+        "props": {
+          "scoringPlays": "ScoringPlay[]",
+          "homeTeam": "Team",
+          "awayTeam": "Team"
+        },
+        "story_examples": [
+          "LowScoring - 3 scores total",
+          "Shootout - 10+ scores"
+        ],
+        "estimated_minutes": 60
+      },
+      {
+        "task_id": "COMP-10",
+        "component": "PlayByPlayFeed",
+        "description": "Drive-by-drive collapsible play-by-play",
+        "actions": [
+          "Generate component",
+          "Implement collapsible drives",
+          "Show down & distance",
+          "Add yard line indicators",
+          "Add EPA/WPA badges",
+          "Highlight scoring plays (green)",
+          "Highlight turnovers (red)",
+          "Import PLAY_BY_PLAY from mock data"
+        ],
+        "props": {
+          "playByPlay": "Play[]",
+          "expandedDrives": "string[]",
+          "onDriveToggle": "(driveId: string) => void"
+        },
+        "story_examples": [
+          "ScoringDrive - 10 plays, TD",
+          "TurnoverDrive - INT on 3rd play"
+        ],
+        "estimated_minutes": 75
+      },
+      {
+        "task_id": "COMP-11",
+        "component": "WinProbabilityChart",
+        "description": "Line chart showing win probability over time",
+        "actions": [
+          "Generate component",
+          "Install Recharts: npm install recharts",
+          "Implement interactive line chart",
+          "Add hover to see exact probability",
+          "Add key moment indicators",
+          "Use team colors for lines",
+          "Calculate WP from EPA data"
+        ],
+        "props": {
+          "playByPlay": "Play[]",
+          "homeTeam": "Team",
+          "awayTeam": "Team"
+        },
+        "story_examples": [
+          "Comeback - Down 14, win 50% → 90%",
+          "Blowout - 90% throughout"
+        ],
+        "library": "Recharts",
+        "estimated_minutes": 75
+      },
+      {
+        "task_id": "COMP-12",
+        "component": "GameInformationCard",
+        "description": "Game metadata (venue, weather, officials)",
+        "actions": [
+          "Generate component",
+          "Implement 4 sections: Venue, Weather, Broadcast, Officials",
+          "Venue: stadium, city, attendance",
+          "Weather: temp, conditions, wind",
+          "Broadcast: network, announcers",
+          "Officials: referee, umpire, etc.",
+          "Import GAMES and STADIUMS from mock data"
+        ],
+        "props": {
+          "venue": "{ name, city, state, capacity, attendance }",
+          "weather": "{ temperature, conditions, wind }",
+          "broadcast": "{ network, announcers }",
+          "officials": "{ referee, umpire, etc }"
+        },
+        "story_examples": [
+          "IndoorGame - Dome, no weather",
+          "OutdoorGame - Cold, windy"
+        ],
+        "estimated_minutes": 45
+      },
+      {
+        "task_id": "COMP-VALIDATE",
+        "description": "Validate all components in Storybook",
+        "actions": [
+          "Run npm run storybook",
+          "View all 12 components",
+          "Test all story variants",
+          "Toggle theme switcher (verify all 6 themes work)",
+          "Test all interactive controls (sorting, collapsing, hovering)",
+          "Switch viewport (mobile/tablet/desktop)",
+          "Check a11y addon (no critical issues)",
+          "Verify no TypeScript errors",
+          "Verify no console warnings"
+        ],
+        "validation_checklist": [
+          "[ ] All 12 components render",
+          "[ ] All stories display correctly",
+          "[ ] Theme switcher changes all components",
+          "[ ] Sorting works on all tables",
+          "[ ] Collapsible drives work in PlayByPlayFeed",
+          "[ ] WinProbabilityChart renders with Recharts",
+          "[ ] 3 GameHeader variants work (live, completed, scheduled)",
+          "[ ] Mobile responsive (768px, 480px)",
+          "[ ] No TypeScript errors",
+          "[ ] No console errors",
+          "[ ] No a11y critical issues"
+        ],
+        "estimated_minutes": 45
+      }
+    ]
+  },
+
+  "phase_3_page_integration": {
+    "description": "Integrate Storybook components into Next.js dynamic page with real Supabase data and WebSocket subscriptions for live games",
+    "estimated_hours": 4,
+
+    "tasks": [
+      {
+        "task_id": "PAGE-1",
+        "description": "Create Next.js dynamic route page file",
+        "file": "app/(pages)/game/[id]/page.tsx",
+        "actions": [
+          "Create server component for initial data fetch",
+          "Detect game status (scheduled/in_progress/final) from ID",
+          "Fetch appropriate data based on status",
+          "Pass data to client components"
+        ],
+        "code_structure": {
+          "imports": [
+            "import { supabase } from '@/lib/supabase'",
+            "import { GameDetailsLayout } from '@/components/game/GameDetailsLayout'",
+            "import { GameHeader } from '@/components/game/GameHeader'",
+            "import { TabNavigation } from '@/components/game/TabNavigation'",
+            "... (import all 12 components)"
+          ],
+          "async_function": "export default async function GameDetailsPage({ params }: { params: { id: string } })",
+          "data_fetching": [
+            "const { data: game } = await supabase.from('games').select('*, home_team:teams!home_team_id(*), away_team:teams!away_team_id(*), venue:stadiums(*)').eq('id', params.id).single()",
+            "const { data: homeTeamStats } = await supabase.from('team_game_stats').select('*').eq('game_id', params.id).eq('team_id', game.home_team_id).single()",
+            "const { data: awayTeamStats } = await supabase.from('team_game_stats').select('*').eq('game_id', params.id).eq('team_id', game.away_team_id).single()",
+            "const { data: playerStats } = await supabase.from('player_game_stats').select('*, player:players(*)').eq('game_id', params.id)",
+            "const { data: scoringPlays } = await supabase.from('scoring_plays').select('*').eq('game_id', params.id).order('quarter').order('time')",
+            "const { data: playByPlay } = await supabase.from('play_by_play').select('*').eq('game_id', params.id).order('quarter').order('play_number')",
+            "const { data: bettingLines } = await supabase.from('game_betting_lines').select('*').eq('game_id', params.id).single()"
+          ],
+          "layout": [
+            "<GameDetailsLayout gameId={params.id} gameStatus={game.status}>",
+            "  <GameHeader homeTeam={game.home_team} awayTeam={game.away_team} gameStatus={game} venue={game.venue} gameDate={game.date} variant={game.status} />",
+            "  <TabNavigation activeTab='summary' onTabChange={handleTabChange} availableTabs={tabs} />",
+            "  {/* Conditionally render content based on activeTab */}",
+            "  {activeTab === 'box-score' && (",
+            "    <>",
+            "      <PassingStatsTable playerStats={passingStats} />",
+            "      <RushingStatsTable playerStats={rushingStats} />",
+            "      <ReceivingStatsTable playerStats={receivingStats} />",
+            "      <DefenseStatsTable playerStats={defenseStats} />",
+            "    </>",
+            "  )}",
+            "  {activeTab === 'team-stats' && <TeamStatsComparison homeTeamStats={homeTeamStats} awayTeamStats={awayTeamStats} />}",
+            "  {activeTab === 'scoring' && <ScoringTimeline scoringPlays={scoringPlays} homeTeam={game.home_team} awayTeam={game.away_team} />}",
+            "  {activeTab === 'play-by-play' && <PlayByPlayFeed playByPlay={playByPlay} />}",
+            "  {activeTab === 'analytics' && <WinProbabilityChart playByPlay={playByPlay} homeTeam={game.home_team} awayTeam={game.away_team} />}",
+            "  {activeTab === 'info' && <GameInformationCard venue={game.venue} weather={game.weather} broadcast={game.broadcast} officials={game.officials} />}",
+            "</GameDetailsLayout>"
+          ]
+        },
+        "estimated_minutes": 60
+      },
+      {
+        "task_id": "PAGE-2",
+        "description": "Add real-time WebSocket subscriptions for live games",
+        "file": "components/game/GameDetailsLayout.tsx (convert to client component for live games)",
+        "actions": [
+          "Add 'use client' directive",
+          "Set up Supabase Realtime channel (only if gameStatus === 'in_progress')",
+          "Subscribe to games table (WHERE id = :gameId)",
+          "Listen for UPDATE events",
+          "Update local state when events fire",
+          "Add fallback 5-second polling"
+        ],
+        "code_example": {
+          "import": "import { useEffect, useState } from 'react'",
+          "state": "const [game, setGame] = useState(initialGame)",
+          "subscription": [
+            "useEffect(() => {",
+            "  if (gameStatus !== 'in_progress') return",
+            "",
+            "  const channel = supabase",
+            "    .channel(`game-${gameId}`)",
+            "    .on('postgres_changes', {",
+            "      event: 'UPDATE',",
+            "      schema: 'public',",
+            "      table: 'games',",
+            "      filter: `id=eq.${gameId}`",
+            "    }, (payload) => {",
+            "      setGame(payload.new)",
+            "    })",
+            "    .subscribe()",
+            "",
+            "  return () => {",
+            "    channel.unsubscribe()",
+            "  }",
+            "}, [gameId, gameStatus])"
+          ]
+        },
+        "estimated_minutes": 60
+      },
+      {
+        "task_id": "PAGE-3",
+        "description": "Add loading and error states",
+        "actions": [
+          "Create LoadingState component (skeleton loaders)",
+          "Add Suspense boundaries for each tab",
+          "Create ErrorBoundary component",
+          "Add error handling for Supabase queries",
+          "Add retry logic",
+          "Show empty states when no data (e.g., no play-by-play for scheduled games)"
+        ],
+        "components_to_create": [
+          "components/ui/LoadingState.tsx",
+          "components/ui/ErrorBoundary.tsx",
+          "components/ui/EmptyState.tsx"
+        ],
+        "estimated_minutes": 30
+      },
+      {
+        "task_id": "PAGE-4",
+        "description": "Add SWR caching for completed games",
+        "actions": [
+          "Install SWR: npm install swr",
+          "Implement SWR for completed games (24-hour cache)",
+          "Disable cache for live games (always fresh)",
+          "Add revalidation on focus/reconnect",
+          "Add optimistic updates for live games"
+        ],
+        "code_example": {
+          "import": "import useSWR from 'swr'",
+          "usage": [
+            "const { data: game, error, mutate } = useSWR(",
+            "  gameStatus === 'final' ? `/api/games/${gameId}` : null,",
+            "  fetcher,",
+            "  { revalidateOnFocus: false, revalidateOnReconnect: false, dedupingInterval: 86400000 } // 24 hours",
+            ")"
+          ]
+        },
+        "estimated_minutes": 30
+      },
+      {
+        "task_id": "PAGE-5",
+        "description": "Optimize performance",
+        "actions": [
+          "Add React.memo to expensive components (tables, charts)",
+          "Use useMemo for data transformations (filtering passing/rushing/receiving stats)",
+          "Add image optimization for team logos",
+          "Implement virtual scrolling for PlayByPlayFeed (if >100 plays)",
+          "Test page load time (<2 seconds)"
+        ],
+        "performance_targets": {
+          "initial_load": "<2 seconds",
+          "realtime_update_latency": "<500ms",
+          "no_layout_shift": "CLS < 0.1"
+        },
+        "estimated_minutes": 45
+      },
+      {
+        "task_id": "PAGE-VALIDATE",
+        "description": "Validate page integration",
+        "validation_steps": [
+          "Run npm run dev",
+          "Navigate to /game/[id] for a live game",
+          "Verify all sections render",
+          "Verify real data from Supabase loads",
+          "Test real-time updates (update game score in Supabase, verify UI updates within 5s)",
+          "Navigate to /game/[id] for a completed game",
+          "Verify quarter scores, winner highlight, all stats load",
+          "Navigate to /game/[id] for a scheduled game",
+          "Verify betting lines, countdown, no play-by-play shown",
+          "Test on mobile (responsive design)",
+          "Test error handling (disconnect Supabase, verify error UI)",
+          "Check Lighthouse score (Performance > 90)",
+          "Verify no console errors",
+          "Verify no TypeScript errors"
+        ],
+        "acceptance_criteria": [
+          "✅ Page loads in <2 seconds",
+          "✅ All 3 variants work (live, completed, scheduled)",
+          "✅ Real-time updates work for live games",
+          "✅ All tabs render correctly",
+          "✅ Tables are sortable",
+          "✅ Charts render (WinProbabilityChart)",
+          "✅ Mobile responsive",
+          "✅ Error handling works",
+          "✅ No errors in console",
+          "✅ Lighthouse score > 90"
+        ],
+        "estimated_minutes": 45
+      }
+    ]
+  },
+
+  "deliverables": [
+    {
+      "phase": "Phase 2",
+      "items": [
+        "components/game/GameDetailsLayout.tsx",
+        "components/game/GameHeader.tsx",
+        "components/game/TabNavigation.tsx",
+        "components/game/PassingStatsTable.tsx",
+        "components/game/RushingStatsTable.tsx",
+        "components/game/ReceivingStatsTable.tsx",
+        "components/game/DefenseStatsTable.tsx",
+        "components/game/TeamStatsComparison.tsx",
+        "components/game/ScoringTimeline.tsx",
+        "components/game/PlayByPlayFeed.tsx",
+        "components/game/WinProbabilityChart.tsx",
+        "components/game/GameInformationCard.tsx",
+        "stories/game/GameDetailsLayout.stories.tsx",
+        "stories/game/GameHeader.stories.tsx",
+        "stories/game/TabNavigation.stories.tsx",
+        "stories/game/PassingStatsTable.stories.tsx",
+        "stories/game/RushingStatsTable.stories.tsx",
+        "stories/game/ReceivingStatsTable.stories.tsx",
+        "stories/game/DefenseStatsTable.stories.tsx",
+        "stories/game/TeamStatsComparison.stories.tsx",
+        "stories/game/ScoringTimeline.stories.tsx",
+        "stories/game/PlayByPlayFeed.stories.tsx",
+        "stories/game/WinProbabilityChart.stories.tsx",
+        "stories/game/GameInformationCard.stories.tsx"
+      ]
+    },
+    {
+      "phase": "Phase 3",
+      "items": [
+        "app/(pages)/game/[id]/page.tsx",
+        "components/ui/LoadingState.tsx",
+        "components/ui/ErrorBoundary.tsx",
+        "components/ui/EmptyState.tsx",
+        "Real-time WebSocket integration for live games",
+        "SWR caching for completed games (24 hours)",
+        "Performance optimizations (React.memo, useMemo, virtual scrolling)"
+      ]
+    }
+  ],
+
+  "success_criteria": [
+    "✅ All 12 components work in Storybook",
+    "✅ All 3 page variants implemented (live, completed, scheduled)",
+    "✅ Theme switcher changes all components",
+    "✅ Tables are sortable and filterable",
+    "✅ Charts render correctly (Recharts)",
+    "✅ Page integrates all components",
+    "✅ Real Supabase data displays",
+    "✅ Real-time updates work for live games",
+    "✅ Page loads in <2 seconds",
+    "✅ Mobile responsive",
+    "✅ Error handling complete",
+    "✅ Zero TypeScript errors",
+    "✅ Zero console errors",
+    "✅ Lighthouse score > 90"
+  ],
+
+  "timeline": {
+    "phase_2": "10 hours",
+    "phase_3": "4 hours",
+    "total": "14 hours"
+  },
+
+  "dependencies": {
+    "requires_from_phase1": [
+      "Next.js 15 app",
+      "Storybook 8 running",
+      "Theme system",
+      "Mock data library",
+      "Component generator",
+      "Supabase client configured",
+      "Recharts installed (for charts)"
+    ],
+    "npm_packages": [
+      "recharts (for WinProbabilityChart)",
+      "swr (for caching)"
+    ]
+  }
+}

@@ -1,0 +1,413 @@
+{
+  "pageType": "Game Details Pages (3 variants: Live, Completed, Scheduled)",
+  "priority": "P0 - Critical",
+  "dataReadiness": "95-100%",
+  "recommendedThemes": {
+    "live": ["Next Down Metrics (HUD)", "Sunday Lights", "Bold Vibrant"],
+    "completed": ["Next Down Metrics (HUD)", "Bold Vibrant", "Cyberpunk Holographic"],
+    "scheduled": ["Next Down Metrics (HUD)", "Tech Forward", "Glassmorphism"]
+  },
+  "components": {
+    "layout": {
+      "GameDetailsLayout": {
+        "description": "Main page wrapper for all game detail pages",
+        "props": ["gameId", "gameStatus", "children"],
+        "features": [
+          "Responsive container (max-width: 1400px)",
+          "Consistent header/footer",
+          "Real-time update subscription (live games)",
+          "Theme-aware styling"
+        ],
+        "files": ["components/game-details-layout.tsx"]
+      },
+      "GameHeader": {
+        "description": "Top section showing teams, score, game info",
+        "variants": {
+          "live": "Real-time score with pulsing indicators",
+          "completed": "Final score with winner highlight",
+          "scheduled": "Matchup preview with betting lines"
+        },
+        "props": [
+          "homeTeam { name, abbreviation, logo, record, score }",
+          "awayTeam { name, abbreviation, logo, record, score }",
+          "gameStatus { status, quarter, timeRemaining, network }",
+          "venue { name, city, state }",
+          "gameDate"
+        ],
+        "files": ["components/game/game-header.tsx"]
+      },
+      "TabNavigation": {
+        "description": "8-tab navigation for organizing game content",
+        "tabs": [
+          "Game Summary",
+          "Box Score",
+          "Play-by-Play",
+          "Team Stats",
+          "Player Stats",
+          "Scoring Summary",
+          "Game Info",
+          "Videos"
+        ],
+        "props": ["activeTab", "onTabChange", "availableTabs"],
+        "files": ["components/game/tab-navigation.tsx"]
+      }
+    },
+    "scorebug": {
+      "LiveScoreBug": {
+        "description": "Real-time score display for live games",
+        "themes": [
+          "Next Down Metrics (HUD) - Primary",
+          "Sunday Lights",
+          "Bold Vibrant"
+        ],
+        "features": [
+          "Auto-refresh every 5 seconds",
+          "Possession indicator",
+          "Down & distance display",
+          "Timeouts remaining",
+          "Quarter/time display"
+        ],
+        "props": [
+          "gameId",
+          "homeTeam { score, timeouts, hasPossession }",
+          "awayTeam { score, timeouts, hasPossession }",
+          "gameStatus { quarter, timeRemaining, down, distance, yardLine }",
+          "refreshInterval"
+        ],
+        "dataSource": "GET /games/:gameId (Supabase real-time subscription)",
+        "files": ["components/game/live-scorebug.tsx"]
+      },
+      "CompletedScoreBug": {
+        "description": "Final score display with quarter breakdown",
+        "themes": [
+          "Next Down Metrics (HUD) - Primary",
+          "Bold Vibrant",
+          "Classic Almanac"
+        ],
+        "features": [
+          "Winner highlighted (green border/glow)",
+          "Quarter-by-quarter scores",
+          "Final badge",
+          "Overtime indicator",
+          "Game duration"
+        ],
+        "props": [
+          "homeTeam { score, q1, q2, q3, q4, ot }",
+          "awayTeam { score, q1, q2, q3, q4, ot }",
+          "winner",
+          "gameDuration"
+        ],
+        "dataSource": "GET /games/:gameId",
+        "files": ["components/game/completed-scorebug.tsx"]
+      },
+      "ScheduledScoreBug": {
+        "description": "Matchup preview with betting info",
+        "themes": [
+          "Next Down Metrics (HUD) - Primary",
+          "Tech Forward"
+        ],
+        "features": [
+          "Team comparison (records, streaks)",
+          "Betting lines (spread, O/U, moneyline)",
+          "Game time countdown",
+          "TV network badge",
+          "Weather forecast"
+        ],
+        "props": [
+          "homeTeam { record, streak, rank }",
+          "awayTeam { record, streak, rank }",
+          "gameDate",
+          "betting { spread, overUnder, moneyline }",
+          "weather { temperature, conditions }"
+        ],
+        "dataSource": "GET /games/:gameId + GET /betting-lines/:gameId",
+        "files": ["components/game/scheduled-scorebug.tsx"]
+      }
+    },
+    "boxScore": {
+      "PassingStatsTable": {
+        "description": "Passing statistics table with sortable columns",
+        "theme": "Tech Forward",
+        "columns": [
+          "Player",
+          "C/ATT (Completions/Attempts)",
+          "YDS (Yards)",
+          "AVG (Yards per attempt)",
+          "TD (Touchdowns)",
+          "INT (Interceptions)",
+          "SACKS",
+          "RTG (Passer Rating)",
+          "LONG (Longest pass)"
+        ],
+        "features": [
+          "Sortable columns",
+          "Highlight 300+ yard games (green)",
+          "Highlight 3+ TD games (amber)",
+          "Passer rating color-coded (>100=green, <70=red)",
+          "Team-separated rows"
+        ],
+        "props": ["playerStats[]", "teamId", "sortColumn", "sortDirection"],
+        "dataSource": "GET /player-game-stats?gameId=:id&category=passing",
+        "files": ["components/game/passing-stats-table.tsx"]
+      },
+      "RushingStatsTable": {
+        "description": "Rushing statistics table",
+        "theme": "Tech Forward",
+        "columns": [
+          "Player",
+          "CAR (Carries)",
+          "YDS (Yards)",
+          "AVG (Average)",
+          "TD (Touchdowns)",
+          "LONG (Longest run)",
+          "FUM (Fumbles)",
+          "1ST (First downs)"
+        ],
+        "features": [
+          "Sortable columns",
+          "Highlight 100+ yard games",
+          "Highlight 2+ TD games"
+        ],
+        "props": ["playerStats[]", "teamId", "sortColumn", "sortDirection"],
+        "dataSource": "GET /player-game-stats?gameId=:id&category=rushing",
+        "files": ["components/game/rushing-stats-table.tsx"]
+      },
+      "ReceivingStatsTable": {
+        "description": "Receiving statistics table",
+        "theme": "Tech Forward",
+        "columns": [
+          "Player",
+          "REC (Receptions)",
+          "TAR (Targets)",
+          "YDS (Yards)",
+          "AVG (Yards per reception)",
+          "TD (Touchdowns)",
+          "LONG (Longest reception)",
+          "1ST (First downs)"
+        ],
+        "features": [
+          "Sortable columns",
+          "Highlight 100+ yard games",
+          "Highlight 10+ reception games"
+        ],
+        "props": ["playerStats[]", "teamId", "sortColumn", "sortDirection"],
+        "dataSource": "GET /player-game-stats?gameId=:id&category=receiving",
+        "files": ["components/game/receiving-stats-table.tsx"]
+      },
+      "DefenseStatsTable": {
+        "description": "Defensive statistics table",
+        "theme": "Tech Forward",
+        "columns": [
+          "Player",
+          "TACK (Tackles)",
+          "AST (Assists)",
+          "SACKS",
+          "TFL (Tackles for loss)",
+          "INT (Interceptions)",
+          "PD (Passes defended)",
+          "FF (Forced fumbles)",
+          "FR (Fumble recoveries)"
+        ],
+        "features": [
+          "Sortable columns",
+          "Highlight 10+ tackles",
+          "Highlight 2+ sacks",
+          "Highlight interceptions"
+        ],
+        "props": ["playerStats[]", "teamId", "sortColumn", "sortDirection"],
+        "dataSource": "GET /player-game-stats?gameId=:id&category=defense",
+        "files": ["components/game/defense-stats-table.tsx"]
+      }
+    },
+    "teamStats": {
+      "TeamStatsComparison": {
+        "description": "Side-by-side team stats with visual bars",
+        "theme": "Next Down Metrics (HUD)",
+        "stats": [
+          "First Downs",
+          "Total Yards",
+          "Passing Yards",
+          "Rushing Yards",
+          "Penalties (count-yards)",
+          "Turnovers",
+          "Time of Possession",
+          "Third Down Efficiency",
+          "Red Zone Efficiency"
+        ],
+        "features": [
+          "Horizontal comparison bars",
+          "Winning stat highlighted (green)",
+          "Percentage bars for efficiency",
+          "Auto-calculate differentials"
+        ],
+        "props": ["homeTeamStats", "awayTeamStats"],
+        "dataSource": "GET /team-game-stats?gameId=:id",
+        "files": ["components/game/team-stats-comparison.tsx"]
+      }
+    },
+    "scoringSummary": {
+      "ScoringTimeline": {
+        "description": "Chronological list of all scoring plays",
+        "theme": "Next Down Metrics (HUD)",
+        "features": [
+          "Vertical timeline with team colors",
+          "Play description",
+          "Score after each play",
+          "Drive info (plays, yards, time)",
+          "Quarter indicators"
+        ],
+        "props": ["scoringPlays[]", "homeTeam", "awayTeam"],
+        "dataSource": "GET /scoring-plays?gameId=:id",
+        "files": ["components/game/scoring-timeline.tsx"]
+      }
+    },
+    "playByPlay": {
+      "PlayByPlayFeed": {
+        "description": "Drive-by-drive collapsible play-by-play",
+        "theme": "Tech Forward",
+        "features": [
+          "Collapsible drives",
+          "Play descriptions",
+          "Down & distance",
+          "Yard line indicators",
+          "EPA/WPA badges",
+          "Scoring play highlights",
+          "Turnover highlights"
+        ],
+        "props": ["playByPlay[]", "expandedDrives[]", "onDriveToggle"],
+        "dataSource": "GET /play-by-play?gameId=:id",
+        "files": ["components/game/play-by-play-feed.tsx"]
+      },
+      "DriveChart": {
+        "description": "Visual drive chart showing field position",
+        "theme": "Next Down Metrics (HUD)",
+        "features": [
+          "Field visualization (0-100 yards)",
+          "Drive arrows",
+          "Scoring drives highlighted (green)",
+          "Turnover drives (red)",
+          "Hover for drive details"
+        ],
+        "props": ["drives[]", "homeTeam", "awayTeam"],
+        "dataSource": "GET /play-by-play?gameId=:id (calculate drives)",
+        "files": ["components/game/drive-chart.tsx"]
+      }
+    },
+    "analytics": {
+      "WinProbabilityChart": {
+        "description": "Line chart showing win probability over time",
+        "theme": "Cyberpunk Holographic",
+        "features": [
+          "Interactive line chart",
+          "Hover to see exact probability",
+          "Key moment indicators",
+          "Team colors for lines"
+        ],
+        "props": ["playByPlay[]", "homeTeam", "awayTeam"],
+        "dataSource": "GET /play-by-play?gameId=:id (calculate WP from EPA)",
+        "files": ["components/game/win-probability-chart.tsx"],
+        "library": "Recharts or Chart.js"
+      },
+      "EPAComparison": {
+        "description": "EPA comparison bars (total, passing, rushing)",
+        "theme": "Next Down Metrics (HUD)",
+        "features": [
+          "Horizontal comparison bars",
+          "Total EPA",
+          "Passing EPA",
+          "Rushing EPA",
+          "Color-coded (positive=green, negative=red)"
+        ],
+        "props": ["homeTeamEPA", "awayTeamEPA"],
+        "dataSource": "GET /play-by-play?gameId=:id (aggregate EPA)",
+        "files": ["components/game/epa-comparison.tsx"]
+      }
+    },
+    "gameInfo": {
+      "GameInformationCard": {
+        "description": "Game metadata (venue, weather, officials)",
+        "theme": "Bold Vibrant",
+        "sections": [
+          "Venue (stadium, city, attendance)",
+          "Weather (temp, conditions, wind)",
+          "Broadcast (network, announcers)",
+          "Officials (referee, umpire, etc.)"
+        ],
+        "props": ["venue", "weather", "broadcast", "officials"],
+        "dataSource": "GET /games/:gameId",
+        "files": ["components/game/game-information-card.tsx"]
+      }
+    },
+    "betting": {
+      "BettingResultsCard": {
+        "description": "Final betting outcomes (spread, O/U, moneyline)",
+        "theme": "Next Down Metrics (HUD)",
+        "features": [
+          "Spread result (covered/not covered)",
+          "Over/Under result",
+          "Moneyline winner",
+          "Opening vs closing lines"
+        ],
+        "props": ["bettingLines", "finalScore"],
+        "dataSource": "GET /betting-lines?gameId=:id",
+        "files": ["components/game/betting-results-card.tsx"]
+      }
+    },
+    "shared": {
+      "LoadingState": {
+        "description": "Skeleton loader for game data",
+        "variants": ["scorebug", "table", "chart", "card"],
+        "files": ["components/ui/loading-state.tsx"]
+      },
+      "ErrorState": {
+        "description": "Error display for failed data fetches",
+        "props": ["error", "retry"],
+        "files": ["components/ui/error-state.tsx"]
+      },
+      "RefreshIndicator": {
+        "description": "Visual indicator for live data refreshing",
+        "features": ["Pulsing dot", "Last updated timestamp"],
+        "files": ["components/ui/refresh-indicator.tsx"]
+      }
+    }
+  },
+  "dataFlow": {
+    "liveGame": {
+      "initialLoad": "GET /games/:gameId",
+      "realTimeUpdates": "Supabase real-time subscription on games table",
+      "refreshInterval": "5 seconds (fallback if WebSocket fails)",
+      "autoTrigger": "game-stats-scraper.js when game status changes to 'final'"
+    },
+    "completedGame": {
+      "initialLoad": "GET /games/:gameId with all relationships",
+      "caching": "24 hours (completed games don't change)",
+      "includes": [
+        "game basic info",
+        "team_game_stats",
+        "player_game_stats (all categories)",
+        "scoring_plays",
+        "play_by_play (EPA/WPA)",
+        "game_betting_lines",
+        "game_rosters"
+      ]
+    },
+    "scheduledGame": {
+      "initialLoad": "GET /games/:gameId",
+      "refreshInterval": "Daily (for updated betting lines)",
+      "includes": [
+        "game basic info",
+        "team season stats",
+        "player season stats (key players)",
+        "game_betting_lines",
+        "historical head-to-head"
+      ]
+    }
+  },
+  "technicalNotes": {
+    "stateManagement": "React Context + SWR for data fetching",
+    "realTime": "Supabase Realtime for live games",
+    "caching": "SWR automatic caching with revalidation",
+    "errorHandling": "Retry logic with exponential backoff",
+    "accessibility": "WCAG 2.1 AA compliant, keyboard navigation, screen reader support"
+  }
+}

@@ -1,0 +1,332 @@
+{
+  "pageType": "Player Profile Pages",
+  "priority": "P0 - Critical",
+  "pageCount": "2,578 active players",
+  "dataReadiness": "85%",
+  "recommendedThemes": {
+    "primary": "Next Down Metrics (HUD)",
+    "alternative": ["Tech Forward", "Luxury Magazine", "Cyberpunk Holographic"]
+  },
+  "components": {
+    "layout": {
+      "PlayerProfileLayout": {
+        "description": "Main page wrapper for player profile pages",
+        "props": ["playerId", "children"],
+        "features": [
+          "Responsive container",
+          "Hero section",
+          "Tabbed content area",
+          "Related players sidebar",
+          "Theme-aware styling"
+        ],
+        "files": ["components/player/player-profile-layout.tsx"]
+      }
+    },
+    "hero": {
+      "PlayerHeroSection": {
+        "description": "Top hero section with player headshot, name, team",
+        "theme": "Cyberpunk Holographic",
+        "features": [
+          "Large player headshot (300x300px)",
+          "Player name (48px, bold)",
+          "Jersey number badge",
+          "Position badge",
+          "Current team logo + colors",
+          "Status badge (Active/Injured/Retired)",
+          "Hall of Fame indicator"
+        ],
+        "props": [
+          "player { name, jerseyNumber, position, headshot, status }",
+          "currentTeam { name, logo, colors }",
+          "hallOfFame { inducted, year }"
+        ],
+        "dataSource": "GET /players/:playerId",
+        "files": ["components/player/player-hero.tsx"]
+      },
+      "QuickStatsBar": {
+        "description": "Horizontal bar with physical/bio info",
+        "theme": "Next Down Metrics (HUD)",
+        "stats": [
+          "Height (6-3)",
+          "Weight (225 lbs)",
+          "Age (28)",
+          "Birth Date (Sep 17, 1995)",
+          "Birthplace (Tyler, TX)",
+          "College (Texas Tech)",
+          "Draft (2017 / Rd 1 / Pick 10)",
+          "Years Pro (7)"
+        ],
+        "features": [
+          "Icon for each stat",
+          "Responsive (stacks on mobile)",
+          "Hover for full details"
+        ],
+        "props": ["player { height, weight, birthDate, birthplace, college, draft, yearsPro }"],
+        "dataSource": "GET /players/:playerId",
+        "files": ["components/player/quick-stats-bar.tsx"]
+      }
+    },
+    "careerStats": {
+      "CareerTotalsCard": {
+        "description": "Big numbers showing career totals",
+        "theme": "Next Down Metrics (HUD)",
+        "stats": {
+          "universal": ["Seasons", "Games Played", "Games Started"],
+          "QB": ["Passing Yards", "Pass TDs", "Interceptions", "Passer Rating", "Completion %"],
+          "RB": ["Rushing Yards", "Rush TDs", "Yards/Carry", "Receptions", "Rec Yards"],
+          "WR/TE": ["Receptions", "Rec Yards", "Rec TDs", "Yards/Reception", "Targets"],
+          "DEF": ["Tackles", "Sacks", "Interceptions", "Forced Fumbles", "Passes Defended"]
+        },
+        "features": [
+          "Large numbers (48px)",
+          "Sparklines showing trend",
+          "All-time ranking badges",
+          "Award badges (MVP, Pro Bowl)"
+        ],
+        "props": ["careerTotals", "position", "rankings", "awards"],
+        "dataSource": "GET /players/:playerId/career-totals (aggregate from player_season_cumulative_stats)",
+        "files": ["components/player/career-totals-card.tsx"]
+      }
+    },
+    "seasonStats": {
+      "SeasonBySeasonTable": {
+        "description": "Table showing stats for each season",
+        "theme": "Tech Forward",
+        "columns": {
+          "universal": ["Season", "Team", "Games", "Games Started"],
+          "position-specific": "All relevant stats for position"
+        },
+        "features": [
+          "Sortable columns",
+          "Expandable rows for game logs",
+          "Championship seasons highlighted (gold)",
+          "Award badges in row",
+          "Pro Bowl indicator",
+          "Team logos"
+        ],
+        "props": ["seasonStats[]", "position", "sortColumn", "sortDirection"],
+        "dataSource": "GET /player-season-cumulative-stats?playerId=:id",
+        "files": ["components/player/season-by-season-table.tsx"]
+      },
+      "GameLogExpanded": {
+        "description": "Game-by-game stats when season row expanded",
+        "theme": "Tech Forward",
+        "columns": ["Week", "Opponent", "Result", "Stats"],
+        "props": ["gameLog[]", "season", "playerId"],
+        "dataSource": "GET /player-game-stats?playerId=:id&season=:season",
+        "files": ["components/player/game-log-expanded.tsx"]
+      }
+    },
+    "bio": {
+      "BiographicalInfoCard": {
+        "description": "Complete biographical information",
+        "theme": "Luxury Magazine",
+        "sections": [
+          "Full Name",
+          "Nickname",
+          "Birthplace (city, state, country)",
+          "High School (name, city, state)",
+          "College (name, years, position)",
+          "Family (if available)",
+          "Social Media Links (if available)"
+        ],
+        "props": ["player { fullName, nickname, birthplace, highSchool, college }"],
+        "dataSource": "GET /players/:playerId",
+        "files": ["components/player/biographical-info-card.tsx"],
+        "note": "Family and social media not in current database - may need manual curation or external API"
+      }
+    },
+    "awards": {
+      "AwardsTrophyCase": {
+        "description": "Visual trophy case showing awards and achievements",
+        "theme": "Cyberpunk Holographic",
+        "awards": [
+          "NFL MVP",
+          "Super Bowl MVP",
+          "Super Bowl Champion",
+          "Pro Bowl Selections",
+          "All-Pro Selections (1st team, 2nd team)",
+          "Offensive/Defensive Player of the Year",
+          "Rookie of the Year",
+          "Hall of Fame"
+        ],
+        "features": [
+          "Trophy icons",
+          "Award year badges",
+          "Count badges (e.g., '2x MVP')",
+          "Hover for details"
+        ],
+        "props": ["awards[]"],
+        "dataSource": "GET /player-awards?playerId=:id (table not yet created)",
+        "files": ["components/player/awards-trophy-case.tsx"],
+        "note": "Requires new player_awards table - data source TBD"
+      },
+      "MilestonesTimeline": {
+        "description": "Career milestones (400th TD, 1000th reception, etc.)",
+        "theme": "Next Down Metrics (HUD)",
+        "milestones": [
+          "First NFL start",
+          "First TD/reception/sack",
+          "100th career TD",
+          "1,000 career receptions",
+          "10,000 career yards",
+          "Career records broken"
+        ],
+        "props": ["milestones[]"],
+        "dataSource": "Calculate from player_game_stats + player_season_cumulative_stats",
+        "files": ["components/player/milestones-timeline.tsx"]
+      }
+    },
+    "career": {
+      "CareerTimeline": {
+        "description": "Vertical timeline of career events",
+        "theme": "Next Down Metrics (HUD)",
+        "events": [
+          "Draft Day",
+          "First Start",
+          "Team Changes (trades/signings)",
+          "Contract Extensions",
+          "Major Injuries",
+          "Awards Won",
+          "Playoff Appearances",
+          "Super Bowl Wins",
+          "Retirement"
+        ],
+        "features": [
+          "Vertical timeline",
+          "Event type icons",
+          "Hover for details",
+          "Team colors for team-related events"
+        ],
+        "props": ["timeline[]"],
+        "dataSource": "GET /roster-transactions?playerId=:id + GET /player-awards?playerId=:id",
+        "files": ["components/player/career-timeline.tsx"]
+      },
+      "TransactionsHistory": {
+        "description": "List of all roster transactions",
+        "theme": "Tech Forward",
+        "types": [
+          "Drafted",
+          "Signed (free agency)",
+          "Traded",
+          "Released",
+          "Injured Reserve",
+          "Practice Squad"
+        ],
+        "props": ["transactions[]"],
+        "dataSource": "GET /roster-transactions?playerId=:id",
+        "files": ["components/player/transactions-history.tsx"]
+      }
+    },
+    "analytics": {
+      "AdvancedAnalyticsCard": {
+        "description": "Advanced analytics (EPA, Next Gen Stats)",
+        "theme": "Cyberpunk Holographic",
+        "stats": {
+          "QB": [
+            "EPA Total",
+            "EPA per Play",
+            "CPOE (Completion % over expected)",
+            "Average Time to Throw",
+            "Average Air Yards",
+            "Max Speed (mph)",
+            "Aggressiveness %"
+          ],
+          "RB": [
+            "EPA per Rush",
+            "Yards After Contact",
+            "Rush Success Rate",
+            "Breakaway %",
+            "Max Speed (mph)"
+          ],
+          "WR/TE": [
+            "EPA per Reception",
+            "Separation Average",
+            "Catch Rate Over Expected",
+            "Yards After Catch",
+            "Max Speed (mph)"
+          ]
+        },
+        "features": [
+          "Radar charts",
+          "Percentile rankings",
+          "Comparison to league average",
+          "Season-over-season trend"
+        ],
+        "props": ["advancedStats", "position", "leagueAverages"],
+        "dataSource": "GET /play-by-play?playerId=:id (calculate EPA)",
+        "files": ["components/player/advanced-analytics-card.tsx"],
+        "note": "Next Gen Stats require NFL Next Gen API (paid) - EPA available from play_by_play table"
+      }
+    },
+    "related": {
+      "RelatedPlayersGrid": {
+        "description": "Similar players (same position, era, stats)",
+        "theme": "Luxury Magazine",
+        "features": [
+          "Player cards (headshot, name, stats)",
+          "Similarity indicator",
+          "Link to player profile"
+        ],
+        "props": ["relatedPlayers[]"],
+        "dataSource": "Algorithm to find similar players based on position, era, stats",
+        "files": ["components/player/related-players-grid.tsx"]
+      }
+    },
+    "shared": {
+      "PositionBadge": {
+        "description": "Badge showing player position with color coding",
+        "variants": {
+          "QB": "Blue",
+          "RB": "Green",
+          "WR/TE": "Purple",
+          "OL": "Gray",
+          "DL": "Red",
+          "LB": "Orange",
+          "DB": "Amber",
+          "K/P": "Indigo"
+        },
+        "props": ["position"],
+        "files": ["components/ui/position-badge.tsx"]
+      },
+      "TeamLogo": {
+        "description": "Team logo with optional team colors border",
+        "sizes": ["xs", "sm", "md", "lg", "xl"],
+        "props": ["teamId", "size", "showBorder"],
+        "files": ["components/ui/team-logo.tsx"]
+      },
+      "StatCard": {
+        "description": "Reusable stat display card",
+        "variants": ["number", "percentage", "time", "ranking"],
+        "props": ["label", "value", "trend", "rank"],
+        "files": ["components/ui/stat-card.tsx"]
+      }
+    }
+  },
+  "dataFlow": {
+    "initialLoad": {
+      "player": "GET /players/:playerId",
+      "careerStats": "GET /player-season-cumulative-stats?playerId=:id (aggregate for career)",
+      "seasonStats": "GET /player-season-cumulative-stats?playerId=:id",
+      "transactions": "GET /roster-transactions?playerId=:id",
+      "awards": "GET /player-awards?playerId=:id (table not created yet)"
+    },
+    "dynamicData": {
+      "gameLog": "GET /player-game-stats?playerId=:id&season=:season (loaded on demand)",
+      "advancedStats": "GET /play-by-play?playerId=:id (calculate EPA, success rate)",
+      "relatedPlayers": "Algorithm-based (calculate on server, cache results)"
+    }
+  },
+  "routing": {
+    "url": "/players/[playerId]",
+    "seoTitle": "{playerName} - Stats, Bio, Career | {siteName}",
+    "seoDescription": "Complete career statistics, biography, and awards for {playerName}. View season-by-season stats, game logs, and advanced analytics."
+  },
+  "technicalNotes": {
+    "stateManagement": "React Context + SWR for data fetching",
+    "caching": "24 hours for completed seasons, 1 hour for current season",
+    "lazyLoading": "Game logs loaded on demand when season expanded",
+    "imageOptimization": "Next/Image for player headshots (300x300 -> 150x150, 300x300, 600x600)",
+    "accessibility": "WCAG 2.1 AA compliant, keyboard navigation"
+  }
+}

@@ -1,0 +1,214 @@
+{
+  "feature_id": "AGENT3-PLAYER-PROFILES",
+  "feature_name": "Player Profile Pages",
+  "phase": 2,
+  "priority": "P1",
+  "assigned_agent": "Agent-3",
+
+  "overview": {
+    "description": "Build Player Profile pages showing comprehensive player data including career stats, bio, awards, season-by-season breakdowns, advanced analytics, and career timeline. Build components in Storybook, then integrate into Next.js page with Supabase data",
+    "page_type": "Player Profiles (2,578 active players)",
+    "route": "/players/[playerId] (dynamic route)",
+    "user_story": "As a fan, I want to see detailed player profiles with career stats, biographical info, awards, and advanced analytics so I can deeply understand a player's career and performance"
+  },
+
+  "dependencies": {
+    "blocks": [],
+    "blocked_by": ["PHASE1-FOUNDATION"],
+    "requires": [
+      "Next.js 15 app running",
+      "Storybook 8 configured",
+      "Theme system available",
+      "Mock data library (lib/mock-data.ts)",
+      "Component generator",
+      "Templates at coderef/finalizing-elements/player-profiles/"
+    ]
+  },
+
+  "tech_stack": {
+    "framework": "Next.js 15 App Router",
+    "components": "shadcn/ui (Button, Card, Badge, Tabs, Table, Avatar)",
+    "styling": "Tailwind CSS v4 + theme variants",
+    "data": "Supabase (players, player_season_cumulative_stats, player_game_stats, roster_transactions, play_by_play)",
+    "state": "React Context + SWR for data fetching",
+    "charts": "Recharts (for sparklines, radar charts, career trends)"
+  },
+
+  "design_variants": {
+    "template_source": "coderef/finalizing-elements/player-profiles/",
+    "recommended_themes": {
+      "primary": "Next Down Metrics (HUD)",
+      "alternative": ["Tech Forward", "Luxury Magazine", "Cyberpunk Holographic"]
+    },
+    "default_theme": "Next Down Metrics (HUD)"
+  },
+
+  "components_to_build": [
+    {
+      "name": "PlayerProfileLayout",
+      "description": "Main page wrapper for player profile pages with hero section",
+      "props": ["playerId", "children"],
+      "features": ["Responsive container", "Hero section slot", "Tabbed content area", "Related players sidebar", "Theme-aware styling"],
+      "story": "stories/player/PlayerProfileLayout.stories.tsx"
+    },
+    {
+      "name": "PlayerHeroSection",
+      "description": "Top hero section with player headshot, name, team, position",
+      "props": ["player", "currentTeam", "hallOfFame"],
+      "features": ["Large player headshot (300x300px)", "Jersey number badge", "Position badge", "Status badge (Active/Injured/Retired)", "Hall of Fame indicator"],
+      "data_source": "GET /players/:playerId",
+      "story": "stories/player/PlayerHeroSection.stories.tsx"
+    },
+    {
+      "name": "QuickStatsBar",
+      "description": "Horizontal bar with physical and biographical info",
+      "stats": ["Height", "Weight", "Age", "Birthplace", "College", "Draft", "Years Pro"],
+      "data_source": "GET /players/:playerId",
+      "story": "stories/player/QuickStatsBar.stories.tsx"
+    },
+    {
+      "name": "CareerTotalsCard",
+      "description": "Big numbers showing career totals with sparklines",
+      "stats": {
+        "QB": ["Passing Yards", "Pass TDs", "Interceptions", "Passer Rating", "Completion %"],
+        "RB": ["Rushing Yards", "Rush TDs", "Yards/Carry", "Receptions", "Rec Yards"],
+        "WR/TE": ["Receptions", "Rec Yards", "Rec TDs", "Yards/Reception", "Targets"],
+        "DEF": ["Tackles", "Sacks", "Interceptions", "Forced Fumbles", "Passes Defended"]
+      },
+      "features": ["Large numbers (48px)", "Sparklines showing trend", "All-time ranking badges", "Award badges"],
+      "data_source": "GET /players/:playerId/career-totals (aggregate from player_season_cumulative_stats)",
+      "story": "stories/player/CareerTotalsCard.stories.tsx"
+    },
+    {
+      "name": "SeasonBySeasonTable",
+      "description": "Table showing stats for each season with expandable game logs",
+      "columns": ["Season", "Team", "Games", "Games Started", "Position-specific stats"],
+      "features": ["Sortable columns", "Expandable rows for game logs", "Championship seasons highlighted", "Award badges", "Pro Bowl indicator"],
+      "data_source": "GET /player-season-cumulative-stats?playerId=:id",
+      "story": "stories/player/SeasonBySeasonTable.stories.tsx"
+    },
+    {
+      "name": "BiographicalInfoCard",
+      "description": "Complete biographical information",
+      "sections": ["Full Name", "Nickname", "Birthplace", "High School", "College", "Family (if available)", "Social Media (if available)"],
+      "data_source": "GET /players/:playerId",
+      "story": "stories/player/BiographicalInfoCard.stories.tsx"
+    },
+    {
+      "name": "AwardsTrophyCase",
+      "description": "Visual trophy case showing awards and achievements",
+      "awards": ["NFL MVP", "Super Bowl MVP", "Super Bowl Champion", "Pro Bowl Selections", "All-Pro Selections", "Player of the Year", "Rookie of the Year", "Hall of Fame"],
+      "features": ["Trophy icons", "Award year badges", "Count badges (e.g., '2x MVP')", "Hover for details"],
+      "data_source": "GET /player-awards?playerId=:id (table not yet created)",
+      "note": "Requires new player_awards table - data source TBD",
+      "story": "stories/player/AwardsTrophyCase.stories.tsx"
+    },
+    {
+      "name": "CareerTimeline",
+      "description": "Vertical timeline of career events",
+      "events": ["Draft Day", "First Start", "Team Changes", "Contract Extensions", "Major Injuries", "Awards Won", "Playoff Appearances", "Super Bowl Wins", "Retirement"],
+      "data_source": "GET /roster-transactions?playerId=:id + GET /player-awards?playerId=:id",
+      "story": "stories/player/CareerTimeline.stories.tsx"
+    },
+    {
+      "name": "TransactionsHistory",
+      "description": "List of all roster transactions",
+      "types": ["Drafted", "Signed", "Traded", "Released", "Injured Reserve", "Practice Squad"],
+      "data_source": "GET /roster-transactions?playerId=:id",
+      "story": "stories/player/TransactionsHistory.stories.tsx"
+    },
+    {
+      "name": "AdvancedAnalyticsCard",
+      "description": "Advanced analytics (EPA, success rate, radar charts)",
+      "stats": {
+        "QB": ["EPA Total", "EPA per Play", "CPOE", "Average Time to Throw", "Average Air Yards"],
+        "RB": ["EPA per Rush", "Yards After Contact", "Rush Success Rate", "Breakaway %"],
+        "WR/TE": ["EPA per Reception", "Separation Average", "Catch Rate Over Expected", "Yards After Catch"]
+      },
+      "features": ["Radar charts", "Percentile rankings", "Comparison to league average", "Season-over-season trend"],
+      "data_source": "GET /play-by-play?playerId=:id (calculate EPA)",
+      "story": "stories/player/AdvancedAnalyticsCard.stories.tsx"
+    }
+  ],
+
+  "data_requirements": {
+    "tables": [
+      "players (id, full_name, first_name, last_name, position, jersey_number, height, weight, birth_date, birthplace, college, high_school, headshot_url, status)",
+      "player_teams (player_id, team_id, start_season, end_season, is_current)",
+      "player_season_cumulative_stats (player_id, season, team_id, games_played, games_started, position-specific stats)",
+      "player_game_stats (player_id, game_id, season, position-specific stats)",
+      "roster_transactions (player_id, team_id, transaction_type, date, description)",
+      "play_by_play (game_id, play_id, player_id, epa, wpa, success)",
+      "player_awards (player_id, award_type, year, details) - TABLE NOT YET CREATED"
+    ],
+    "api_endpoints": [
+      "GET /players/:playerId",
+      "GET /players/:playerId/career-totals",
+      "GET /player-season-cumulative-stats?playerId=:id",
+      "GET /player-game-stats?playerId=:id&season=:season",
+      "GET /roster-transactions?playerId=:id",
+      "GET /play-by-play?playerId=:id",
+      "GET /player-awards?playerId=:id"
+    ],
+    "data_transformations": [
+      "Aggregate player_season_cumulative_stats to get career totals",
+      "Calculate EPA from play_by_play table",
+      "Generate sparklines from season stats",
+      "Calculate percentile rankings by position",
+      "Find similar players based on position, era, stats"
+    ]
+  },
+
+  "acceptance_criteria": [
+    "✅ All 10 components render in Storybook with mock data",
+    "✅ Theme switcher changes all components",
+    "✅ Controls in Storybook stories work",
+    "✅ Tables are sortable and expandable (season-by-season)",
+    "✅ Charts render correctly (sparklines, radar charts)",
+    "✅ Mobile responsive (breakpoints at 768px, 480px)",
+    "✅ Page integrates components with real Supabase data",
+    "✅ Career totals calculated from season stats",
+    "✅ Game logs load on demand (expandable rows)",
+    "✅ Page loads in <2 seconds",
+    "✅ Zero TypeScript errors",
+    "✅ Zero accessibility errors (a11y addon)"
+  ],
+
+  "estimated_hours": {
+    "phase_2_components": 8,
+    "phase_3_page_integration": 4,
+    "total": 12
+  },
+
+  "deliverables": [
+    {
+      "phase": 2,
+      "name": "Storybook Components",
+      "items": [
+        "10 components in components/player/ folder",
+        "10 stories in stories/player/ folder",
+        "Position-specific stat displays (QB, RB, WR/TE, DEF)",
+        "Mock data integration",
+        "Recharts integration for sparklines and radar charts"
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Next.js Page",
+      "items": [
+        "app/(pages)/players/[playerId]/page.tsx (dynamic route)",
+        "Real Supabase data integration",
+        "Career totals calculation from season stats",
+        "Game log lazy loading (on-demand)",
+        "SWR caching for completed seasons (24 hours)",
+        "Error handling and loading states"
+      ]
+    }
+  ],
+
+  "references": {
+    "components_spec": "coderef/finalizing-elements/player-profiles/components.json",
+    "themes_doc": "coderef/finalizing-elements/THEMES/README.md",
+    "backend_schema": "types/database.ts"
+  }
+}

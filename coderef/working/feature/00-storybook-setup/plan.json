@@ -1,0 +1,648 @@
+{
+  "plan_id": "PHASE1-FOUNDATION",
+  "feature_id": "PHASE1-FOUNDATION",
+  "plan_version": "2.0",
+  "created": "2025-01-23",
+  "status": "ready_for_execution",
+
+  "overview": {
+    "description": "Generate Next.js 15 app using nextjs-pwa generator, install shadcn/ui, configure Storybook 8, create theme system, build mock data library, and integrate with NFL Supabase backend",
+    "agent": "Agent-Foundation",
+    "estimated_hours": 12,
+    "blocks": "All 7 Phase 2 agents (cannot start until complete)"
+  },
+
+  "phases": [
+    {
+      "phase": "1. Generate Next.js 15 App",
+      "location": "C:\\Users\\willh\\Desktop\\projects - current-location\\loudpacks\\nextjs-pwa",
+      "tasks": [
+        {
+          "task_id": "NEXT-1",
+          "description": "Run nextjs-pwa generator to create new app",
+          "command": "node create-nextjs-pwa.js",
+          "prompts": {
+            "project_name": "nfl-stats-app",
+            "description": "NFL Stats Platform - 2025 Season Data",
+            "author": "Your Name",
+            "features": [
+              "TypeScript",
+              "Tailwind CSS",
+              "PWA",
+              "App Router"
+            ]
+          },
+          "output_dir": "C:\\Users\\willh\\Desktop\\projects - current-location\\nfl-stats-app",
+          "validation": "package.json exists with Next.js 15",
+          "estimated_minutes": 10
+        },
+        {
+          "task_id": "NEXT-2",
+          "description": "Install dependencies and verify Next.js runs",
+          "commands": [
+            "cd nfl-stats-app",
+            "npm install",
+            "npm run dev"
+          ],
+          "validation": "App runs at localhost:3000",
+          "estimated_minutes": 10
+        }
+      ]
+    },
+
+    {
+      "phase": "2. Install shadcn/ui",
+      "tasks": [
+        {
+          "task_id": "SHADCN-1",
+          "description": "Initialize shadcn/ui",
+          "command": "npx shadcn@latest init",
+          "prompts": {
+            "style": "New York",
+            "base_color": "Neutral",
+            "css_variables": "Yes"
+          },
+          "creates": [
+            "components/ui/",
+            "lib/utils.ts",
+            "components.json"
+          ],
+          "validation": "components/ui/ folder exists",
+          "estimated_minutes": 5
+        },
+        {
+          "task_id": "SHADCN-2",
+          "description": "Install base components used in templates",
+          "command": "npx shadcn@latest add button card badge tabs table select input label avatar",
+          "components": [
+            "button",
+            "card",
+            "badge",
+            "tabs",
+            "table",
+            "select",
+            "input",
+            "label",
+            "avatar"
+          ],
+          "validation": "All components exist in components/ui/",
+          "estimated_minutes": 10
+        }
+      ]
+    },
+
+    {
+      "phase": "3. Install Storybook 8",
+      "tasks": [
+        {
+          "task_id": "STORY-1",
+          "description": "Install Storybook for Next.js",
+          "command": "npx storybook@latest init --type nextjs",
+          "creates": [
+            ".storybook/",
+            ".storybook/main.ts",
+            ".storybook/preview.tsx",
+            "stories/"
+          ],
+          "validation": ".storybook/ folder exists",
+          "estimated_minutes": 10
+        },
+        {
+          "task_id": "STORY-2",
+          "description": "Install Storybook addons",
+          "command": "npm install @storybook/addon-a11y storybook-dark-mode",
+          "addons": [
+            "@storybook/addon-essentials",
+            "@storybook/addon-a11y",
+            "@storybook/addon-interactions",
+            "@storybook/addon-viewport",
+            "storybook-dark-mode"
+          ],
+          "validation": "Addons in package.json",
+          "estimated_minutes": 5
+        },
+        {
+          "task_id": "STORY-3",
+          "description": "Configure .storybook/main.ts",
+          "file": ".storybook/main.ts",
+          "changes": [
+            "Set framework to '@storybook/nextjs'",
+            "Add stories pattern: '../stories/**/*.stories.@(js|jsx|ts|tsx)'",
+            "Add staticDirs for public assets",
+            "Configure all addons"
+          ],
+          "validation": "Storybook compiles without errors",
+          "estimated_minutes": 15
+        },
+        {
+          "task_id": "STORY-4",
+          "description": "Configure .storybook/preview.tsx with themes",
+          "file": ".storybook/preview.tsx",
+          "imports": [
+            "Import global Tailwind CSS",
+            "Import ThemeProvider",
+            "Add decorators for theme switching"
+          ],
+          "globalTypes": {
+            "theme": {
+              "description": "Global theme for components",
+              "defaultValue": "next-down-metrics",
+              "toolbar": {
+                "title": "Theme",
+                "items": [
+                  "next-down-metrics",
+                  "modern-dashboard",
+                  "data-heavy",
+                  "card-based",
+                  "classic-reference",
+                  "premium-glass"
+                ]
+              }
+            }
+          },
+          "validation": "Theme switcher appears in toolbar",
+          "estimated_minutes": 30
+        }
+      ]
+    },
+
+    {
+      "phase": "4. Create Theme System",
+      "tasks": [
+        {
+          "task_id": "THEME-1",
+          "description": "Create ThemeProvider component",
+          "file": "components/providers/ThemeProvider.tsx",
+          "exports": [
+            "ThemeProvider (React Context)",
+            "useTheme() hook",
+            "THEMES constant (5 themes)"
+          ],
+          "themes": {
+            "next-down-metrics": {
+              "name": "Next Down Metrics (HUD)",
+              "colors": {
+                "background": "hsl(0 0% 0%)",
+                "foreground": "hsl(0 0% 98%)",
+                "primary": "hsl(189 95% 43%)",
+                "accent": "hsl(142 76% 36%)"
+              },
+              "typography": "font-mono everywhere"
+            },
+            "modern-dashboard": {
+              "name": "Modern Dashboard",
+              "colors": "Standard shadcn neutral palette"
+            },
+            "data-heavy": {
+              "name": "Data-Heavy Stats",
+              "colors": "Monochrome with table emphasis"
+            },
+            "card-based": {
+              "name": "Card-Based Modular",
+              "colors": "Team colors with white cards"
+            },
+            "classic-reference": {
+              "name": "Classic Reference",
+              "colors": "Newspaper/sports almanac aesthetic"
+            },
+            "premium-glass": {
+              "name": "Premium Glassmorphic",
+              "colors": "Gradient backgrounds with blur"
+            }
+          },
+          "validation": "Theme changes apply to root element",
+          "estimated_minutes": 45
+        },
+        {
+          "task_id": "THEME-2",
+          "description": "Define theme CSS variables in globals.css",
+          "file": "app/globals.css",
+          "layers": [
+            "@layer base { /* Base styles */ }",
+            "[data-theme='next-down-metrics'] { /* HUD theme vars */ }",
+            "[data-theme='modern-dashboard'] { /* Modern theme vars */ }",
+            "[data-theme='data-heavy'] { /* Data theme vars */ }",
+            "[data-theme='card-based'] { /* Card theme vars */ }",
+            "[data-theme='classic-reference'] { /* Classic theme vars */ }",
+            "[data-theme='premium-glass'] { /* Glass theme vars */ }"
+          ],
+          "validation": "CSS variables exist for all themes",
+          "estimated_minutes": 60
+        }
+      ]
+    },
+
+    {
+      "phase": "5. Integrate NFL Backend (Supabase)",
+      "tasks": [
+        {
+          "task_id": "SUPABASE-1",
+          "description": "Install Supabase client",
+          "command": "npm install @supabase/supabase-js",
+          "validation": "Package in package.json",
+          "estimated_minutes": 2
+        },
+        {
+          "task_id": "SUPABASE-2",
+          "description": "Copy database types from backend project",
+          "source": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\supabase\\types\\database.ts",
+          "destination": "types/database.ts",
+          "validation": "types/database.ts exists with NFL schema",
+          "estimated_minutes": 5
+        },
+        {
+          "task_id": "SUPABASE-3",
+          "description": "Create Supabase client utility",
+          "file": "lib/supabase.ts",
+          "exports": [
+            "supabase (client instance)",
+            "Database types",
+            "Helper functions for common queries"
+          ],
+          "env_vars": [
+            "NEXT_PUBLIC_SUPABASE_URL",
+            "NEXT_PUBLIC_SUPABASE_ANON_KEY"
+          ],
+          "validation": "Can query Supabase tables",
+          "estimated_minutes": 15
+        },
+        {
+          "task_id": "SUPABASE-4",
+          "description": "Create .env.local with Supabase credentials",
+          "file": ".env.local",
+          "copy_from": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\.env",
+          "variables": [
+            "NEXT_PUBLIC_SUPABASE_URL=https://fuzouuxhxluqjmiyabal.supabase.co",
+            "NEXT_PUBLIC_SUPABASE_ANON_KEY=<from .env>"
+          ],
+          "validation": "Supabase queries work",
+          "estimated_minutes": 5
+        }
+      ]
+    },
+
+    {
+      "phase": "6. Create Mock Data Library",
+      "tasks": [
+        {
+          "task_id": "MOCK-1",
+          "description": "Create mock data utilities",
+          "file": "lib/mock-data.ts",
+          "imports": "import { Database } from '@/types/database'",
+          "exports": {
+            "GAMES": {
+              "liveGame": "In-progress game",
+              "completedGame": "Final game",
+              "scheduledGame": "Upcoming game",
+              "weekOfGames": "Array of 16 games"
+            },
+            "PLAYERS": {
+              "mahomes": "Patrick Mahomes QB",
+              "allen": "Josh Allen QB",
+              "mccaffrey": "Christian McCaffrey RB",
+              "hill": "Tyreek Hill WR",
+              "kelce": "Travis Kelce TE",
+              "byPosition": "Map of position → players[]"
+            },
+            "TEAMS": {
+              "chiefs": "Kansas City Chiefs",
+              "bills": "Buffalo Bills",
+              "cowboys": "Dallas Cowboys",
+              "all32": "Array of all 32 teams"
+            },
+            "STATS": "Player and team stat fixtures",
+            "BETTING": "Betting line fixtures",
+            "STADIUMS": "Stadium fixtures",
+            "INJURIES": "Injury report fixtures"
+          },
+          "data_source": "Match types/database.ts schema exactly",
+          "validation": "All exports are type-safe",
+          "estimated_minutes": 90
+        },
+        {
+          "task_id": "MOCK-2",
+          "description": "Create Storybook utilities",
+          "file": "lib/storybook-utils.ts",
+          "functions": [
+            "generateRandomScore() - Random 0-42",
+            "generatePlayerStats(position) - Stats by position",
+            "generateTeamStats() - Team aggregates",
+            "generateBettingLine() - Spread/total/ML",
+            "mockDelay(ms) - Simulate API latency",
+            "getTeamColor(teamAbbr) - Team primary color"
+          ],
+          "validation": "Utils generate realistic data",
+          "estimated_minutes": 30
+        }
+      ]
+    },
+
+    {
+      "phase": "7. Create Example Component + Story",
+      "tasks": [
+        {
+          "task_id": "EXAMPLE-1",
+          "description": "Create ScoreBug component",
+          "file": "components/ScoreBug/ScoreBug.tsx",
+          "props": {
+            "game": "Database['public']['Tables']['games']['Row']",
+            "variant": "'modern' | 'data-heavy' | 'card' | 'classic' | 'glass'",
+            "isLive": "boolean",
+            "showBetting": "boolean"
+          },
+          "implements": "5 design variants from templates",
+          "validation": "Component renders all variants",
+          "estimated_minutes": 45
+        },
+        {
+          "task_id": "EXAMPLE-2",
+          "description": "Create ScoreBug.stories.tsx",
+          "file": "stories/ScoreBug.stories.tsx",
+          "format": "CSF 3.0 (Component Story Format)",
+          "stories": [
+            "ModernDashboard",
+            "DataHeavyStats",
+            "CardBased",
+            "ClassicReference",
+            "PremiumGlass",
+            "LiveGame",
+            "WithBetting"
+          ],
+          "controls": {
+            "homeScore": "number (0-42)",
+            "awayScore": "number (0-42)",
+            "quarter": "select (Q1/Q2/Q3/Q4/OT)",
+            "timeRemaining": "text",
+            "isLive": "boolean",
+            "showBetting": "boolean"
+          },
+          "validation": "All stories render in Storybook",
+          "estimated_minutes": 30
+        }
+      ]
+    },
+
+    {
+      "phase": "8. Component Generator Script",
+      "tasks": [
+        {
+          "task_id": "GEN-1",
+          "description": "Create component generator CLI",
+          "file": "scripts/generate-component.js",
+          "usage": "npm run generate:component <ComponentName>",
+          "generates": [
+            "components/<ComponentName>/<ComponentName>.tsx",
+            "components/<ComponentName>/index.ts",
+            "components/<ComponentName>/<ComponentName>.types.ts",
+            "stories/<ComponentName>.stories.tsx"
+          ],
+          "templates": {
+            "component": "Functional component with types",
+            "story": "CSF 3.0 story with controls",
+            "types": "TypeScript interface"
+          },
+          "validation": "Script creates all files",
+          "estimated_minutes": 45
+        },
+        {
+          "task_id": "GEN-2",
+          "description": "Add npm scripts to package.json",
+          "file": "package.json",
+          "scripts": {
+            "generate:component": "node scripts/generate-component.js",
+            "storybook": "storybook dev -p 6006",
+            "build-storybook": "storybook build"
+          },
+          "validation": "Scripts run successfully",
+          "estimated_minutes": 5
+        }
+      ]
+    },
+
+    {
+      "phase": "9. Documentation",
+      "tasks": [
+        {
+          "task_id": "DOC-1",
+          "description": "Create STORYBOOK-WORKFLOW.md",
+          "file": "docs/STORYBOOK-WORKFLOW.md",
+          "sections": [
+            "## 1. Introduction",
+            "## 2. Why Storybook-First Development",
+            "## 3. Creating a New Component",
+            "## 4. Writing Stories",
+            "## 5. Using Themes",
+            "## 6. Mock Data vs Real Data",
+            "## 7. Testing Components",
+            "## 8. Integration to Pages (Phase 3)",
+            "## 9. Best Practices",
+            "## 10. Troubleshooting"
+          ],
+          "includes_code_examples": true,
+          "validation": "Documentation is complete",
+          "estimated_minutes": 60
+        },
+        {
+          "task_id": "DOC-2",
+          "description": "Create stories/README.md",
+          "file": "stories/README.md",
+          "content": [
+            "Story organization (7 categories matching pages)",
+            "Naming conventions",
+            "Importing mock data",
+            "Theme switcher usage",
+            "Links to example stories"
+          ],
+          "validation": "README provides guidance",
+          "estimated_minutes": 15
+        },
+        {
+          "task_id": "DOC-3",
+          "description": "Create PROJECT-STRUCTURE.md",
+          "file": "docs/PROJECT-STRUCTURE.md",
+          "content": [
+            "Frontend (Next.js 15) architecture",
+            "Backend (Supabase) connection",
+            "Component library structure",
+            "Phase 2 agent workflow",
+            "Phase 3 integration workflow"
+          ],
+          "validation": "Structure is documented",
+          "estimated_minutes": 20
+        }
+      ]
+    },
+
+    {
+      "phase": "10. Validation & Testing",
+      "tasks": [
+        {
+          "task_id": "VAL-1",
+          "description": "Validate Next.js app",
+          "command": "npm run dev",
+          "checks": [
+            "App loads at localhost:3000",
+            "No TypeScript errors",
+            "Tailwind CSS works",
+            "shadcn components render"
+          ],
+          "validation": "All checks pass",
+          "estimated_minutes": 10
+        },
+        {
+          "task_id": "VAL-2",
+          "description": "Validate Storybook",
+          "command": "npm run storybook",
+          "checks": [
+            "Storybook loads at localhost:6006",
+            "Theme switcher works (6 themes)",
+            "ScoreBug example renders",
+            "All 5 variants display",
+            "Controls work",
+            "Viewport switcher works",
+            "No console errors"
+          ],
+          "validation": "All checks pass",
+          "estimated_minutes": 15
+        },
+        {
+          "task_id": "VAL-3",
+          "description": "Validate Supabase integration",
+          "test_query": "SELECT * FROM teams LIMIT 5",
+          "checks": [
+            "Supabase client connects",
+            "Can query teams table",
+            "Types match schema",
+            "Mock data matches real schema"
+          ],
+          "validation": "Queries return data",
+          "estimated_minutes": 10
+        },
+        {
+          "task_id": "VAL-4",
+          "description": "Test component generator",
+          "command": "npm run generate:component TestCard",
+          "checks": [
+            "Creates components/TestCard/",
+            "Creates stories/TestCard.stories.tsx",
+            "Files have boilerplate",
+            "Story renders in Storybook"
+          ],
+          "cleanup": "Delete TestCard after test",
+          "validation": "Generator works",
+          "estimated_minutes": 10
+        }
+      ]
+    }
+  ],
+
+  "deliverables": [
+    {
+      "name": "Next.js 15 App",
+      "location": "nfl-stats-app/",
+      "validation": "npm run dev works"
+    },
+    {
+      "name": "Storybook 8",
+      "location": ".storybook/",
+      "validation": "npm run storybook works"
+    },
+    {
+      "name": "shadcn/ui",
+      "location": "components/ui/",
+      "validation": "9 components installed"
+    },
+    {
+      "name": "Theme System",
+      "location": "components/providers/ThemeProvider.tsx + app/globals.css",
+      "validation": "6 themes switch correctly"
+    },
+    {
+      "name": "Supabase Integration",
+      "location": "lib/supabase.ts + types/database.ts",
+      "validation": "Queries work"
+    },
+    {
+      "name": "Mock Data Library",
+      "location": "lib/mock-data.ts",
+      "validation": "Type-safe fixtures"
+    },
+    {
+      "name": "Example Component",
+      "location": "components/ScoreBug/ + stories/ScoreBug.stories.tsx",
+      "validation": "All 5 variants render"
+    },
+    {
+      "name": "Component Generator",
+      "location": "scripts/generate-component.js",
+      "validation": "Creates proper structure"
+    },
+    {
+      "name": "Documentation",
+      "location": "docs/",
+      "validation": "3 docs complete"
+    }
+  ],
+
+  "acceptance_criteria": [
+    "✅ Next.js 15 app runs at localhost:3000",
+    "✅ Storybook 8 runs at localhost:6006",
+    "✅ shadcn/ui components work",
+    "✅ 6 themes switch correctly (Next Down Metrics default)",
+    "✅ Supabase queries return NFL data",
+    "✅ Mock data matches database schema",
+    "✅ Example ScoreBug shows all 5 design variants",
+    "✅ Component generator creates proper file structure",
+    "✅ Documentation complete",
+    "✅ Zero TypeScript errors",
+    "✅ Zero console warnings",
+    "✅ Ready for 7 Phase 2 agents to start component work"
+  ],
+
+  "total_estimated_time": "12 hours",
+
+  "handoff_to_phase2": {
+    "when": "After all acceptance criteria pass",
+    "what": [
+      "Running Next.js 15 app",
+      "Running Storybook 8 instance",
+      "Theme system (6 themes)",
+      "Supabase connection",
+      "Mock data library",
+      "Component generator",
+      "Documentation"
+    ],
+    "agents_can_start": [
+      "Agent-1: Live Scoreboard components",
+      "Agent-2: Game Details components",
+      "Agent-3: Player Profile components",
+      "Agent-4: Team Page components",
+      "Agent-5: Stats & Leaderboards components",
+      "Agent-6: Matchup Preview components",
+      "Agent-7: Stadium Page components"
+    ],
+    "communication": "Post completion message in 00-storybook-setup/communication.json"
+  },
+
+  "dependencies": {
+    "npm_packages": [
+      "next@15",
+      "react@19",
+      "typescript@5",
+      "tailwindcss@4",
+      "@supabase/supabase-js",
+      "storybook@8",
+      "@storybook/nextjs",
+      "@storybook/addon-essentials",
+      "@storybook/addon-a11y",
+      "storybook-dark-mode",
+      "shadcn/ui (via CLI)"
+    ],
+    "external_resources": [
+      "nextjs-pwa generator at C:\\Users\\willh\\Desktop\\projects - current-location\\loudpacks\\nextjs-pwa",
+      "NFL backend at C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper",
+      "Supabase database (fuzouuxhxluqjmiyabal)",
+      "Templates at next-scraper/coderef/finalizing-elements/"
+    ]
+  }
+}

@@ -1,0 +1,450 @@
+{
+  "plan_id": "AGENT1-LIVE-SCOREBOARD-PLAN",
+  "feature_id": "AGENT1-LIVE-SCOREBOARD",
+  "plan_version": "1.0",
+  "created": "2025-01-23",
+  "status": "waiting_for_phase1",
+
+  "overview": {
+    "agent": "Agent-1",
+    "page": "Live Scoreboard (Homepage)",
+    "phases": [
+      "Phase 2: Build components in Storybook (8 hours)",
+      "Phase 3: Integrate to Next.js page (4 hours)"
+    ],
+    "total_estimated_time": "12 hours"
+  },
+
+  "phase_2_storybook_components": {
+    "description": "Build all components in Storybook with mock data, all design variants, and full interactivity",
+    "estimated_hours": 8,
+
+    "tasks": [
+      {
+        "task_id": "COMP-1",
+        "component": "ScoreBug",
+        "description": "Single game score display (example already exists from Phase 1)",
+        "actions": [
+          "Review existing components/ScoreBug/ScoreBug.tsx from Phase 1",
+          "Enhance with all 5 design variants",
+          "Add betting lines display",
+          "Create comprehensive story with controls"
+        ],
+        "props": {
+          "game": "Game type from database",
+          "variant": "'modern' | 'data-heavy' | 'card' | 'classic' | 'glass'",
+          "isLive": "boolean",
+          "showBetting": "boolean"
+        },
+        "story_controls": ["homeScore (0-42)", "awayScore (0-42)", "quarter", "timeRemaining", "isLive", "showBetting"],
+        "estimated_minutes": 60
+      },
+      {
+        "task_id": "COMP-2",
+        "component": "LiveGamesGrid",
+        "description": "Grid of all currently live games",
+        "actions": [
+          "Generate component: npm run generate:component LiveGamesGrid",
+          "Implement 2-column grid (desktop) / 1-column (mobile)",
+          "Add auto-refresh simulation",
+          "Import GAMES.weekOfGames from mock data",
+          "Filter to live games only",
+          "Map over games and render ScoreBug for each"
+        ],
+        "props": {
+          "games": "Game[]",
+          "layout": "'grid' | 'list'",
+          "autoRefresh": "boolean"
+        },
+        "story_examples": [
+          "NoLiveGames - Empty state",
+          "OneLiveGame - Single game",
+          "MultipleLiveGames - Full grid (16 games)",
+          "MobileView - Single column layout"
+        ],
+        "estimated_minutes": 45
+      },
+      {
+        "task_id": "COMP-3",
+        "component": "CompletedGamesGrid",
+        "description": "Recently completed games with final scores",
+        "actions": [
+          "Generate component",
+          "Similar layout to LiveGamesGrid",
+          "Show final scores (no quarter/time)",
+          "Add 'Final' badge",
+          "Filter GAMES to status='completed'",
+          "Limit to 10 most recent"
+        ],
+        "props": {
+          "games": "Game[]",
+          "limit": "number (default 10)"
+        },
+        "story_examples": [
+          "Recent10 - Default view",
+          "Recent5 - Compact view",
+          "WithStats - Show top performer per game"
+        ],
+        "estimated_minutes": 30
+      },
+      {
+        "task_id": "COMP-4",
+        "component": "UpcomingGamesGrid",
+        "description": "Scheduled games with betting lines",
+        "actions": [
+          "Generate component",
+          "Show game time/date/network",
+          "Add betting lines (spread, total, ML)",
+          "Filter GAMES to status='scheduled'",
+          "Sort by date ascending"
+        ],
+        "props": {
+          "games": "Game[]",
+          "showBetting": "boolean (default true)"
+        },
+        "story_examples": [
+          "NextWeek - Upcoming 16 games",
+          "WithBetting - Show all odds",
+          "NoBetting - Hide betting section"
+        ],
+        "estimated_minutes": 45
+      },
+      {
+        "task_id": "COMP-5",
+        "component": "StandingsCard",
+        "description": "Division or conference standings table",
+        "actions": [
+          "Generate component",
+          "Create table with rank, team, record, pct, GB columns",
+          "Add division/conference switcher tabs",
+          "Import TEAMS and calculate standings",
+          "Highlight top teams (playoff spots)",
+          "Add team logos"
+        ],
+        "props": {
+          "division": "'AFC East' | 'NFC West' | etc | null",
+          "conference": "'AFC' | 'NFC' | null",
+          "compact": "boolean"
+        },
+        "story_examples": [
+          "AFCEast - Division view",
+          "NFCStandings - Full conference",
+          "AllDivisions - Tabs for all 8 divisions"
+        ],
+        "estimated_minutes": 60
+      },
+      {
+        "task_id": "COMP-6",
+        "component": "TopPerformersToday",
+        "description": "Top statistical performers from today's games",
+        "actions": [
+          "Generate component",
+          "Create 4 categories: Passing, Rushing, Receiving, Defense",
+          "Show top 5 per category",
+          "Display player headshot, name, team, stat line",
+          "Add category tabs",
+          "Import PLAYERS and STATS from mock data"
+        ],
+        "props": {
+          "category": "'passing' | 'rushing' | 'receiving' | 'defense'",
+          "limit": "number (default 5)"
+        },
+        "story_examples": [
+          "PassingLeaders - Top 5 QBs",
+          "RushingLeaders - Top 5 RBs",
+          "AllCategories - Tabs for all 4"
+        ],
+        "estimated_minutes": 60
+      },
+      {
+        "task_id": "COMP-7",
+        "component": "InjuryReportCard",
+        "description": "Key injuries with color-coded status",
+        "actions": [
+          "Generate component",
+          "Create list with player, team, position, injury, status",
+          "Color code status: OUT (red), DOUBTFUL (orange), QUESTIONABLE (yellow)",
+          "Add filter by team/status",
+          "Import INJURIES from mock data",
+          "Show injury impact text"
+        ],
+        "props": {
+          "injuries": "Injury[]",
+          "compact": "boolean (show fewer details)"
+        },
+        "story_examples": [
+          "AllInjuries - Full list",
+          "OutOnly - Critical injuries",
+          "ByTeam - Filter to specific team"
+        ],
+        "estimated_minutes": 45
+      },
+      {
+        "task_id": "COMP-8",
+        "component": "RosterMovesCard",
+        "description": "Recent roster transactions timeline",
+        "actions": [
+          "Generate component",
+          "Create timeline with date, player, team, transaction type (signed/released)",
+          "Add icons for transaction types",
+          "Show most recent 10 by default",
+          "Import TRANSACTIONS from mock data (create if needed)",
+          "Add 'Load More' button"
+        ],
+        "props": {
+          "transactions": "Transaction[]",
+          "limit": "number (default 10)"
+        },
+        "story_examples": [
+          "Recent10 - Latest moves",
+          "SigningsOnly - Filter to additions",
+          "ReleasesOnly - Filter to departures"
+        ],
+        "estimated_minutes": 45
+      },
+      {
+        "task_id": "COMP-VALIDATE",
+        "description": "Validate all components in Storybook",
+        "actions": [
+          "Run npm run storybook",
+          "View all 8 components",
+          "Test all story variants",
+          "Toggle theme switcher (verify all 6 themes work)",
+          "Test all interactive controls",
+          "Switch viewport (mobile/tablet/desktop)",
+          "Check a11y addon (no critical issues)",
+          "Verify no TypeScript errors",
+          "Verify no console warnings"
+        ],
+        "validation_checklist": [
+          "[ ] All 8 components render",
+          "[ ] All stories display correctly",
+          "[ ] Theme switcher changes all components",
+          "[ ] Controls work (scores, quarters, filters)",
+          "[ ] Mobile responsive (768px, 480px)",
+          "[ ] No TypeScript errors",
+          "[ ] No console errors",
+          "[ ] No a11y critical issues"
+        ],
+        "estimated_minutes": 30
+      }
+    ]
+  },
+
+  "phase_3_page_integration": {
+    "description": "Integrate Storybook components into Next.js page with real Supabase data and WebSocket subscriptions",
+    "estimated_hours": 4,
+
+    "tasks": [
+      {
+        "task_id": "PAGE-1",
+        "description": "Create Next.js page file",
+        "file": "app/(pages)/scoreboard/page.tsx (or app/page.tsx)",
+        "actions": [
+          "Create server component for initial data fetch",
+          "Fetch initial games data from Supabase",
+          "Fetch standings data",
+          "Fetch top performers data",
+          "Pass data to client components"
+        ],
+        "code_structure": {
+          "imports": [
+            "import { supabase } from '@/lib/supabase'",
+            "import { LiveGamesGrid } from '@/components/LiveGamesGrid'",
+            "import { StandingsCard } from '@/components/StandingsCard'",
+            "... (import all 8 components)"
+          ],
+          "async_function": "export default async function ScoreboardPage()",
+          "data_fetching": [
+            "const { data: liveGames } = await supabase.from('games').select('*').eq('status', 'in_progress')",
+            "const { data: completedGames } = await supabase.from('games').select('*').eq('status', 'completed').order('date', { ascending: false }).limit(10)",
+            "const { data: upcomingGames } = await supabase.from('games').select('*').eq('status', 'scheduled').order('date').limit(10)",
+            "const { data: standings } = await supabase.from('standings').select('*')",
+            "const { data: topPerformers } = await supabase.from('player_game_stats').select('*').order('passing_yards', { ascending: false }).limit(5)",
+            "const { data: injuries } = await supabase.from('player_injury_status').select('*')",
+            "const { data: transactions } = await supabase.from('roster_transactions').select('*').order('date', { ascending: false }).limit(10)"
+          ],
+          "layout": [
+            "<div className='container mx-auto p-4'>",
+            "  <h1>Live Scoreboard</h1>",
+            "  <LiveGamesGrid games={liveGames} />",
+            "  <StandingsCard />",
+            "  <TopPerformersToday />",
+            "  <CompletedGamesGrid games={completedGames} />",
+            "  <UpcomingGamesGrid games={upcomingGames} />",
+            "  <InjuryReportCard injuries={injuries} />",
+            "  <RosterMovesCard transactions={transactions} />",
+            "</div>"
+          ]
+        },
+        "estimated_minutes": 45
+      },
+      {
+        "task_id": "PAGE-2",
+        "description": "Add real-time WebSocket subscriptions",
+        "file": "components/LiveGamesGrid.tsx (convert to client component)",
+        "actions": [
+          "Add 'use client' directive",
+          "Set up Supabase Realtime channel",
+          "Subscribe to games table (WHERE status = 'in_progress')",
+          "Listen for UPDATE and INSERT events",
+          "Update local state when events fire",
+          "Add fallback 30-second polling"
+        ],
+        "code_example": {
+          "import": "import { useEffect, useState } from 'react'",
+          "state": "const [games, setGames] = useState(initialGames)",
+          "subscription": [
+            "useEffect(() => {",
+            "  const channel = supabase",
+            "    .channel('live-games')",
+            "    .on('postgres_changes', {",
+            "      event: '*',",
+            "      schema: 'public',",
+            "      table: 'games',",
+            "      filter: \"status=eq.in_progress\"",
+            "    }, (payload) => {",
+            "      // Update games state",
+            "      setGames(prev => updateGames(prev, payload))",
+            "    })",
+            "    .subscribe()",
+            "",
+            "  return () => {",
+            "    channel.unsubscribe()",
+            "  }",
+            "}, [])"
+          ]
+        },
+        "estimated_minutes": 60
+      },
+      {
+        "task_id": "PAGE-3",
+        "description": "Add loading and error states",
+        "actions": [
+          "Create LoadingSpinner component",
+          "Add Suspense boundaries",
+          "Create ErrorBoundary component",
+          "Add error handling for Supabase queries",
+          "Add retry logic",
+          "Show empty states when no data"
+        ],
+        "components_to_create": [
+          "components/LoadingSpinner.tsx",
+          "components/ErrorBoundary.tsx",
+          "components/EmptyState.tsx"
+        ],
+        "estimated_minutes": 30
+      },
+      {
+        "task_id": "PAGE-4",
+        "description": "Optimize performance",
+        "actions": [
+          "Add React.memo to expensive components",
+          "Use useMemo for data transformations",
+          "Add SWR for client-side caching",
+          "Implement virtual scrolling for long lists (if needed)",
+          "Add image optimization for team logos",
+          "Test page load time (<2 seconds)"
+        ],
+        "performance_targets": {
+          "initial_load": "<2 seconds",
+          "realtime_update_latency": "<500ms",
+          "no_layout_shift": "CLS < 0.1"
+        },
+        "estimated_minutes": 45
+      },
+      {
+        "task_id": "PAGE-VALIDATE",
+        "description": "Validate page integration",
+        "validation_steps": [
+          "Run npm run dev",
+          "Navigate to /scoreboard (or /)",
+          "Verify all sections render",
+          "Verify real data from Supabase loads",
+          "Test real-time updates (update a game score in Supabase, verify UI updates)",
+          "Test on mobile (responsive design)",
+          "Test error handling (disconnect Supabase, verify error UI)",
+          "Check Lighthouse score (Performance > 90)",
+          "Verify no console errors",
+          "Verify no TypeScript errors"
+        ],
+        "acceptance_criteria": [
+          "✅ Page loads in <2 seconds",
+          "✅ All data from Supabase displays",
+          "✅ Real-time updates work",
+          "✅ Mobile responsive",
+          "✅ Error handling works",
+          "✅ No errors in console",
+          "✅ Lighthouse score > 90"
+        ],
+        "estimated_minutes": 30
+      }
+    ]
+  },
+
+  "deliverables": [
+    {
+      "phase": "Phase 2",
+      "items": [
+        "components/ScoreBug/ (enhanced from Phase 1)",
+        "components/LiveGamesGrid/",
+        "components/CompletedGamesGrid/",
+        "components/UpcomingGamesGrid/",
+        "components/StandingsCard/",
+        "components/TopPerformersToday/",
+        "components/InjuryReportCard/",
+        "components/RosterMovesCard/",
+        "stories/ScoreBug.stories.tsx",
+        "stories/LiveGamesGrid.stories.tsx",
+        "stories/CompletedGamesGrid.stories.tsx",
+        "stories/UpcomingGamesGrid.stories.tsx",
+        "stories/StandingsCard.stories.tsx",
+        "stories/TopPerformersToday.stories.tsx",
+        "stories/InjuryReportCard.stories.tsx",
+        "stories/RosterMovesCard.stories.tsx"
+      ]
+    },
+    {
+      "phase": "Phase 3",
+      "items": [
+        "app/(pages)/scoreboard/page.tsx",
+        "components/LoadingSpinner.tsx",
+        "components/ErrorBoundary.tsx",
+        "components/EmptyState.tsx",
+        "Real-time WebSocket integration",
+        "Performance optimizations"
+      ]
+    }
+  ],
+
+  "success_criteria": [
+    "✅ All 8 components work in Storybook",
+    "✅ All 5 design variants implemented",
+    "✅ Page integrates all components",
+    "✅ Real Supabase data displays",
+    "✅ Real-time updates work",
+    "✅ Page loads in <2 seconds",
+    "✅ Mobile responsive",
+    "✅ Error handling complete",
+    "✅ Zero TypeScript errors",
+    "✅ Zero console errors",
+    "✅ Lighthouse score > 90"
+  ],
+
+  "timeline": {
+    "phase_2": "8 hours",
+    "phase_3": "4 hours",
+    "total": "12 hours"
+  },
+
+  "dependencies": {
+    "requires_from_phase1": [
+      "Next.js 15 app",
+      "Storybook 8 running",
+      "Theme system",
+      "Mock data library",
+      "Component generator",
+      "Supabase client configured"
+    ]
+  }
+}

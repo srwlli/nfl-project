@@ -1,0 +1,173 @@
+{
+  "feature_id": "AGENT1-LIVE-SCOREBOARD",
+  "feature_name": "Live Scoreboard (Homepage)",
+  "phase": 2,
+  "priority": "P0",
+  "assigned_agent": "Agent-1",
+
+  "overview": {
+    "description": "Build Live Scoreboard homepage components in Storybook showing real-time game scores, standings, top performers, injuries, and upcoming games. Then integrate into Next.js page with Supabase data",
+    "page_type": "Homepage / Live Scoreboard",
+    "route": "/scoreboard or / (homepage)",
+    "user_story": "As a fan, I want to see all live games and scores at a glance so I can track multiple games simultaneously"
+  },
+
+  "dependencies": {
+    "blocks": [],
+    "blocked_by": ["PHASE1-FOUNDATION"],
+    "requires": [
+      "Next.js 15 app running",
+      "Storybook 8 configured",
+      "Theme system available",
+      "Mock data library (lib/mock-data.ts)",
+      "Component generator",
+      "Templates at coderef/finalizing-elements/live-scoreboard/"
+    ]
+  },
+
+  "tech_stack": {
+    "framework": "Next.js 15 App Router",
+    "components": "shadcn/ui (Button, Card, Badge, Tabs)",
+    "styling": "Tailwind CSS v4 + theme variants",
+    "data": "Supabase (games, players, teams, standings, injuries)",
+    "real_time": "Supabase Realtime (WebSocket subscriptions)",
+    "state": "React hooks (useState, useEffect)"
+  },
+
+  "design_variants": {
+    "template_source": "coderef/finalizing-elements/live-scoreboard/template-scorebugs.tsx",
+    "variants": [
+      "Modern Dashboard - Card-based layout with shadows",
+      "Data-Heavy Stats - Embedded player stats in scorebugs",
+      "Card-Based Modular - Stacked team color cards",
+      "Classic Reference - Table-style layout",
+      "Premium Glassmorphic - Gradient with backdrop blur"
+    ],
+    "default_theme": "Next Down Metrics (HUD)"
+  },
+
+  "components_to_build": [
+    {
+      "name": "ScoreBug",
+      "description": "Single game score display with team logos, scores, quarter, time",
+      "props": ["game", "variant", "isLive", "showBetting"],
+      "variants": 5,
+      "story": "stories/ScoreBug.stories.tsx"
+    },
+    {
+      "name": "LiveGamesGrid",
+      "description": "Grid of all live games (2-col desktop, 1-col mobile)",
+      "props": ["games", "layout", "autoRefresh"],
+      "data_source": "GET /games?status=in_progress",
+      "story": "stories/LiveGamesGrid.stories.tsx"
+    },
+    {
+      "name": "CompletedGamesGrid",
+      "description": "Recently completed games with final scores",
+      "props": ["games", "limit"],
+      "data_source": "GET /games?status=completed&order=date.desc&limit=10",
+      "story": "stories/CompletedGamesGrid.stories.tsx"
+    },
+    {
+      "name": "UpcomingGamesGrid",
+      "description": "Scheduled games with betting lines",
+      "props": ["games", "showBetting"],
+      "data_source": "GET /games?status=scheduled&order=date.asc&limit=10",
+      "story": "stories/UpcomingGamesGrid.stories.tsx"
+    },
+    {
+      "name": "StandingsCard",
+      "description": "Division/conference standings tables",
+      "props": ["division", "conference", "compact"],
+      "data_source": "GET /standings?conference=:conf",
+      "story": "stories/StandingsCard.stories.tsx"
+    },
+    {
+      "name": "TopPerformersToday",
+      "description": "Top passers/rushers/receivers from today's games",
+      "props": ["category", "limit"],
+      "categories": ["Passing Yards", "Rushing Yards", "Receiving Yards", "TDs"],
+      "data_source": "GET /player-game-stats?date=today&order=:category.desc&limit=5",
+      "story": "stories/TopPerformersToday.stories.tsx"
+    },
+    {
+      "name": "InjuryReportCard",
+      "description": "Key injuries with color-coded status",
+      "props": ["injuries", "compact"],
+      "data_source": "GET /player-injury-status?status=out,doubtful,questionable",
+      "story": "stories/InjuryReportCard.stories.tsx"
+    },
+    {
+      "name": "RosterMovesCard",
+      "description": "Recent roster transactions (signings/releases)",
+      "props": ["transactions", "limit"],
+      "data_source": "GET /roster-transactions?order=date.desc&limit=10",
+      "story": "stories/RosterMovesCard.stories.tsx"
+    }
+  ],
+
+  "data_requirements": {
+    "tables": [
+      "games (id, home_team_id, away_team_id, home_score, away_score, status, quarter, time_remaining, date)",
+      "teams (id, team_abbr, team_name, team_logo_url, primary_color, record)",
+      "standings (team_id, division_rank, conference_rank, wins, losses, win_pct)",
+      "player_game_stats (player_id, game_id, passing_yards, rushing_yards, receiving_yards, touchdowns)",
+      "player_injury_status (player_id, status, injury_type)",
+      "roster_transactions (player_id, team_id, transaction_type, date)"
+    ],
+    "real_time": {
+      "subscribe_to": "games table (WHERE status = 'in_progress')",
+      "events": ["UPDATE", "INSERT"],
+      "refresh_interval": "30 seconds (fallback)"
+    }
+  },
+
+  "acceptance_criteria": [
+    "✅ All 8 components render in Storybook with mock data",
+    "✅ All 5 design variants work for ScoreBug",
+    "✅ Theme switcher changes all components",
+    "✅ Controls in Storybook stories work",
+    "✅ Mobile responsive (breakpoints at 768px, 480px)",
+    "✅ Page integrates components with real Supabase data",
+    "✅ Real-time updates work (WebSocket subscription)",
+    "✅ Page loads in <2 seconds",
+    "✅ Zero TypeScript errors",
+    "✅ Zero accessibility errors (a11y addon)"
+  ],
+
+  "estimated_hours": {
+    "phase_2_components": 8,
+    "phase_3_page_integration": 4,
+    "total": 12
+  },
+
+  "deliverables": [
+    {
+      "phase": 2,
+      "name": "Storybook Components",
+      "items": [
+        "8 components in components/ folder",
+        "8 stories in stories/ folder",
+        "All variants implemented",
+        "Mock data integration"
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Next.js Page",
+      "items": [
+        "app/(pages)/scoreboard/page.tsx (or app/page.tsx for homepage)",
+        "Real Supabase data integration",
+        "WebSocket real-time updates",
+        "Error handling and loading states"
+      ]
+    }
+  ],
+
+  "references": {
+    "template": "coderef/finalizing-elements/live-scoreboard/template-scorebugs.tsx",
+    "components_spec": "coderef/finalizing-elements/live-scoreboard/components.json",
+    "themes_doc": "coderef/finalizing-elements/THEMES/README.md",
+    "backend_schema": "types/database.ts"
+  }
+}

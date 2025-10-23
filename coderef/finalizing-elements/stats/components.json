@@ -1,0 +1,287 @@
+{
+  "pageType": "Stats & Leaderboards Pages",
+  "priority": "P1 - Important",
+  "pageCount": "Multiple stats categories",
+  "dataReadiness": "100%",
+  "recommendedThemes": {
+    "primary": "Next Down Metrics (HUD)",
+    "alternative": ["Tech Forward", "Classic Almanac", "Data-Heavy Stats Focus"]
+  },
+  "components": {
+    "layout": {
+      "StatsPageLayout": {
+        "description": "Main wrapper for all stats pages",
+        "props": ["category", "season", "children"],
+        "features": [
+          "Responsive container",
+          "Category navigation tabs",
+          "Season selector",
+          "Filter panel sidebar"
+        ],
+        "files": ["components/stats/stats-page-layout.tsx"]
+      }
+    },
+    "leaderboards": {
+      "LeaderboardTable": {
+        "description": "Main leaderboard table with rankings",
+        "theme": "Next Down Metrics (HUD)",
+        "columns": {
+          "universal": ["Rank", "Player", "Team", "Position"],
+          "passingLeaders": ["Rank", "Player", "Team", "Yards", "TDs", "INTs", "Rating", "Games"],
+          "rushingLeaders": ["Rank", "Player", "Team", "Yards", "TDs", "Avg", "Games"],
+          "receivingLeaders": ["Rank", "Player", "Team", "Rec", "Yards", "TDs", "Avg", "Games"],
+          "defenseLeaders": ["Rank", "Player", "Team", "Tackles", "Sacks", "INTs", "FF", "Games"]
+        },
+        "features": [
+          "Sortable columns",
+          "Position filters",
+          "Team filters",
+          "Paginated (25 per page)",
+          "Rank badges (#1, #2, #3 highlighted)",
+          "Click player row to open profile"
+        ],
+        "props": ["category", "season", "players[]", "sortColumn", "sortDirection"],
+        "dataSource": "GET /player-season-cumulative-stats?season=:season&category=:category",
+        "files": ["components/stats/leaderboard-table.tsx"]
+      },
+      "WeeklyLeadersCard": {
+        "description": "Top performers for specific week",
+        "theme": "Bold Vibrant",
+        "categories": ["Passing", "Rushing", "Receiving", "Defense"],
+        "features": [
+          "Top 5 per category",
+          "Weekly highlight badges",
+          "Stat milestones (300+ yds, 3+ TDs)",
+          "Link to player profile"
+        ],
+        "props": ["week", "season", "category", "leaders[]"],
+        "dataSource": "GET /weekly-stats?week=:week&season=:season",
+        "files": ["components/stats/weekly-leaders-card.tsx"]
+      }
+    },
+    "filters": {
+      "StatsFilterPanel": {
+        "description": "Filter sidebar for leaderboards",
+        "theme": "Tech Forward",
+        "filters": [
+          "Season (dropdown)",
+          "Position group (checkboxes)",
+          "Team (multi-select)",
+          "Stat minimum (slider)",
+          "Games played min (slider)"
+        ],
+        "features": [
+          "Collapsible on mobile",
+          "Reset all filters button",
+          "Apply filters button",
+          "Filter count badge"
+        ],
+        "props": ["filters", "onFilterChange", "onReset"],
+        "files": ["components/stats/stats-filter-panel.tsx"]
+      }
+    },
+    "comparison": {
+      "PlayerComparisonCard": {
+        "description": "Side-by-side player comparison",
+        "theme": "Cyberpunk Holographic",
+        "features": [
+          "Select up to 3 players",
+          "Stat category tabs",
+          "Radar chart visualization",
+          "Percentile rankings",
+          "Color-coded better/worse"
+        ],
+        "props": ["players[]", "category", "season"],
+        "dataSource": "GET /player-season-cumulative-stats?playerId=:id",
+        "files": ["components/stats/player-comparison-card.tsx"]
+      },
+      "TeamComparisonGrid": {
+        "description": "Team stats comparison grid",
+        "theme": "Gridiron Legacy",
+        "stats": [
+          "Offense: PPG, Total Yards, Pass Yards, Rush Yards",
+          "Defense: PPG Allowed, Yards Allowed, Sacks, Takeaways",
+          "Special Teams: FG%, Punt Avg, Return Avg"
+        ],
+        "features": [
+          "All 32 teams displayed",
+          "Sortable by any stat",
+          "Rank columns",
+          "Color gradient for rankings"
+        ],
+        "props": ["teams[]", "category", "season"],
+        "dataSource": "GET /team-season-stats?season=:season",
+        "files": ["components/stats/team-comparison-grid.tsx"]
+      }
+    },
+    "visualizations": {
+      "StatTrendChart": {
+        "description": "Line chart showing stat trends over time",
+        "theme": "Next Down Metrics (HUD)",
+        "chartTypes": ["Line", "Bar", "Area"],
+        "features": [
+          "Week-by-week progression",
+          "Multiple players overlay",
+          "Zoom/pan controls",
+          "Export as image"
+        ],
+        "props": ["players[]", "stat", "season"],
+        "dataSource": "GET /player-game-stats?playerId=:id&season=:season",
+        "files": ["components/stats/stat-trend-chart.tsx"],
+        "library": "Recharts"
+      },
+      "PositionRadarChart": {
+        "description": "Radar chart for position-specific stats",
+        "theme": "Tech Forward",
+        "positions": {
+          "QB": ["Yards", "TDs", "Comp%", "Rating", "YPA"],
+          "RB": ["Rush Yds", "Rush TDs", "Rec Yds", "YPC", "Targets"],
+          "WR": ["Rec", "Rec Yds", "Rec TDs", "YPR", "Catch%"],
+          "TE": ["Rec", "Rec Yds", "TDs", "YPR", "Targets"],
+          "DEF": ["Tackles", "Sacks", "INTs", "PD", "FF"]
+        },
+        "features": [
+          "Percentile-based (0-100)",
+          "Compare vs league average",
+          "Compare vs position average",
+          "Overlay multiple players"
+        ],
+        "props": ["player", "position", "season", "leagueAverages"],
+        "dataSource": "GET /player-season-cumulative-stats?playerId=:id",
+        "files": ["components/stats/position-radar-chart.tsx"],
+        "library": "Recharts"
+      }
+    },
+    "records": {
+      "RecordBookTable": {
+        "description": "All-time records and single-season records",
+        "theme": "Classic Almanac",
+        "recordTypes": [
+          "Single Game Records",
+          "Single Season Records",
+          "Career Records",
+          "Team Records"
+        ],
+        "columns": ["Rank", "Player/Team", "Stat Value", "Date/Season", "Opponent (if game record)"],
+        "features": [
+          "Category filters",
+          "Era filters (All-time, Modern, etc.)",
+          "Search by player/team"
+        ],
+        "props": ["recordType", "category"],
+        "dataSource": "Calculated from player_game_stats and player_season_cumulative_stats",
+        "files": ["components/stats/record-book-table.tsx"]
+      }
+    },
+    "streaks": {
+      "ActiveStreaksCard": {
+        "description": "Current active streaks (games with TD, 100+ yards, etc.)",
+        "theme": "Bold Vibrant",
+        "streakTypes": [
+          "Games with TD",
+          "Games with 100+ yards",
+          "Games with reception",
+          "Consecutive starts"
+        ],
+        "features": [
+          "Top 10 active streaks",
+          "Milestone badges (10 games, 20 games)",
+          "Link to player profile"
+        ],
+        "props": ["streaks[]", "category"],
+        "dataSource": "Calculated from player_game_stats",
+        "files": ["components/stats/active-streaks-card.tsx"]
+      }
+    },
+    "awards": {
+      "WeeklyAwardsDisplay": {
+        "description": "Weekly awards (Offensive/Defensive Player of Week)",
+        "theme": "Luxury Magazine",
+        "awards": [
+          "Offensive Player of the Week",
+          "Defensive Player of the Week",
+          "Rookie of the Week",
+          "Special Teams Player of the Week"
+        ],
+        "features": [
+          "Winner cards with headshots",
+          "Key stats for winning performance",
+          "Link to game details",
+          "Historical winners list"
+        ],
+        "props": ["week", "season", "awards[]"],
+        "dataSource": "Manual curation or algorithm-based selection",
+        "files": ["components/stats/weekly-awards-display.tsx"]
+      }
+    },
+    "shared": {
+      "StatBadge": {
+        "description": "Stat display badge with icon and value",
+        "variants": ["default", "milestone", "record", "trending"],
+        "props": ["label", "value", "icon", "trend"],
+        "files": ["components/ui/stat-badge.tsx"]
+      },
+      "RankBadge": {
+        "description": "Ranking badge with #1, #2, #3 special styling",
+        "colors": {
+          "#1": "Gold",
+          "#2": "Silver",
+          "#3": "Bronze",
+          "#4-10": "Blue gradient",
+          "#11+": "Gray"
+        },
+        "props": ["rank", "total"],
+        "files": ["components/ui/rank-badge.tsx"]
+      },
+      "PercentileIndicator": {
+        "description": "Visual percentile indicator (0-100)",
+        "variants": ["bar", "circle", "gradient"],
+        "colors": {
+          "90-100": "Green (elite)",
+          "75-89": "Cyan (above average)",
+          "50-74": "Yellow (average)",
+          "25-49": "Orange (below average)",
+          "0-24": "Red (poor)"
+        },
+        "props": ["percentile", "variant"],
+        "files": ["components/ui/percentile-indicator.tsx"]
+      }
+    }
+  },
+  "dataFlow": {
+    "leaderboards": {
+      "initialLoad": "GET /player-season-cumulative-stats?season=:season",
+      "filtering": "Client-side filtering from full dataset",
+      "sorting": "Client-side sorting",
+      "pagination": "Client-side (25 per page)"
+    },
+    "weeklyLeaders": {
+      "source": "GET /weekly-stats?week=:week&season=:season",
+      "fallback": "Calculate from player_game_stats if weekly_stats not available"
+    },
+    "comparison": {
+      "players": "GET /player-season-cumulative-stats?playerId=:id (multiple IDs)",
+      "teams": "GET /team-season-stats?season=:season"
+    },
+    "trends": {
+      "source": "GET /player-game-stats?playerId=:id&season=:season",
+      "aggregation": "Client-side grouping by week"
+    }
+  },
+  "routing": {
+    "leaderboards": "/stats/[category]?season=:season",
+    "weeklyLeaders": "/stats/weekly/[week]?season=:season",
+    "comparison": "/stats/compare",
+    "records": "/stats/records",
+    "trends": "/stats/trends/[playerId]",
+    "seoTitle": "{category} Leaders - {season} Season | {siteName}",
+    "seoDescription": "View {season} season leaders for {category}. Complete stats, rankings, and player comparisons."
+  },
+  "technicalNotes": {
+    "stateManagement": "React Context + SWR for data fetching",
+    "caching": "24 hours for completed weeks, 1 hour for current week",
+    "clientFiltering": "Use IndexedDB for full dataset caching",
+    "chartLibrary": "Recharts for all visualizations",
+    "accessibility": "WCAG 2.1 AA compliant, keyboard navigation, screen reader support"
+  }
+}

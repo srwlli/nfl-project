@@ -1,0 +1,95 @@
+{
+  "feature_id": "PHASE1-FOUNDATION",
+  "feature_name": "Next.js 14 + Storybook 8 Foundation Setup",
+  "phase": 1,
+  "priority": "P0-BLOCKER",
+  "assigned_agent": "Agent-Foundation",
+
+  "current_state": {
+    "description": "Backend-only Node.js project with scrapers and Supabase database",
+    "has_frontend": false,
+    "has_nextjs": false,
+    "has_storybook": false,
+    "starting_from_scratch": true
+  },
+
+  "overview": {
+    "description": "Set up Next.js 14 App Router frontend, install and configure Storybook 8, create theme system, build mock data library, and establish component development workflow to enable 7 agents to work in parallel",
+    "blocks": ["All Phase 2 agents (1-7) - cannot start until this is complete"],
+    "enables": ["Parallel component development", "Visual testing", "Component library", "Frontend application"]
+  },
+
+  "deliverables": [
+    "Next.js 14 App Router project initialized",
+    "Storybook 8 running at localhost:6006",
+    "5 theme variants (Next Down Metrics as default)",
+    "Mock data library matching Supabase schema",
+    "Component generator script",
+    "STORYBOOK-WORKFLOW.md documentation",
+    "Example ScoreBug component with all 5 variants"
+  ],
+
+  "acceptance_criteria": [
+    "npm run dev launches Next.js at localhost:3000",
+    "npm run storybook launches Storybook at localhost:6006",
+    "Theme switcher works (5 themes)",
+    "Mock data matches database schema types (types/database.ts)",
+    "Component generator creates proper structure",
+    "Zero TypeScript errors",
+    "Documentation complete and clear"
+  ],
+
+  "tech_stack": {
+    "frontend_framework": "Next.js 14.2+ (App Router)",
+    "storybook": "8.x",
+    "styling": "Tailwind CSS v4",
+    "components": "shadcn/ui",
+    "typescript": "5.x",
+    "package_manager": "npm",
+    "addons": ["essentials", "a11y", "interactions", "viewport", "dark-mode"]
+  },
+
+  "estimated_hours": 10,
+  "breakdown": {
+    "nextjs_setup": "2 hours",
+    "storybook_install": "2 hours",
+    "theme_system": "2 hours",
+    "mock_data": "2 hours",
+    "example_component": "1 hour",
+    "documentation": "1 hour"
+  },
+
+  "depends_on": [],
+  "blocks": [
+    "01-live-scoreboard",
+    "02-game-details",
+    "03-player-profiles",
+    "04-team-pages",
+    "05-stats-leaderboards",
+    "06-matchup-preview",
+    "07-stadium-pages"
+  ],
+
+  "project_structure_after_completion": {
+    "new_folders": [
+      "app/",
+      ".storybook/",
+      "stories/",
+      "components/",
+      "lib/",
+      "public/",
+      "docs/"
+    ],
+    "key_files": [
+      "next.config.js",
+      "tailwind.config.ts",
+      "app/layout.tsx",
+      "app/page.tsx",
+      ".storybook/main.ts",
+      ".storybook/preview.tsx",
+      "lib/mock-data.ts",
+      "components/providers/ThemeProvider.tsx",
+      "stories/ScoreBug.stories.tsx"
+    ]
+  }
+}

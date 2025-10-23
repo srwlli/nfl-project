@@ -1,0 +1,205 @@
+{
+  "pageType": "Team Pages",
+  "priority": "P1 - Important",
+  "pageCount": "32 NFL teams",
+  "dataReadiness": "95%",
+  "recommendedThemes": {
+    "primary": "Next Down Metrics (HUD)",
+    "alternative": ["Bold Vibrant", "Gridiron Legacy", "Tech Forward"]
+  },
+  "components": {
+    "layout": {
+      "TeamPageLayout": {
+        "description": "Main page wrapper for team pages",
+        "props": ["teamId", "children"],
+        "features": ["Team colors theme", "Responsive container", "Tabbed navigation"],
+        "files": ["components/team/team-page-layout.tsx"]
+      }
+    },
+    "hero": {
+      "TeamHeroSection": {
+        "description": "Hero section with team branding",
+        "theme": "Bold Vibrant",
+        "features": [
+          "Large team logo (200x200px)",
+          "Team name (48px, bold)",
+          "Division/Conference badges",
+          "Current record (large, bold)",
+          "Division standing (#1 AFC West)",
+          "Team colors gradient background"
+        ],
+        "props": ["team { name, logo, colors, division, conference, record, standing }"],
+        "dataSource": "GET /teams/:teamId + calculate standings",
+        "files": ["components/team/team-hero.tsx"]
+      },
+      "TeamQuickStats": {
+        "description": "Quick stat cards (PPG, Rank, etc.)",
+        "theme": "Next Down Metrics (HUD)",
+        "stats": [
+          "Record (W-L-T)",
+          "Points Per Game (PPG)",
+          "Points Allowed Per Game",
+          "Total Yards Per Game",
+          "Division Standing",
+          "Conference Standing",
+          "Current Streak (W3, L2, etc.)"
+        ],
+        "props": ["teamStats", "standings"],
+        "dataSource": "GET /team-season-stats?teamId=:id + calculate standings",
+        "files": ["components/team/team-quick-stats.tsx"]
+      }
+    },
+    "roster": {
+      "CurrentRosterTable": {
+        "description": "Full 53-man roster table",
+        "theme": "Tech Forward",
+        "columns": ["#", "Name", "Position", "Height", "Weight", "Age", "College", "Experience"],
+        "features": [
+          "Sortable columns",
+          "Filter by position group",
+          "Search by name",
+          "Position color coding",
+          "Link to player profile"
+        ],
+        "props": ["roster[]", "sortColumn", "sortDirection", "positionFilter"],
+        "dataSource": "GET /players?teamId=:id + JOIN player_teams",
+        "files": ["components/team/current-roster-table.tsx"]
+      },
+      "DepthChartView": {
+        "description": "Visual depth chart by position",
+        "theme": "Gridiron Legacy",
+        "positions": [
+          "Offense: QB, RB, WR (3), TE, OL (5)",
+          "Defense: DL (4), LB (3), DB (4)",
+          "Special: K, P, LS"
+        ],
+        "features": [
+          "Starter/backup designation",
+          "Injury status indicators",
+          "Drag-and-drop (admin feature)",
+          "Player cards with headshot"
+        ],
+        "props": ["depthChart", "roster[]"],
+        "dataSource": "GET /players?teamId=:id (use snap_counts or manual designation)",
+        "files": ["components/team/depth-chart-view.tsx"],
+        "note": "Starter/backup logic needs implementation (snap counts threshold or manual)"
+      }
+    },
+    "schedule": {
+      "TeamScheduleTable": {
+        "description": "Season schedule with results",
+        "theme": "Next Down Metrics (HUD)",
+        "columns": ["Week", "Date", "Opponent", "Result", "Score", "Record"],
+        "features": [
+          "Filter by status (completed, live, scheduled)",
+          "Win/loss color coding",
+          "Link to game details",
+          "Home/away indicators",
+          "TV network badges"
+        ],
+        "props": ["games[]", "teamId"],
+        "dataSource": "GET /games?teamId=:id",
+        "files": ["components/team/team-schedule-table.tsx"]
+      }
+    },
+    "stats": {
+      "TeamSeasonStats": {
+        "description": "Complete season statistics",
+        "theme": "Tech Forward",
+        "sections": [
+          "Offense: PPG, Total Yds/G, Pass Yds/G, Rush Yds/G, 3rd Down %",
+          "Defense: PPG Allowed, Total Yds/G Allowed, Pass Yds/G Allowed, Rush Yds/G Allowed, Sacks",
+          "Turnovers: Giveaways, Takeaways, Turnover Differential"
+        ],
+        "features": [
+          "Rank badges (#1, #5, etc.)",
+          "League comparison bars",
+          "Season trend sparklines"
+        ],
+        "props": ["teamSeasonStats", "leagueAverages", "rankings"],
+        "dataSource": "GET /team-season-stats?teamId=:id",
+        "files": ["components/team/team-season-stats.tsx"]
+      },
+      "TeamLeadersCard": {
+        "description": "Team leaders by category",
+        "theme": "Gridiron Legacy",
+        "categories": [
+          "Passing: Yards, TDs",
+          "Rushing: Yards, TDs",
+          "Receiving: Receptions, Yards, TDs",
+          "Defense: Tackles, Sacks, INTs"
+        ],
+        "props": ["teamLeaders"],
+        "dataSource": "GET /player-season-cumulative-stats?teamId=:id (top 3 per category)",
+        "files": ["components/team/team-leaders-card.tsx"]
+      }
+    },
+    "standings": {
+      "DivisionStandingsCard": {
+        "description": "Division standings with current team highlighted",
+        "theme": "Next Down Metrics (HUD)",
+        "columns": ["Team", "W", "L", "T", "PCT", "PF", "PA", "DIFF", "STRK"],
+        "features": [
+          "Current team highlighted (bold, team colors)",
+          "Clickable team names",
+          "Playoff indicator (green dot)"
+        ],
+        "props": ["divisionStandings", "currentTeamId"],
+        "dataSource": "Calculate from /games",
+        "files": ["components/team/division-standings-card.tsx"]
+      }
+    },
+    "info": {
+      "TeamInfoCard": {
+        "description": "Team information and history",
+        "theme": "Gridiron Legacy",
+        "sections": [
+          "Stadium (name, city, capacity, surface)",
+          "Head Coach",
+          "General Manager",
+          "Founded Year",
+          "Super Bowl Wins",
+          "Conference Championships",
+          "Division Championships",
+          "Playoff Appearances"
+        ],
+        "props": ["team", "stadium", "staff", "history"],
+        "dataSource": "GET /teams/:teamId + GET /stadiums?teamId=:id",
+        "files": ["components/team/team-info-card.tsx"],
+        "note": "Coach/GM data not in current database - may need manual curation"
+      }
+    },
+    "shared": {
+      "RecordBadge": {
+        "description": "Team record badge with W-L-T",
+        "variants": ["default", "winning", "losing", "playoff"],
+        "props": ["record { wins, losses, ties }"],
+        "files": ["components/ui/record-badge.tsx"]
+      },
+      "StandingBadge": {
+        "description": "Division/conference standing badge (#1 AFC West)",
+        "props": ["standing", "division/conference"],
+        "files": ["components/ui/standing-badge.tsx"]
+      }
+    }
+  },
+  "dataFlow": {
+    "initialLoad": {
+      "team": "GET /teams/:teamId",
+      "roster": "GET /players?teamId=:id + JOIN player_teams",
+      "schedule": "GET /games?teamId=:id",
+      "seasonStats": "GET /team-season-stats?teamId=:id",
+      "standings": "Calculate from /games (all teams in division)"
+    }
+  },
+  "routing": {
+    "url": "/teams/[teamId]",
+    "seoTitle": "{teamName} - Roster, Schedule, Stats | {siteName}",
+    "seoDescription": "Official {teamName} roster, schedule, and statistics. View current standings, depth chart, and player stats."
+  },
+  "technicalNotes": {
+    "dynamicTheming": "Apply team colors to page (primary for headers, secondary for accents)",
+    "caching": "1 hour (roster/schedule change daily)",
+    "accessibility": "WCAG 2.1 AA compliant"
+  }
+}

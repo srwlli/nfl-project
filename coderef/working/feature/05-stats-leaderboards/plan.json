@@ -1,0 +1,55 @@
+{
+  "plan_id": "AGENT5-STATS-LEADERBOARDS-PLAN",
+  "feature_id": "AGENT5-STATS-LEADERBOARDS",
+  "plan_version": "1.0",
+  "created": "2025-01-23",
+  "status": "waiting_for_phase1",
+
+  "overview": {
+    "agent": "Agent-5",
+    "page": "Stats & Leaderboards (Multiple categories)",
+    "estimated_time": "12 hours (8h Phase 2 + 4h Phase 3)"
+  },
+
+  "phase_2_storybook_components": {
+    "description": "Build 8 components with leaderboards, comparisons, and visualizations",
+    "estimated_hours": 8,
+    "components": [
+      {"name": "StatsPageLayout", "minutes": 45},
+      {"name": "LeaderboardTable", "minutes": 75},
+      {"name": "WeeklyLeadersCard", "minutes": 60},
+      {"name": "StatsFilterPanel", "minutes": 60},
+      {"name": "PlayerComparisonCard", "minutes": 75},
+      {"name": "TeamComparisonGrid", "minutes": 60},
+      {"name": "StatTrendChart", "minutes": 60},
+      {"name": "PositionRadarChart", "minutes": 60},
+      {"name": "Validation", "minutes": 45}
+    ]
+  },
+
+  "phase_3_page_integration": {
+    "description": "Integrate components into multiple stat pages",
+    "estimated_hours": 4,
+    "tasks": [
+      {"task": "Create stats category pages", "minutes": 60},
+      {"task": "Add percentile calculation utility", "minutes": 45},
+      {"task": "Add league averages calculation", "minutes": 30},
+      {"task": "Add client-side filtering with IndexedDB", "minutes": 45},
+      {"task": "Add SWR caching and performance optimizations", "minutes": 45},
+      {"task": "Validation", "minutes": 45}
+    ]
+  },
+
+  "success_criteria": [
+    "✅ All 8 components work in Storybook",
+    "✅ Leaderboards sortable and filterable",
+    "✅ Charts render correctly",
+    "✅ Player comparison works",
+    "✅ Percentile rankings calculated",
+    "✅ Page loads in <2 seconds"
+  ],
+
+  "dependencies": {
+    "requires_from_phase1": ["Next.js 15", "Storybook 8", "Theme system", "Mock data", "Supabase client", "Recharts"]
+  }
+}

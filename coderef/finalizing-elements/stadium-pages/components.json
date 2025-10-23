@@ -1,0 +1,376 @@
+{
+  "pageType": "Stadium Pages",
+  "priority": "P2 - Nice to Have",
+  "pageCount": "30 NFL stadiums",
+  "dataReadiness": "90%",
+  "recommendedThemes": {
+    "primary": "Next Down Metrics (HUD)",
+    "alternative": ["Gridiron Legacy", "Luxury Magazine", "Bold Vibrant"]
+  },
+  "components": {
+    "layout": {
+      "StadiumPageLayout": {
+        "description": "Main wrapper for stadium pages",
+        "props": ["stadiumId", "children"],
+        "features": [
+          "Hero image with stadium photo",
+          "Responsive container",
+          "Tabbed navigation",
+          "Share buttons"
+        ],
+        "files": ["components/stadium/stadium-page-layout.tsx"]
+      }
+    },
+    "hero": {
+      "StadiumHero": {
+        "description": "Hero section with stadium image and info",
+        "theme": "Gridiron Legacy",
+        "features": [
+          "Large stadium photo (1200x600px)",
+          "Stadium name (large, bold)",
+          "Location (city, state)",
+          "Home team logo and colors",
+          "Quick facts badges (capacity, year opened, surface)"
+        ],
+        "props": ["stadium", "homeTeam", "stadiumPhoto"],
+        "dataSource": "GET /stadiums/:stadiumId + GET /teams",
+        "files": ["components/stadium/stadium-hero.tsx"]
+      }
+    },
+    "info": {
+      "StadiumInformation": {
+        "description": "Detailed stadium specifications",
+        "theme": "Next Down Metrics (HUD)",
+        "sections": [
+          "Official Name",
+          "Location (address, city, state, zip)",
+          "Coordinates (lat/long)",
+          "Capacity",
+          "Year Opened",
+          "Surface Type (grass, turf)",
+          "Roof Type (open, retractable, dome)",
+          "Owner",
+          "Architect",
+          "Construction Cost",
+          "Renovation History"
+        ],
+        "features": [
+          "Icon for each info type",
+          "Copy coordinates button",
+          "Link to Google Maps"
+        ],
+        "props": ["stadium"],
+        "dataSource": "GET /stadiums/:stadiumId",
+        "files": ["components/stadium/stadium-information.tsx"],
+        "note": "Some fields may need manual curation (owner, architect, cost)"
+      }
+    },
+    "homeTeam": {
+      "HomeTeamHistory": {
+        "description": "Home team's history at this stadium",
+        "theme": "Bold Vibrant",
+        "stats": [
+          "All-Time Record at Stadium (W-L-T)",
+          "Home Record This Season",
+          "Playoff Games Hosted",
+          "Championships Won Here",
+          "Longest Home Win Streak",
+          "Average Attendance",
+          "Sellout Streak"
+        ],
+        "features": [
+          "Team colors accent",
+          "Record badges",
+          "Trend charts (win % over years)",
+          "Link to team page"
+        ],
+        "props": ["homeTeamStats", "stadium", "team"],
+        "dataSource": "Calculate from /games (filter by stadium_id + home_team_id)",
+        "files": ["components/stadium/home-team-history.tsx"]
+      }
+    },
+    "weather": {
+      "WeatherImpactAnalysis": {
+        "description": "Historical weather impact at this stadium",
+        "theme": "Tech Forward",
+        "stats": [
+          "Average Game Temperature (by month)",
+          "Games with Rain (%)",
+          "Games with Snow (%)",
+          "Games with High Wind (>15mph) (%)",
+          "Coldest Game Played",
+          "Hottest Game Played",
+          "Most Extreme Conditions"
+        ],
+        "features": [
+          "Monthly temperature chart",
+          "Weather condition icons",
+          "Notable weather games list",
+          "Impact on scoring (PPG in weather vs normal)"
+        ],
+        "props": ["weatherStats", "extremeGames[]"],
+        "dataSource": "GET /game-weather (filter by stadium_id)",
+        "files": ["components/stadium/weather-impact-analysis.tsx"]
+      }
+    },
+    "notableGames": {
+      "NotableGamesAtStadium": {
+        "description": "Historic games played at this venue",
+        "theme": "Luxury Magazine",
+        "gameTypes": [
+          "Super Bowls Hosted",
+          "Playoff Games",
+          "Highest Scoring Games",
+          "Overtime Classics",
+          "Milestone Games (player/team records)",
+          "First Game Played"
+        ],
+        "features": [
+          "Game date and teams",
+          "Final score",
+          "Significance badge (Super Bowl, Playoffs, etc.)",
+          "Brief description",
+          "Link to game details"
+        ],
+        "props": ["notableGames[]", "stadium"],
+        "dataSource": "GET /games (filter by stadium_id, sorted by significance)",
+        "files": ["components/stadium/notable-games.tsx"]
+      }
+    },
+    "upcomingGames": {
+      "UpcomingGamesAtStadium": {
+        "description": "Upcoming games at this stadium",
+        "theme": "Next Down Metrics (HUD)",
+        "features": [
+          "Next 5 scheduled games",
+          "Date and time",
+          "Matchup (teams)",
+          "Ticket availability link",
+          "Weather forecast",
+          "Link to matchup preview"
+        ],
+        "props": ["upcomingGames[]", "stadium"],
+        "dataSource": "GET /games?stadium_id=:id&status=scheduled (limit 5)",
+        "files": ["components/stadium/upcoming-games.tsx"]
+      }
+    },
+    "recentGames": {
+      "RecentGamesAtStadium": {
+        "description": "Recently completed games at this venue",
+        "theme": "Bold Vibrant",
+        "features": [
+          "Last 10 games",
+          "Date and matchup",
+          "Final score",
+          "Attendance",
+          "Weather conditions",
+          "Link to game details"
+        ],
+        "props": ["recentGames[]", "stadium"],
+        "dataSource": "GET /games?stadium_id=:id&status=final (limit 10)",
+        "files": ["components/stadium/recent-games.tsx"]
+      }
+    },
+    "map": {
+      "StadiumLocationMap": {
+        "description": "Interactive map showing stadium location",
+        "theme": "Tech Forward",
+        "features": [
+          "Embedded Google Maps",
+          "Stadium marker",
+          "Directions button",
+          "Nearby parking",
+          "Public transit info"
+        ],
+        "props": ["stadium", "coordinates"],
+        "dataSource": "stadiums.latitude, stadiums.longitude",
+        "files": ["components/stadium/stadium-location-map.tsx"],
+        "library": "Google Maps API or Mapbox"
+      }
+    },
+    "gallery": {
+      "StadiumPhotoGallery": {
+        "description": "Photo gallery of stadium",
+        "theme": "Luxury Magazine",
+        "photos": [
+          "Exterior views",
+          "Field view",
+          "Seating sections",
+          "Scoreboard",
+          "Concourse",
+          "Game day atmosphere"
+        ],
+        "features": [
+          "Grid layout (3 columns desktop, 1 mobile)",
+          "Lightbox viewer",
+          "Photo captions",
+          "High-resolution images"
+        ],
+        "props": ["photos[]"],
+        "dataSource": "Manual upload or external API",
+        "files": ["components/stadium/stadium-photo-gallery.tsx"],
+        "note": "Requires manual photo curation or external API"
+      }
+    },
+    "amenities": {
+      "StadiumAmenities": {
+        "description": "Fan amenities and features",
+        "theme": "Next Down Metrics (HUD)",
+        "amenities": [
+          "Seating Capacity",
+          "Luxury Suites",
+          "Club Seats",
+          "Concession Stands",
+          "Restrooms",
+          "Parking Capacity",
+          "Wi-Fi Availability",
+          "Video Boards",
+          "Sound System"
+        ],
+        "features": [
+          "Icon for each amenity",
+          "Rating/quality indicator",
+          "Accessibility features"
+        ],
+        "props": ["amenities"],
+        "dataSource": "Manual curation or external API",
+        "files": ["components/stadium/stadium-amenities.tsx"],
+        "note": "Requires manual data entry"
+      }
+    },
+    "records": {
+      "StadiumRecords": {
+        "description": "Records set at this stadium",
+        "theme": "Gridiron Legacy",
+        "records": [
+          "Highest Score by Home Team",
+          "Highest Score by Visiting Team",
+          "Most Points in a Game (combined)",
+          "Largest Home Win Margin",
+          "Longest Field Goal",
+          "Most Passing Yards in Game",
+          "Most Rushing Yards in Game"
+        ],
+        "features": [
+          "Record value",
+          "Player/team who set it",
+          "Date set",
+          "Link to game details"
+        ],
+        "props": ["records[]", "stadium"],
+        "dataSource": "Calculate from /games and /player_game_stats (filter by stadium_id)",
+        "files": ["components/stadium/stadium-records.tsx"]
+      }
+    },
+    "shared": {
+      "CapacityIndicator": {
+        "description": "Visual indicator of stadium capacity",
+        "variants": ["bar", "circle"],
+        "props": ["capacity", "averageAttendance"],
+        "files": ["components/ui/capacity-indicator.tsx"]
+      },
+      "SurfaceBadge": {
+        "description": "Badge showing playing surface type",
+        "types": ["Grass", "Turf", "Hybrid"],
+        "colors": {
+          "Grass": "Green",
+          "Turf": "Blue",
+          "Hybrid": "Teal"
+        },
+        "props": ["surfaceType"],
+        "files": ["components/ui/surface-badge.tsx"]
+      },
+      "RoofBadge": {
+        "description": "Badge showing roof type",
+        "types": ["Open", "Retractable", "Dome"],
+        "props": ["roofType"],
+        "files": ["components/ui/roof-badge.tsx"]
+      }
+    }
+  },
+  "dataFlow": {
+    "initialLoad": {
+      "stadium": "GET /stadiums/:stadiumId",
+      "homeTeam": "GET /teams (filter by stadium_id)",
+      "upcomingGames": "GET /games?stadium_id=:id&status=scheduled (limit 5)",
+      "recentGames": "GET /games?stadium_id=:id&status=final (limit 10)",
+      "weatherStats": "GET /game-weather (aggregate by stadium_id)",
+      "homeTeamStats": "Calculate from /games (stadium_id + home team)"
+    },
+    "dynamicData": {
+      "notableGames": "Calculate from /games (significance algorithm)",
+      "records": "Calculate from /games + /player_game_stats (max values)"
+    }
+  },
+  "routing": {
+    "url": "/stadiums/[stadiumId]",
+    "seoTitle": "{stadiumName} - Info, History, Upcoming Games | {siteName}",
+    "seoDescription": "Complete information about {stadiumName} in {city}, home of the {homeTeam}. View stadium specs, upcoming games, weather history, and notable games."
+  },
+  "sections": [
+    {
+      "name": "Stadium Hero",
+      "order": 1,
+      "component": "StadiumHero"
+    },
+    {
+      "name": "Stadium Information",
+      "order": 2,
+      "component": "StadiumInformation"
+    },
+    {
+      "name": "Upcoming Games",
+      "order": 3,
+      "component": "UpcomingGamesAtStadium"
+    },
+    {
+      "name": "Home Team History",
+      "order": 4,
+      "component": "HomeTeamHistory"
+    },
+    {
+      "name": "Weather Impact",
+      "order": 5,
+      "component": "WeatherImpactAnalysis"
+    },
+    {
+      "name": "Notable Games",
+      "order": 6,
+      "component": "NotableGamesAtStadium"
+    },
+    {
+      "name": "Recent Games",
+      "order": 7,
+      "component": "RecentGamesAtStadium"
+    },
+    {
+      "name": "Location Map",
+      "order": 8,
+      "component": "StadiumLocationMap"
+    },
+    {
+      "name": "Stadium Records",
+      "order": 9,
+      "component": "StadiumRecords"
+    },
+    {
+      "name": "Photo Gallery",
+      "order": 10,
+      "component": "StadiumPhotoGallery",
+      "condition": "If photos available"
+    },
+    {
+      "name": "Amenities",
+      "order": 11,
+      "component": "StadiumAmenities",
+      "condition": "If amenity data available"
+    }
+  ],
+  "technicalNotes": {
+    "stateManagement": "SWR for data fetching",
+    "caching": "24 hours (stadium info rarely changes)",
+    "images": "Next/Image with optimization",
+    "maps": "Lazy load Google Maps component",
+    "accessibility": "WCAG 2.1 AA compliant"
+  }
+}

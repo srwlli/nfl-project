@@ -1,0 +1,44 @@
+{
+  "feature_id": "AGENT6-MATCHUP-PREVIEW",
+  "feature_name": "Matchup Preview Pages",
+  "phase": 2,
+  "priority": "P2",
+  "assigned_agent": "Agent-6",
+
+  "overview": {
+    "description": "Build Matchup Preview pages showing head-to-head comparisons, betting lines, key matchups, injury reports, and predictions for upcoming games. Build components in Storybook, then integrate into Next.js pages",
+    "page_type": "Matchup Preview (scheduled games)",
+    "route": "/matchup/[gameId] (dynamic route)",
+    "user_story": "As a fan, I want to see comprehensive matchup previews for upcoming games so I can understand key storylines and make informed predictions"
+  },
+
+  "components_to_build": [
+    {"name": "MatchupPageLayout", "description": "Main wrapper with team vs team header"},
+    {"name": "MatchupHeroSection", "description": "Team vs team header with records, standings, betting lines"},
+    {"name": "HeadToHeadHistory", "description": "Historical matchup results (last 10 meetings)"},
+    {"name": "KeyMatchupsCard", "description": "Position battles (QB vs QB, WR vs DB, etc.)"},
+    {"name": "TeamTrendsComparison", "description": "Recent form, streaks, ATS records"},
+    {"name": "InjuryReportCard", "description": "Both teams injury reports side-by-side"},
+    {"name": "BettingInsightsCard", "description": "Betting lines, trends, public betting %"}
+  ],
+
+  "data_requirements": {
+    "tables": ["games", "teams", "team_season_stats", "player_injury_status", "game_betting_lines"],
+    "transformations": ["Calculate head-to-head records", "Calculate recent form (last 5 games)", "Calculate ATS records"]
+  },
+
+  "acceptance_criteria": [
+    "✅ All 7 components render in Storybook",
+    "✅ Head-to-head history displays",
+    "✅ Betting lines integrated",
+    "✅ Injury reports show for both teams",
+    "✅ Page loads in <2 seconds"
+  ],
+
+  "estimated_hours": {"phase_2_components": 6, "phase_3_page_integration": 4, "total": 10},
+
+  "references": {
+    "components_spec": "coderef/finalizing-elements/matchup-preview/components.json",
+    "template": "coderef/finalizing-elements/matchup-preview/template-matchup-preview.tsx"
+  }
+}

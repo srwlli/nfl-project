@@ -1,0 +1,26 @@
+{
+  "feature_id": "AGENT6-MATCHUP-PREVIEW",
+  "agent": "Agent-6",
+  "communication_log": [],
+  "status_updates": [],
+  "blockers": [],
+  "phase_2_complete": false,
+  "phase_3_complete": false,
+
+  "template": {
+    "log_entry": {
+      "timestamp": "ISO 8601 format",
+      "agent": "Agent-6",
+      "phase": "2 or 3",
+      "message_type": "status_update | blocker | question | completion | handoff",
+      "message": "Description",
+      "context": {"task_id": "COMP-X or PAGE-X", "component": "Component name", "details": "Additional info"}
+    }
+  },
+
+  "usage_instructions": [
+    "Log all component completions in Phase 2",
+    "Mark phase_2_complete=true when all 7 components done",
+    "Mark phase_3_complete=true when page integration validated"
+  ]
+}

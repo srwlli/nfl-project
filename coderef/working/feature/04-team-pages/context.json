@@ -1,0 +1,210 @@
+{
+  "feature_id": "AGENT4-TEAM-PAGES",
+  "feature_name": "Team Pages",
+  "phase": 2,
+  "priority": "P1",
+  "assigned_agent": "Agent-4",
+
+  "overview": {
+    "description": "Build Team Pages showing comprehensive team data including roster, depth chart, schedule, season stats, team leaders, division standings, and team information. Build components in Storybook, then integrate into Next.js page with Supabase data",
+    "page_type": "Team Pages (32 NFL teams)",
+    "route": "/teams/[teamId] (dynamic route)",
+    "user_story": "As a fan, I want to see my favorite team's complete roster, schedule, and statistics so I can stay updated on the team's performance and personnel"
+  },
+
+  "dependencies": {
+    "blocks": [],
+    "blocked_by": ["PHASE1-FOUNDATION"],
+    "requires": [
+      "Next.js 15 app running",
+      "Storybook 8 configured",
+      "Theme system available",
+      "Mock data library (lib/mock-data.ts)",
+      "Component generator",
+      "Templates at coderef/finalizing-elements/team-pages/"
+    ]
+  },
+
+  "tech_stack": {
+    "framework": "Next.js 15 App Router",
+    "components": "shadcn/ui (Button, Card, Badge, Tabs, Table, Input)",
+    "styling": "Tailwind CSS v4 + theme variants + dynamic team colors",
+    "data": "Supabase (teams, players, player_teams, games, team_season_stats, player_season_cumulative_stats, stadiums, snap_counts)",
+    "state": "React Context + SWR for data fetching",
+    "charts": "Recharts (for sparklines)"
+  },
+
+  "design_variants": {
+    "template_source": "coderef/finalizing-elements/team-pages/",
+    "recommended_themes": {
+      "primary": "Next Down Metrics (HUD)",
+      "alternative": ["Bold Vibrant", "Gridiron Legacy", "Tech Forward"]
+    },
+    "default_theme": "Next Down Metrics (HUD)",
+    "dynamic_theming": "Apply team colors to page (primary for headers, secondary for accents)"
+  },
+
+  "components_to_build": [
+    {
+      "name": "TeamPageLayout",
+      "description": "Main page wrapper for team pages with team colors theme",
+      "props": ["teamId", "children"],
+      "features": ["Team colors theme", "Responsive container", "Tabbed navigation"],
+      "story": "stories/team/TeamPageLayout.stories.tsx"
+    },
+    {
+      "name": "TeamHeroSection",
+      "description": "Hero section with team branding, logo, record, standing",
+      "props": ["team"],
+      "features": ["Large team logo (200x200px)", "Current record", "Division standing", "Team colors gradient background"],
+      "data_source": "GET /teams/:teamId + calculate standings",
+      "story": "stories/team/TeamHeroSection.stories.tsx"
+    },
+    {
+      "name": "TeamQuickStats",
+      "description": "Quick stat cards (PPG, Rank, etc.)",
+      "stats": ["Record", "Points Per Game", "Points Allowed Per Game", "Total Yards Per Game", "Division Standing", "Conference Standing", "Current Streak"],
+      "data_source": "GET /team-season-stats?teamId=:id + calculate standings",
+      "story": "stories/team/TeamQuickStats.stories.tsx"
+    },
+    {
+      "name": "CurrentRosterTable",
+      "description": "Full 53-man roster table with sorting and filtering",
+      "columns": ["#", "Name", "Position", "Height", "Weight", "Age", "College", "Experience"],
+      "features": ["Sortable columns", "Filter by position group", "Search by name", "Position color coding", "Link to player profile"],
+      "data_source": "GET /players?teamId=:id + JOIN player_teams",
+      "story": "stories/team/CurrentRosterTable.stories.tsx"
+    },
+    {
+      "name": "DepthChartView",
+      "description": "Visual depth chart by position with starter/backup designation",
+      "positions": ["Offense: QB, RB, WR (3), TE, OL (5)", "Defense: DL (4), LB (3), DB (4)", "Special: K, P, LS"],
+      "features": ["Starter/backup designation", "Injury status indicators", "Player cards with headshot"],
+      "data_source": "GET /players?teamId=:id (use snap_counts or manual designation)",
+      "note": "Starter/backup logic needs implementation (snap counts threshold or manual)",
+      "story": "stories/team/DepthChartView.stories.tsx"
+    },
+    {
+      "name": "TeamScheduleTable",
+      "description": "Season schedule with results",
+      "columns": ["Week", "Date", "Opponent", "Result", "Score", "Record"],
+      "features": ["Filter by status", "Win/loss color coding", "Link to game details", "Home/away indicators", "TV network badges"],
+      "data_source": "GET /games?teamId=:id",
+      "story": "stories/team/TeamScheduleTable.stories.tsx"
+    },
+    {
+      "name": "TeamSeasonStats",
+      "description": "Complete season statistics with ranks",
+      "sections": ["Offense: PPG, Total Yds/G, Pass Yds/G, Rush Yds/G, 3rd Down %", "Defense: PPG Allowed, Total Yds/G Allowed, Pass Yds/G Allowed, Rush Yds/G Allowed, Sacks", "Turnovers: Giveaways, Takeaways, Turnover Differential"],
+      "features": ["Rank badges (#1, #5, etc.)", "League comparison bars", "Season trend sparklines"],
+      "data_source": "GET /team-season-stats?teamId=:id",
+      "story": "stories/team/TeamSeasonStats.stories.tsx"
+    },
+    {
+      "name": "TeamLeadersCard",
+      "description": "Team leaders by category",
+      "categories": ["Passing: Yards, TDs", "Rushing: Yards, TDs", "Receiving: Receptions, Yards, TDs", "Defense: Tackles, Sacks, INTs"],
+      "data_source": "GET /player-season-cumulative-stats?teamId=:id (top 3 per category)",
+      "story": "stories/team/TeamLeadersCard.stories.tsx"
+    },
+    {
+      "name": "DivisionStandingsCard",
+      "description": "Division standings with current team highlighted",
+      "columns": ["Team", "W", "L", "T", "PCT", "PF", "PA", "DIFF", "STRK"],
+      "features": ["Current team highlighted", "Clickable team names", "Playoff indicator"],
+      "data_source": "Calculate from /games",
+      "story": "stories/team/DivisionStandingsCard.stories.tsx"
+    },
+    {
+      "name": "TeamInfoCard",
+      "description": "Team information and history",
+      "sections": ["Stadium", "Head Coach", "General Manager", "Founded Year", "Super Bowl Wins", "Conference Championships", "Division Championships", "Playoff Appearances"],
+      "data_source": "GET /teams/:teamId + GET /stadiums?teamId=:id",
+      "note": "Coach/GM data not in current database - may need manual curation",
+      "story": "stories/team/TeamInfoCard.stories.tsx"
+    }
+  ],
+
+  "data_requirements": {
+    "tables": [
+      "teams (id, team_abbr, team_name, team_logo_url, primary_color, secondary_color, division, conference, founded_year)",
+      "players (id, full_name, position, jersey_number, height, weight, birth_date, college, experience, headshot_url)",
+      "player_teams (player_id, team_id, start_season, end_season, is_current)",
+      "games (id, home_team_id, away_team_id, home_score, away_score, status, date, network)",
+      "team_season_stats (team_id, season, ppg, total_yards_pg, passing_yards_pg, rushing_yards_pg, third_down_pct, ppg_allowed, sacks, etc.)",
+      "player_season_cumulative_stats (player_id, team_id, season, position-specific stats)",
+      "stadiums (id, stadium_name, city, state, capacity, surface_type, roof_type)",
+      "snap_counts (player_id, game_id, offensive_snaps, defensive_snaps, special_teams_snaps)"
+    ],
+    "api_endpoints": [
+      "GET /teams/:teamId",
+      "GET /players?teamId=:id",
+      "GET /games?teamId=:id",
+      "GET /team-season-stats?teamId=:id",
+      "GET /player-season-cumulative-stats?teamId=:id",
+      "GET /stadiums?teamId=:id",
+      "GET /snap-counts?teamId=:id"
+    ],
+    "data_transformations": [
+      "Calculate division/conference standings from games table",
+      "Determine starters from snap_counts table (threshold: >50% snaps)",
+      "Calculate team leaders from player_season_cumulative_stats",
+      "Calculate current streak from games table"
+    ]
+  },
+
+  "acceptance_criteria": [
+    "✅ All 9 components render in Storybook with mock data",
+    "✅ Theme switcher changes all components",
+    "✅ Controls in Storybook stories work",
+    "✅ Tables are sortable and filterable (roster, schedule)",
+    "✅ Dynamic team colors applied to components",
+    "✅ Charts render correctly (sparklines)",
+    "✅ Mobile responsive (breakpoints at 768px, 480px)",
+    "✅ Page integrates components with real Supabase data",
+    "✅ Division standings calculated from games",
+    "✅ Depth chart uses snap counts to determine starters",
+    "✅ Page loads in <2 seconds",
+    "✅ Zero TypeScript errors",
+    "✅ Zero accessibility errors (a11y addon)"
+  ],
+
+  "estimated_hours": {
+    "phase_2_components": 8,
+    "phase_3_page_integration": 4,
+    "total": 12
+  },
+
+  "deliverables": [
+    {
+      "phase": 2,
+      "name": "Storybook Components",
+      "items": [
+        "9 components in components/team/ folder",
+        "9 stories in stories/team/ folder",
+        "Dynamic team colors support",
+        "Mock data integration",
+        "Recharts integration for sparklines"
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Next.js Page",
+      "items": [
+        "app/(pages)/teams/[teamId]/page.tsx (dynamic route)",
+        "Real Supabase data integration",
+        "Division standings calculation",
+        "Depth chart logic (snap counts threshold)",
+        "Dynamic team colors theming",
+        "SWR caching (1 hour)",
+        "Error handling and loading states"
+      ]
+    }
+  ],
+
+  "references": {
+    "components_spec": "coderef/finalizing-elements/team-pages/components.json",
+    "themes_doc": "coderef/finalizing-elements/THEMES/README.md",
+    "backend_schema": "types/database.ts"
+  }
+}

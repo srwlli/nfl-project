@@ -1,0 +1,43 @@
+{
+  "plan_id": "AGENT7-STADIUM-PAGES-PLAN",
+  "feature_id": "AGENT7-STADIUM-PAGES",
+  "plan_version": "1.0",
+  "created": "2025-01-23",
+  "status": "waiting_for_phase1",
+
+  "overview": {
+    "agent": "Agent-7",
+    "page": "Stadium Pages (30 NFL stadiums)",
+    "estimated_time": "10 hours (6h Phase 2 + 4h Phase 3)"
+  },
+
+  "phase_2_storybook_components": {
+    "description": "Build 6 components for stadium pages",
+    "estimated_hours": 6,
+    "components": [
+      {"name": "StadiumPageLayout", "minutes": 40},
+      {"name": "StadiumHeroSection", "minutes": 60},
+      {"name": "StadiumInfoCard", "minutes": 50},
+      {"name": "HomeTeamStatsCard", "minutes": 60},
+      {"name": "RecentGamesAtVenue", "minutes": 50},
+      {"name": "VenueWeatherHistory", "minutes": 50},
+      {"name": "Validation", "minutes": 30}
+    ]
+  },
+
+  "phase_3_page_integration": {
+    "description": "Integrate components into stadium pages",
+    "estimated_hours": 4,
+    "tasks": [
+      {"task": "Create dynamic route page", "minutes": 60},
+      {"task": "Add home record calculation", "minutes": 45},
+      {"task": "Add weather aggregation", "minutes": 45},
+      {"task": "Add SWR caching", "minutes": 30},
+      {"task": "Validation", "minutes": 60}
+    ]
+  },
+
+  "success_criteria": ["✅ All 6 components work", "✅ Stadium info displays", "✅ Home stats calculated", "✅ Page loads <2s"],
+
+  "dependencies": {"requires_from_phase1": ["Next.js 15", "Storybook 8", "Theme system", "Supabase client"]}
+}

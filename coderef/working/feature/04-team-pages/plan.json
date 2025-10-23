@@ -1,0 +1,64 @@
+{
+  "plan_id": "AGENT4-TEAM-PAGES-PLAN",
+  "feature_id": "AGENT4-TEAM-PAGES",
+  "plan_version": "1.0",
+  "created": "2025-01-23",
+  "status": "waiting_for_phase1",
+
+  "overview": {
+    "agent": "Agent-4",
+    "page": "Team Pages (32 NFL teams)",
+    "estimated_time": "12 hours (8h Phase 2 + 4h Phase 3)"
+  },
+
+  "phase_2_storybook_components": {
+    "description": "Build 9 components in Storybook with dynamic team colors and mock data",
+    "estimated_hours": 8,
+    "components": [
+      {"name": "TeamPageLayout", "minutes": 45},
+      {"name": "TeamHeroSection", "minutes": 60},
+      {"name": "TeamQuickStats", "minutes": 45},
+      {"name": "CurrentRosterTable", "minutes": 60},
+      {"name": "DepthChartView", "minutes": 75},
+      {"name": "TeamScheduleTable", "minutes": 60},
+      {"name": "TeamSeasonStats", "minutes": 60},
+      {"name": "TeamLeadersCard", "minutes": 45},
+      {"name": "DivisionStandingsCard", "minutes": 45},
+      {"name": "Validation", "minutes": 45}
+    ]
+  },
+
+  "phase_3_page_integration": {
+    "description": "Integrate components into Next.js dynamic page with Supabase data",
+    "estimated_hours": 4,
+    "tasks": [
+      {"task": "Create dynamic route page", "minutes": 60},
+      {"task": "Add standings calculation utility", "minutes": 45},
+      {"task": "Add depth chart logic (snap counts)", "minutes": 45},
+      {"task": "Add dynamic team colors theming", "minutes": 30},
+      {"task": "Add SWR caching and performance optimizations", "minutes": 45},
+      {"task": "Validation", "minutes": 45}
+    ]
+  },
+
+  "success_criteria": [
+    "✅ All 9 components work in Storybook",
+    "✅ Dynamic team colors applied",
+    "✅ Tables sortable and filterable",
+    "✅ Division standings calculated from games",
+    "✅ Depth chart uses snap counts",
+    "✅ Page loads in <2 seconds"
+  ],
+
+  "dependencies": {
+    "requires_from_phase1": [
+      "Next.js 15 app",
+      "Storybook 8",
+      "Theme system",
+      "Mock data library",
+      "Component generator",
+      "Supabase client",
+      "Recharts"
+    ]
+  }
+}

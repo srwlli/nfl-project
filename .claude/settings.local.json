@@ -24,7 +24,14 @@
       "Bash(npm run scrape:snap-counts:*)",
       "Bash(npm run floors:*)",
       "WebFetch(domain:www.rotowire.com)",
-      "Bash(timeout 180 node:*)"
+      "Bash(timeout 180 node:*)",
+      "Read(//c/Users/willh/Downloads/nfl-scorebug-showcase/coderef/context/**)",
+      "Read(//c/Users/willh/Downloads/nfl-scorebug-showcase/components/**)",
+      "Read(//c/Users/willh/Downloads/nfl-scorebug-showcase/app/(showcase)/01-core-ui-components/scorebugs/**)",
+      "Read(//c/Users/willh/Downloads/nfl-scorebug-showcase/**)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Read(//c/Users/willh/Desktop/projects - current-location/loudpacks/nextjs-pwa/**)"
     ],
     "deny": [],
     "ask": []

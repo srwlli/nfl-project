@@ -1,0 +1,323 @@
+{
+  "pageType": "Live Scoreboard / Dashboard (Homepage)",
+  "priority": "P0 - Critical",
+  "pageCount": "1 homepage",
+  "dataReadiness": "100%",
+  "recommendedThemes": {
+    "primary": "Next Down Metrics (HUD)",
+    "alternative": ["Sunday Lights", "Bold Vibrant", "Tech Forward"]
+  },
+  "components": {
+    "layout": {
+      "DashboardLayout": {
+        "description": "Main homepage wrapper with sections",
+        "props": ["children", "refreshInterval"],
+        "features": [
+          "Auto-refresh every 30 seconds during games",
+          "Sticky header with nav",
+          "Responsive grid layout",
+          "Real-time WebSocket updates"
+        ],
+        "files": ["components/dashboard/dashboard-layout.tsx"]
+      }
+    },
+    "header": {
+      "LiveIndicator": {
+        "description": "Pulsing LIVE indicator when games are active",
+        "theme": "Next Down Metrics (HUD)",
+        "features": [
+          "Red pulsing dot",
+          "Game count badge (3 LIVE)",
+          "Last updated timestamp",
+          "Auto-hide when no live games"
+        ],
+        "props": ["liveGameCount", "lastUpdated"],
+        "dataSource": "GET /games?status=in_progress",
+        "files": ["components/dashboard/live-indicator.tsx"]
+      }
+    },
+    "liveGames": {
+      "LiveGamesGrid": {
+        "description": "Grid of all currently live games",
+        "theme": "Sunday Lights",
+        "features": [
+          "2-column grid (desktop), 1-column (mobile)",
+          "Real-time score updates",
+          "Current quarter and time",
+          "Possession indicator",
+          "Red zone indicator",
+          "Click to open game details"
+        ],
+        "props": ["liveGames[]", "autoRefresh"],
+        "dataSource": "GET /games?status=in_progress (WebSocket subscription)",
+        "files": ["components/dashboard/live-games-grid.tsx"]
+      },
+      "LiveGameCard": {
+        "description": "Individual live game card",
+        "theme": "Next Down Metrics (HUD)",
+        "features": [
+          "Team logos and scores (large)",
+          "Current down & distance",
+          "Quarter and time remaining",
+          "Possession arrow",
+          "Scoring play animation",
+          "Red zone glow effect"
+        ],
+        "props": ["game", "homeTeam", "awayTeam", "gameStatus"],
+        "dataSource": "Real-time from WebSocket",
+        "files": ["components/dashboard/live-game-card.tsx"]
+      }
+    },
+    "upcomingGames": {
+      "UpcomingGamesToday": {
+        "description": "Games starting today (not yet live)",
+        "theme": "Tech Forward",
+        "features": [
+          "Countdown to kickoff",
+          "Betting lines (spread, O/U)",
+          "TV network badge",
+          "Weather preview",
+          "Matchup comparison (PPG, records)"
+        ],
+        "props": ["upcomingGames[]", "currentTime"],
+        "dataSource": "GET /games?status=scheduled&date=today",
+        "files": ["components/dashboard/upcoming-games-today.tsx"]
+      }
+    },
+    "recentGames": {
+      "RecentlyCompleted": {
+        "description": "Games that finished in last 6 hours",
+        "theme": "Bold Vibrant",
+        "features": [
+          "Final scores with winner highlighted",
+          "Time since completion (2h ago)",
+          "Quick stats (top passer, rusher, receiver)",
+          "Betting result badge (covered/push/lost)",
+          "Link to full game details"
+        ],
+        "props": ["recentGames[]", "currentTime"],
+        "dataSource": "GET /games?status=final&completedWithin=6h",
+        "files": ["components/dashboard/recently-completed.tsx"]
+      }
+    },
+    "topPerformers": {
+      "TopPerformersToday": {
+        "description": "Best stats from live/completed games today",
+        "theme": "Next Down Metrics (HUD)",
+        "categories": [
+          "Passing: Yards, TDs",
+          "Rushing: Yards, TDs",
+          "Receiving: Yards, Receptions, TDs",
+          "Defense: Tackles, Sacks, INTs"
+        ],
+        "features": [
+          "Top 3 per category",
+          "Live updating during games",
+          "Player headshots",
+          "Team logos",
+          "Stat badges",
+          "Link to player profile"
+        ],
+        "props": ["topPerformers", "category"],
+        "dataSource": "GET /player-game-stats?date=today (sorted by stat)",
+        "files": ["components/dashboard/top-performers-today.tsx"]
+      }
+    },
+    "standings": {
+      "StandingsWidget": {
+        "description": "Division standings compact view",
+        "theme": "Gridiron Legacy",
+        "features": [
+          "All 8 divisions in tabs or accordion",
+          "Top 3 teams per division",
+          "Record, win %, point differential",
+          "Playoff indicator (green dot)",
+          "Click team to open team page"
+        ],
+        "props": ["standings", "selectedDivision"],
+        "dataSource": "Calculate from /games (all teams)",
+        "files": ["components/dashboard/standings-widget.tsx"]
+      }
+    },
+    "news": {
+      "TrendingNews": {
+        "description": "Latest news and updates",
+        "theme": "Luxury Magazine",
+        "features": [
+          "Top 5 news items",
+          "Injury updates",
+          "Transaction notifications",
+          "Breaking news badge",
+          "Time since posted"
+        ],
+        "props": ["news[]", "maxItems"],
+        "dataSource": "GET /player-news + GET /team-news (sorted by date)",
+        "files": ["components/dashboard/trending-news.tsx"],
+        "note": "Requires player_news and team_news tables (not yet implemented)"
+      }
+    },
+    "featuredGame": {
+      "FeaturedGameSpotlight": {
+        "description": "Game of the week spotlight",
+        "theme": "Cyberpunk Holographic",
+        "features": [
+          "Large hero image",
+          "Matchup preview",
+          "Key storylines (3-5 bullets)",
+          "Betting lines",
+          "Expert pick",
+          "Click to open game details"
+        ],
+        "props": ["featuredGame", "storylines[]"],
+        "dataSource": "Manual selection or algorithm (primetime games, rivalry games)",
+        "files": ["components/dashboard/featured-game-spotlight.tsx"]
+      }
+    },
+    "schedule": {
+      "WeekScheduleOverview": {
+        "description": "Full week's schedule in compact view",
+        "theme": "Classic Almanac",
+        "features": [
+          "Grouped by day (Thu/Sun/Mon)",
+          "Time slots",
+          "TV networks",
+          "Quick scores (if completed)",
+          "Filter by status (live, upcoming, final)"
+        ],
+        "props": ["weekGames[]", "currentWeek", "filterStatus"],
+        "dataSource": "GET /games?week=:current&season=2025",
+        "files": ["components/dashboard/week-schedule-overview.tsx"]
+      }
+    },
+    "quickLinks": {
+      "QuickAccessNav": {
+        "description": "Quick links to common pages",
+        "theme": "Tech Forward",
+        "links": [
+          "Stats Leaders",
+          "Team Standings",
+          "Player Profiles",
+          "Injury Report",
+          "Power Rankings",
+          "Playoff Picture"
+        ],
+        "features": [
+          "Icon + label buttons",
+          "Responsive grid",
+          "Hover effects"
+        ],
+        "props": ["links[]"],
+        "files": ["components/dashboard/quick-access-nav.tsx"]
+      }
+    },
+    "shared": {
+      "ScoreCard": {
+        "description": "Reusable score display card",
+        "variants": ["live", "final", "scheduled"],
+        "props": ["homeTeam", "awayTeam", "score", "status"],
+        "files": ["components/ui/score-card.tsx"]
+      },
+      "GameStatusBadge": {
+        "description": "Badge showing game status",
+        "variants": {
+          "live": "Red pulsing (LIVE, Q3 2:15)",
+          "final": "Green (FINAL)",
+          "scheduled": "Gray (3:00 PM ET)"
+        },
+        "props": ["status", "quarter", "time"],
+        "files": ["components/ui/game-status-badge.tsx"]
+      },
+      "RefreshTimer": {
+        "description": "Auto-refresh countdown indicator",
+        "features": [
+          "Circular progress (30s countdown)",
+          "Pause/resume button",
+          "Manual refresh button"
+        ],
+        "props": ["interval", "lastUpdate", "onRefresh"],
+        "files": ["components/ui/refresh-timer.tsx"]
+      }
+    }
+  },
+  "dataFlow": {
+    "initialLoad": {
+      "liveGames": "GET /games?status=in_progress",
+      "upcomingToday": "GET /games?status=scheduled&date=today",
+      "recentlyCompleted": "GET /games?status=final&completedWithin=6h",
+      "topPerformers": "GET /player-game-stats?date=today (aggregate top performers)",
+      "standings": "Calculate from /games (all teams)"
+    },
+    "realTimeUpdates": {
+      "method": "Supabase Realtime WebSocket",
+      "subscribe": "games table (where status = in_progress)",
+      "events": ["UPDATE", "INSERT"],
+      "refreshInterval": "30 seconds (fallback if WebSocket fails)"
+    },
+    "caching": {
+      "liveGames": "No cache (real-time)",
+      "standings": "5 minutes",
+      "upcomingGames": "1 hour",
+      "completedGames": "10 minutes"
+    }
+  },
+  "routing": {
+    "url": "/",
+    "seoTitle": "NFL Live Scores, Stats & Standings | {siteName}",
+    "seoDescription": "Follow live NFL scores, real-time game updates, player stats, and team standings. Your home for comprehensive NFL coverage."
+  },
+  "sections": [
+    {
+      "name": "Live Games",
+      "order": 1,
+      "component": "LiveGamesGrid",
+      "condition": "Only show if liveGames.length > 0",
+      "autoRefresh": true
+    },
+    {
+      "name": "Upcoming Games Today",
+      "order": 2,
+      "component": "UpcomingGamesToday",
+      "condition": "Only show if upcomingToday.length > 0"
+    },
+    {
+      "name": "Recently Completed",
+      "order": 3,
+      "component": "RecentlyCompleted",
+      "condition": "Only show if recentGames.length > 0"
+    },
+    {
+      "name": "Top Performers Today",
+      "order": 4,
+      "component": "TopPerformersToday",
+      "condition": "Only show if topPerformers.length > 0"
+    },
+    {
+      "name": "Featured Game",
+      "order": 5,
+      "component": "FeaturedGameSpotlight"
+    },
+    {
+      "name": "Standings",
+      "order": 6,
+      "component": "StandingsWidget"
+    },
+    {
+      "name": "Week Schedule",
+      "order": 7,
+      "component": "WeekScheduleOverview"
+    },
+    {
+      "name": "Trending News",
+      "order": 8,
+      "component": "TrendingNews",
+      "condition": "If news data available"
+    }
+  ],
+  "technicalNotes": {
+    "stateManagement": "React Context for live updates + SWR for non-live data",
+    "realTime": "Supabase Realtime WebSocket subscription",
+    "refreshStrategy": "30-second interval during game windows (Thu 8pm-11pm, Sun 1pm-11pm, Mon 8pm-11pm)",
+    "accessibility": "WCAG 2.1 AA compliant, live region announcements for score updates",
+    "performance": "Virtualized lists for large game grids, lazy load sections below fold"
+  }
+}

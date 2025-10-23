@@ -1,0 +1,559 @@
+{
+  "plan_id": "AGENT3-PLAYER-PROFILES-PLAN",
+  "feature_id": "AGENT3-PLAYER-PROFILES",
+  "plan_version": "1.0",
+  "created": "2025-01-23",
+  "status": "waiting_for_phase1",
+
+  "overview": {
+    "agent": "Agent-3",
+    "page": "Player Profiles (2,578 active players)",
+    "phases": [
+      "Phase 2: Build components in Storybook (8 hours)",
+      "Phase 3: Integrate to Next.js page (4 hours)"
+    ],
+    "total_estimated_time": "12 hours"
+  },
+
+  "phase_2_storybook_components": {
+    "description": "Build all components in Storybook with mock data, position-specific stats, and full interactivity",
+    "estimated_hours": 8,
+
+    "tasks": [
+      {
+        "task_id": "COMP-1",
+        "component": "PlayerProfileLayout",
+        "description": "Main page wrapper for player profile pages",
+        "actions": [
+          "Generate component: npm run generate:component PlayerProfileLayout",
+          "Implement responsive container",
+          "Add hero section slot at top",
+          "Add tabbed content area for main content",
+          "Add related players sidebar (desktop only)",
+          "Add theme-aware styling hooks"
+        ],
+        "props": {
+          "playerId": "string",
+          "children": "ReactNode"
+        },
+        "story_controls": ["playerId"],
+        "estimated_minutes": 45
+      },
+      {
+        "task_id": "COMP-2",
+        "component": "PlayerHeroSection",
+        "description": "Top hero section with player headshot, name, team, position",
+        "actions": [
+          "Generate component: npm run generate:component PlayerHeroSection",
+          "Implement large player headshot (300x300px)",
+          "Add player name display (48px, bold)",
+          "Add jersey number badge",
+          "Add position badge (color-coded by position group)",
+          "Add current team logo with team colors",
+          "Add status badge (Active/Injured/Retired/Practice Squad)",
+          "Add Hall of Fame indicator (if inducted)",
+          "Import PLAYERS and TEAMS from mock data"
+        ],
+        "props": {
+          "player": "{ name, jerseyNumber, position, headshot, status }",
+          "currentTeam": "{ name, logo, colors }",
+          "hallOfFame": "{ inducted, year }"
+        },
+        "story_examples": [
+          "ActiveQB - Active QB with team",
+          "HallOfFamer - Retired with HOF badge",
+          "InjuredPlayer - Injured status badge"
+        ],
+        "estimated_minutes": 60
+      },
+      {
+        "task_id": "COMP-3",
+        "component": "QuickStatsBar",
+        "description": "Horizontal bar with physical and biographical info",
+        "actions": [
+          "Generate component",
+          "Implement 8 stat displays: Height, Weight, Age, Birth Date, Birthplace, College, Draft, Years Pro",
+          "Add icon for each stat",
+          "Make responsive (stacks on mobile)",
+          "Add hover for full details",
+          "Import PLAYERS from mock data"
+        ],
+        "props": {
+          "player": "{ height, weight, birthDate, birthplace, college, draft, yearsPro }"
+        },
+        "story_examples": [
+          "FirstRoundPick - High draft pick",
+          "UndraftedFreeAgent - Undrafted player"
+        ],
+        "estimated_minutes": 45
+      },
+      {
+        "task_id": "COMP-4",
+        "component": "CareerTotalsCard",
+        "description": "Big numbers showing career totals with sparklines",
+        "actions": [
+          "Generate component",
+          "Implement position-specific stat displays",
+          "QB: Passing Yards, Pass TDs, INTs, Passer Rating, Completion %",
+          "RB: Rushing Yards, Rush TDs, Yards/Carry, Receptions, Rec Yards",
+          "WR/TE: Receptions, Rec Yards, Rec TDs, Yards/Reception, Targets",
+          "DEF: Tackles, Sacks, INTs, Forced Fumbles, Passes Defended",
+          "Add large numbers (48px)",
+          "Add sparklines showing trend (install Recharts if needed)",
+          "Add all-time ranking badges (Top 10, Top 50, Top 100)",
+          "Add award badges (MVP, Pro Bowl, All-Pro)",
+          "Import PLAYER_SEASON_CUMULATIVE_STATS from mock data"
+        ],
+        "props": {
+          "careerTotals": "object",
+          "position": "string",
+          "rankings": "object",
+          "awards": "object[]"
+        },
+        "story_examples": [
+          "Elite QB - 50,000+ yards, 400+ TDs",
+          "Star RB - 10,000+ yards, 100+ TDs",
+          "All-Pro WR - 1,000+ receptions"
+        ],
+        "estimated_minutes": 75
+      },
+      {
+        "task_id": "COMP-5",
+        "component": "SeasonBySeasonTable",
+        "description": "Table showing stats for each season with expandable game logs",
+        "actions": [
+          "Generate component",
+          "Implement columns: Season, Team, Games, Games Started, + position-specific stats",
+          "Add sortable column headers",
+          "Add expandable rows (click to show game log)",
+          "Highlight championship seasons (gold background)",
+          "Add award badges in rows (Pro Bowl, All-Pro, MVP)",
+          "Add team logos",
+          "Import PLAYER_SEASON_CUMULATIVE_STATS from mock data"
+        ],
+        "props": {
+          "seasonStats": "SeasonStat[]",
+          "position": "string",
+          "sortColumn": "string",
+          "sortDirection": "'asc' | 'desc'",
+          "expandedSeasons": "string[]",
+          "onSeasonToggle": "(season: string) => void"
+        },
+        "story_examples": [
+          "LongCareer - 15+ seasons",
+          "MultipleTeans - Played for 4+ teams",
+          "ChampionshipSeason - Super Bowl winner"
+        ],
+        "estimated_minutes": 75
+      },
+      {
+        "task_id": "COMP-6",
+        "component": "BiographicalInfoCard",
+        "description": "Complete biographical information",
+        "actions": [
+          "Generate component",
+          "Implement 7 sections: Full Name, Nickname, Birthplace, High School, College, Family, Social Media",
+          "Add icons for each section",
+          "Add copy-to-clipboard for social media links",
+          "Show 'Not Available' for missing data (Family, Social Media)",
+          "Import PLAYERS from mock data"
+        ],
+        "props": {
+          "player": "{ fullName, nickname, birthplace, highSchool, college, family, socialMedia }"
+        },
+        "story_examples": [
+          "CompleteBio - All fields filled",
+          "MinimalBio - Only basic info available"
+        ],
+        "estimated_minutes": 45
+      },
+      {
+        "task_id": "COMP-7",
+        "component": "AwardsTrophyCase",
+        "description": "Visual trophy case showing awards and achievements",
+        "actions": [
+          "Generate component",
+          "Implement 8 award types: NFL MVP, Super Bowl MVP, Super Bowl Champion, Pro Bowl, All-Pro, Player of Year, Rookie of Year, Hall of Fame",
+          "Add trophy icons for each award",
+          "Add award year badges",
+          "Add count badges (e.g., '2x MVP', '5x Pro Bowl')",
+          "Add hover for details",
+          "Create mock awards data (table not yet created in DB)"
+        ],
+        "props": {
+          "awards": "Award[]"
+        },
+        "story_examples": [
+          "LegendaryPlayer - MVP, SB MVP, HOF",
+          "StarPlayer - Multiple Pro Bowls, All-Pro"
+        ],
+        "note": "Requires new player_awards table - use mock data for now",
+        "estimated_minutes": 60
+      },
+      {
+        "task_id": "COMP-8",
+        "component": "CareerTimeline",
+        "description": "Vertical timeline of career events",
+        "actions": [
+          "Generate component",
+          "Implement vertical timeline UI",
+          "Add 9 event types: Draft Day, First Start, Team Changes, Contract Extensions, Major Injuries, Awards Won, Playoff Appearances, Super Bowl Wins, Retirement",
+          "Add event type icons",
+          "Add hover for details",
+          "Use team colors for team-related events",
+          "Import ROSTER_TRANSACTIONS from mock data"
+        ],
+        "props": {
+          "timeline": "TimelineEvent[]"
+        },
+        "story_examples": [
+          "LongCareer - 15+ year timeline",
+          "ShortCareer - 3-year career"
+        ],
+        "estimated_minutes": 60
+      },
+      {
+        "task_id": "COMP-9",
+        "component": "TransactionsHistory",
+        "description": "List of all roster transactions",
+        "actions": [
+          "Generate component",
+          "Implement 6 transaction types: Drafted, Signed, Traded, Released, Injured Reserve, Practice Squad",
+          "Add chronological list (most recent first)",
+          "Add team logos for each transaction",
+          "Add transaction type badges",
+          "Import ROSTER_TRANSACTIONS from mock data"
+        ],
+        "props": {
+          "transactions": "Transaction[]"
+        },
+        "story_examples": [
+          "ManyTransactions - 10+ transactions",
+          "SingleTeam - Only 1 team entire career"
+        ],
+        "estimated_minutes": 45
+      },
+      {
+        "task_id": "COMP-10",
+        "component": "AdvancedAnalyticsCard",
+        "description": "Advanced analytics (EPA, success rate, radar charts)",
+        "actions": [
+          "Generate component",
+          "Implement position-specific analytics",
+          "QB: EPA Total, EPA per Play, CPOE, Avg Time to Throw, Avg Air Yards",
+          "RB: EPA per Rush, Yards After Contact, Rush Success Rate, Breakaway %",
+          "WR/TE: EPA per Reception, Separation Avg, Catch Rate Over Expected, YAC",
+          "Add radar charts (install Recharts if needed)",
+          "Add percentile rankings",
+          "Add comparison to league average",
+          "Add season-over-season trend",
+          "Import PLAY_BY_PLAY from mock data (calculate EPA)"
+        ],
+        "props": {
+          "advancedStats": "object",
+          "position": "string",
+          "leagueAverages": "object"
+        },
+        "story_examples": [
+          "Elite QB - High EPA, high CPOE",
+          "Average RB - League-average stats"
+        ],
+        "estimated_minutes": 75
+      },
+      {
+        "task_id": "COMP-VALIDATE",
+        "description": "Validate all components in Storybook",
+        "actions": [
+          "Run npm run storybook",
+          "View all 10 components",
+          "Test all story variants",
+          "Toggle theme switcher (verify all 6 themes work)",
+          "Test all interactive controls (sorting, expanding, hovering)",
+          "Switch viewport (mobile/tablet/desktop)",
+          "Check a11y addon (no critical issues)",
+          "Verify no TypeScript errors",
+          "Verify no console warnings"
+        ],
+        "validation_checklist": [
+          "[ ] All 10 components render",
+          "[ ] All stories display correctly",
+          "[ ] Theme switcher changes all components",
+          "[ ] Sorting works on SeasonBySeasonTable",
+          "[ ] Expandable rows work (season game logs)",
+          "[ ] Sparklines render in CareerTotalsCard",
+          "[ ] Radar charts render in AdvancedAnalyticsCard",
+          "[ ] Position-specific stats display correctly (QB, RB, WR/TE, DEF)",
+          "[ ] Mobile responsive (768px, 480px)",
+          "[ ] No TypeScript errors",
+          "[ ] No console errors",
+          "[ ] No a11y critical issues"
+        ],
+        "estimated_minutes": 45
+      }
+    ]
+  },
+
+  "phase_3_page_integration": {
+    "description": "Integrate Storybook components into Next.js dynamic page with real Supabase data and career stats calculations",
+    "estimated_hours": 4,
+
+    "tasks": [
+      {
+        "task_id": "PAGE-1",
+        "description": "Create Next.js dynamic route page file",
+        "file": "app/(pages)/players/[playerId]/page.tsx",
+        "actions": [
+          "Create server component for initial data fetch",
+          "Fetch player basic info",
+          "Fetch player season stats",
+          "Calculate career totals from season stats",
+          "Fetch roster transactions",
+          "Pass data to client components"
+        ],
+        "code_structure": {
+          "imports": [
+            "import { supabase } from '@/lib/supabase'",
+            "import { PlayerProfileLayout } from '@/components/player/PlayerProfileLayout'",
+            "import { PlayerHeroSection } from '@/components/player/PlayerHeroSection'",
+            "import { QuickStatsBar } from '@/components/player/QuickStatsBar'",
+            "... (import all 10 components)"
+          ],
+          "async_function": "export default async function PlayerProfilePage({ params }: { params: { playerId: string } })",
+          "data_fetching": [
+            "const { data: player } = await supabase.from('players').select('*, current_team:player_teams!inner(team:teams(*))').eq('id', params.playerId).single()",
+            "const { data: seasonStats } = await supabase.from('player_season_cumulative_stats').select('*').eq('player_id', params.playerId).order('season', { ascending: false })",
+            "const { data: transactions } = await supabase.from('roster_transactions').select('*, team:teams(*)').eq('player_id', params.playerId).order('date', { ascending: false })",
+            "const { data: playByPlay } = await supabase.from('play_by_play').select('*').contains('player_id', params.playerId)",
+            "// Calculate career totals from seasonStats",
+            "const careerTotals = calculateCareerTotals(seasonStats, player.position)"
+          ],
+          "layout": [
+            "<PlayerProfileLayout playerId={params.playerId}>",
+            "  <PlayerHeroSection player={player} currentTeam={player.current_team} hallOfFame={player.hall_of_fame} />",
+            "  <QuickStatsBar player={player} />",
+            "  <Tabs>",
+            "    <TabsList>",
+            "      <TabsTrigger value='stats'>Career Stats</TabsTrigger>",
+            "      <TabsTrigger value='bio'>Biography</TabsTrigger>",
+            "      <TabsTrigger value='awards'>Awards</TabsTrigger>",
+            "      <TabsTrigger value='analytics'>Analytics</TabsTrigger>",
+            "    </TabsList>",
+            "    <TabsContent value='stats'>",
+            "      <CareerTotalsCard careerTotals={careerTotals} position={player.position} />",
+            "      <SeasonBySeasonTable seasonStats={seasonStats} position={player.position} />",
+            "    </TabsContent>",
+            "    <TabsContent value='bio'>",
+            "      <BiographicalInfoCard player={player} />",
+            "      <CareerTimeline timeline={timeline} />",
+            "      <TransactionsHistory transactions={transactions} />",
+            "    </TabsContent>",
+            "    <TabsContent value='awards'>",
+            "      <AwardsTrophyCase awards={player.awards} />",
+            "    </TabsContent>",
+            "    <TabsContent value='analytics'>",
+            "      <AdvancedAnalyticsCard advancedStats={advancedStats} position={player.position} />",
+            "    </TabsContent>",
+            "  </Tabs>",
+            "</PlayerProfileLayout>"
+          ]
+        },
+        "estimated_minutes": 60
+      },
+      {
+        "task_id": "PAGE-2",
+        "description": "Create career totals calculation utility",
+        "file": "lib/calculate-career-totals.ts",
+        "actions": [
+          "Create utility function to aggregate season stats",
+          "Handle position-specific stats (QB, RB, WR/TE, DEF)",
+          "Calculate totals for each stat category",
+          "Calculate averages (e.g., yards per carry, yards per reception)",
+          "Handle missing data gracefully"
+        ],
+        "code_example": {
+          "function": [
+            "export function calculateCareerTotals(seasonStats: SeasonStat[], position: string) {",
+            "  const totals = { seasons: seasonStats.length, gamesPlayed: 0, gamesStarted: 0 }",
+            "  ",
+            "  seasonStats.forEach(season => {",
+            "    totals.gamesPlayed += season.games_played",
+            "    totals.gamesStarted += season.games_started",
+            "    // Add position-specific stat aggregation",
+            "  })",
+            "  ",
+            "  return totals",
+            "}"
+          ]
+        },
+        "estimated_minutes": 30
+      },
+      {
+        "task_id": "PAGE-3",
+        "description": "Add lazy loading for game logs",
+        "file": "components/player/SeasonBySeasonTable.tsx (convert to client component)",
+        "actions": [
+          "Add 'use client' directive",
+          "Add state for expanded seasons",
+          "Fetch game log on demand when season expanded",
+          "Use SWR for caching game log data",
+          "Show loading spinner while fetching",
+          "Render GameLogExpanded component when data loaded"
+        ],
+        "code_example": {
+          "import": "import useSWR from 'swr'",
+          "state": "const [expandedSeasons, setExpandedSeasons] = useState<string[]>([])",
+          "fetcher": [
+            "const { data: gameLog, isLoading } = useSWR(",
+            "  expandedSeasons.includes(season) ? `/api/players/${playerId}/game-log/${season}` : null,",
+            "  fetcher",
+            ")"
+          ]
+        },
+        "estimated_minutes": 45
+      },
+      {
+        "task_id": "PAGE-4",
+        "description": "Add loading and error states",
+        "actions": [
+          "Create LoadingState component (skeleton loaders for player profile)",
+          "Add Suspense boundaries for each tab",
+          "Create ErrorBoundary component",
+          "Add error handling for Supabase queries",
+          "Add retry logic",
+          "Show empty states when no data (e.g., no awards)"
+        ],
+        "components_to_create": [
+          "components/ui/PlayerLoadingState.tsx",
+          "components/ui/ErrorBoundary.tsx",
+          "components/ui/EmptyState.tsx"
+        ],
+        "estimated_minutes": 30
+      },
+      {
+        "task_id": "PAGE-5",
+        "description": "Add SWR caching and optimize performance",
+        "actions": [
+          "Install SWR: npm install swr",
+          "Implement SWR for player data (24-hour cache)",
+          "Implement SWR for season stats (24-hour cache for completed seasons, 1-hour for current)",
+          "Add React.memo to expensive components (tables, charts)",
+          "Use useMemo for career totals calculation",
+          "Add image optimization for player headshots",
+          "Test page load time (<2 seconds)"
+        ],
+        "performance_targets": {
+          "initial_load": "<2 seconds",
+          "career_totals_calculation": "<100ms",
+          "no_layout_shift": "CLS < 0.1"
+        },
+        "estimated_minutes": 45
+      },
+      {
+        "task_id": "PAGE-VALIDATE",
+        "description": "Validate page integration",
+        "validation_steps": [
+          "Run npm run dev",
+          "Navigate to /players/[playerId] for an active player",
+          "Verify all sections render",
+          "Verify real data from Supabase loads",
+          "Verify career totals calculated correctly",
+          "Test expanding season rows (game logs load on demand)",
+          "Navigate to /players/[playerId] for a HOF player",
+          "Verify HOF badge shows",
+          "Test different positions (QB, RB, WR, TE, DEF) to verify position-specific stats",
+          "Test on mobile (responsive design)",
+          "Test error handling (disconnect Supabase, verify error UI)",
+          "Check Lighthouse score (Performance > 90)",
+          "Verify no console errors",
+          "Verify no TypeScript errors"
+        ],
+        "acceptance_criteria": [
+          "✅ Page loads in <2 seconds",
+          "✅ All data from Supabase displays",
+          "✅ Career totals calculated correctly",
+          "✅ Game logs load on demand (lazy loading)",
+          "✅ Position-specific stats display correctly",
+          "✅ Tables are sortable and expandable",
+          "✅ Charts render (sparklines, radar charts)",
+          "✅ Mobile responsive",
+          "✅ Error handling works",
+          "✅ No errors in console",
+          "✅ Lighthouse score > 90"
+        ],
+        "estimated_minutes": 45
+      }
+    ]
+  },
+
+  "deliverables": [
+    {
+      "phase": "Phase 2",
+      "items": [
+        "components/player/PlayerProfileLayout.tsx",
+        "components/player/PlayerHeroSection.tsx",
+        "components/player/QuickStatsBar.tsx",
+        "components/player/CareerTotalsCard.tsx",
+        "components/player/SeasonBySeasonTable.tsx",
+        "components/player/BiographicalInfoCard.tsx",
+        "components/player/AwardsTrophyCase.tsx",
+        "components/player/CareerTimeline.tsx",
+        "components/player/TransactionsHistory.tsx",
+        "components/player/AdvancedAnalyticsCard.tsx",
+        "stories/player/[10 story files].stories.tsx"
+      ]
+    },
+    {
+      "phase": "Phase 3",
+      "items": [
+        "app/(pages)/players/[playerId]/page.tsx",
+        "lib/calculate-career-totals.ts",
+        "components/ui/PlayerLoadingState.tsx",
+        "components/ui/ErrorBoundary.tsx",
+        "components/ui/EmptyState.tsx",
+        "Game log lazy loading",
+        "SWR caching for player data",
+        "Performance optimizations"
+      ]
+    }
+  ],
+
+  "success_criteria": [
+    "✅ All 10 components work in Storybook",
+    "✅ Position-specific stat displays work (QB, RB, WR/TE, DEF)",
+    "✅ Theme switcher changes all components",
+    "✅ Tables are sortable and expandable",
+    "✅ Charts render correctly (sparklines, radar charts)",
+    "✅ Page integrates all components",
+    "✅ Real Supabase data displays",
+    "✅ Career totals calculated from season stats",
+    "✅ Game logs load on demand",
+    "✅ Page loads in <2 seconds",
+    "✅ Mobile responsive",
+    "✅ Error handling complete",
+    "✅ Zero TypeScript errors",
+    "✅ Zero console errors",
+    "✅ Lighthouse score > 90"
+  ],
+
+  "timeline": {
+    "phase_2": "8 hours",
+    "phase_3": "4 hours",
+    "total": "12 hours"
+  },
+
+  "dependencies": {
+    "requires_from_phase1": [
+      "Next.js 15 app",
+      "Storybook 8 running",
+      "Theme system",
+      "Mock data library",
+      "Component generator",
+      "Supabase client configured",
+      "Recharts installed (for charts)"
+    ],
+    "npm_packages": [
+      "recharts (for sparklines and radar charts)",
+      "swr (for caching)"
+    ]
+  }
+}

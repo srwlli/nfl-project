@@ -1,0 +1,23 @@
+{
+  "feature_id": "PHASE1-FOUNDATION",
+  "communication_log": [],
+  "status_updates": [],
+  "blockers": [],
+  "handoff_ready": false,
+
+  "template": {
+    "log_entry": {
+      "timestamp": "ISO 8601 format",
+      "agent": "Agent-Foundation",
+      "message_type": "status_update | blocker | question | completion",
+      "message": "Description of update",
+      "context": {
+        "task_id": "TASK-X",
+        "phase": "Phase number",
+        "details": "Additional context"
+      }
+    }
+  },
+
+  "usage_instructions": "Append entries to communication_log array. Mark handoff_ready=true when all acceptance criteria pass."
+}

@@ -1,0 +1,367 @@
+{
+  "pageType": "Matchup Preview Pages (Pre-Game Analysis)",
+  "priority": "P1 - Important",
+  "pageCount": "~16 games per week (272 total for season)",
+  "dataReadiness": "85%",
+  "recommendedThemes": {
+    "primary": "Next Down Metrics (HUD)",
+    "alternative": ["Bold Vibrant", "Tech Forward", "Cyberpunk Holographic"]
+  },
+  "components": {
+    "layout": {
+      "MatchupPreviewLayout": {
+        "description": "Main wrapper for matchup preview pages",
+        "props": ["gameId", "children"],
+        "features": [
+          "Two-team split design",
+          "Responsive container",
+          "Countdown timer to kickoff",
+          "Share buttons"
+        ],
+        "files": ["components/matchup/matchup-preview-layout.tsx"]
+      }
+    },
+    "header": {
+      "MatchupHeader": {
+        "description": "Hero section with teams and game info",
+        "theme": "Bold Vibrant",
+        "features": [
+          "Large team logos (200x200px)",
+          "Team names and records",
+          "VS divider with game time",
+          "Network badge (CBS, FOX, NBC, ESPN)",
+          "Stadium name and city",
+          "Countdown to kickoff",
+          "Weather forecast"
+        ],
+        "props": ["homeTeam", "awayTeam", "game", "venue", "weather"],
+        "dataSource": "GET /games/:gameId + GET /teams + GET /stadiums + GET /game-weather",
+        "files": ["components/matchup/matchup-header.tsx"]
+      }
+    },
+    "bettingLines": {
+      "BettingLinesCard": {
+        "description": "Current betting lines and odds",
+        "theme": "Cyberpunk Holographic",
+        "lines": [
+          "Spread (opening/current)",
+          "Moneyline (home/away)",
+          "Over/Under (opening/current)",
+          "Movement indicator (line moved)"
+        ],
+        "features": [
+          "Multiple sportsbooks comparison",
+          "Line movement arrows",
+          "Best odds highlighter",
+          "Historical closing lines"
+        ],
+        "props": ["bettingLines[]", "game"],
+        "dataSource": "GET /game-betting-lines?gameId=:id",
+        "files": ["components/matchup/betting-lines-card.tsx"]
+      }
+    },
+    "teamComparison": {
+      "HeadToHeadStats": {
+        "description": "Side-by-side team stat comparison",
+        "theme": "Next Down Metrics (HUD)",
+        "stats": [
+          "Record (W-L-T)",
+          "Points Per Game",
+          "Points Allowed",
+          "Total Yards/Game",
+          "Pass Yards/Game",
+          "Rush Yards/Game",
+          "Turnover Differential",
+          "3rd Down %",
+          "Red Zone %"
+        ],
+        "features": [
+          "Horizontal comparison bars",
+          "Better stat highlighted (green)",
+          "Percentage bars",
+          "League rank badges (#5, #12, etc.)"
+        ],
+        "props": ["homeTeamStats", "awayTeamStats", "leagueAverages"],
+        "dataSource": "GET /team-season-stats?teamId=:id",
+        "files": ["components/matchup/head-to-head-stats.tsx"]
+      }
+    },
+    "keyPlayers": {
+      "KeyPlayersToWatch": {
+        "description": "Top players from each team",
+        "theme": "Tech Forward",
+        "players": {
+          "offense": [
+            "QB: Season stats, last 3 games",
+            "RB: Rushing leader",
+            "WR: Receiving leader",
+            "TE: Top target"
+          ],
+          "defense": [
+            "Pass Rusher: Sacks leader",
+            "Coverage: INT leader",
+            "Linebacker: Tackles leader"
+          ]
+        },
+        "features": [
+          "Player headshots",
+          "Season stats summary",
+          "Last 3 games trend",
+          "Injury status indicator",
+          "Link to player profile"
+        ],
+        "props": ["homeKeyPlayers[]", "awayKeyPlayers[]"],
+        "dataSource": "GET /player-season-cumulative-stats (top players by team)",
+        "files": ["components/matchup/key-players-to-watch.tsx"]
+      }
+    },
+    "injuries": {
+      "InjuryReport": {
+        "description": "Injury status for both teams",
+        "theme": "Next Down Metrics (HUD)",
+        "statuses": ["Out", "Doubtful", "Questionable", "Probable"],
+        "features": [
+          "Grouped by status",
+          "Color-coded (red/orange/yellow/green)",
+          "Position and name",
+          "Impact indicator (starter/backup)",
+          "Last updated timestamp"
+        ],
+        "props": ["homeInjuries[]", "awayInjuries[]", "lastUpdated"],
+        "dataSource": "GET /player-injury-status?teamId=:id",
+        "files": ["components/matchup/injury-report.tsx"]
+      }
+    },
+    "weather": {
+      "WeatherForecast": {
+        "description": "Game day weather conditions",
+        "theme": "Sunday Lights",
+        "conditions": [
+          "Temperature (°F)",
+          "Precipitation chance (%)",
+          "Wind speed and direction",
+          "Humidity",
+          "Game-time forecast icon"
+        ],
+        "features": [
+          "Large weather icon",
+          "Impact assessment (HIGH/MEDIUM/LOW)",
+          "Historical performance in similar conditions",
+          "Indoor/outdoor indicator"
+        ],
+        "props": ["weather", "stadium", "historicalPerformance"],
+        "dataSource": "GET /game-weather?gameId=:id + GET /stadiums",
+        "files": ["components/matchup/weather-forecast.tsx"]
+      }
+    },
+    "history": {
+      "RecentMatchups": {
+        "description": "Last 5 meetings between teams",
+        "theme": "Classic Almanac",
+        "features": [
+          "Game date and final score",
+          "Location (home/away/neutral)",
+          "Key stats from game",
+          "Series record (Team A leads 8-4)",
+          "Link to full game details"
+        ],
+        "props": ["recentGames[]", "seriesRecord"],
+        "dataSource": "GET /games?homeTeamId=X&awayTeamId=Y (last 5)",
+        "files": ["components/matchup/recent-matchups.tsx"]
+      }
+    },
+    "prediction": {
+      "GamePrediction": {
+        "description": "AI/statistical prediction with confidence",
+        "theme": "Cyberpunk Holographic",
+        "features": [
+          "Win probability percentage",
+          "Predicted final score",
+          "Confidence level (HIGH/MEDIUM/LOW)",
+          "Key factors (3-5 bullets)",
+          "X-factors (game-changing plays/players)"
+        ],
+        "props": ["prediction", "confidence", "factors[]"],
+        "dataSource": "Algorithm-based (calculate from team stats, trends, matchups)",
+        "files": ["components/matchup/game-prediction.tsx"],
+        "note": "Requires prediction algorithm development"
+      }
+    },
+    "storylines": {
+      "KeyStorylines": {
+        "description": "Main narratives for the game",
+        "theme": "Luxury Magazine",
+        "storylines": [
+          "Rivalry games",
+          "Playoff implications",
+          "Revenge games",
+          "Individual milestones",
+          "Streak opportunities",
+          "Coaching matchups"
+        ],
+        "features": [
+          "3-5 storylines per game",
+          "Icon for each type",
+          "Expandable details",
+          "Social sharing"
+        ],
+        "props": ["storylines[]"],
+        "dataSource": "Manual curation or algorithm-based",
+        "files": ["components/matchup/key-storylines.tsx"]
+      }
+    },
+    "trends": {
+      "TeamTrends": {
+        "description": "Recent form and patterns",
+        "theme": "Tech Forward",
+        "trends": [
+          "Last 5 games (W-L record)",
+          "Home/Away splits",
+          "Division record",
+          "Scoring trends (up/down)",
+          "ATS record (against the spread)",
+          "O/U record (over/under)"
+        ],
+        "features": [
+          "Visual trend lines",
+          "Hot/cold indicators",
+          "Comparison between teams"
+        ],
+        "props": ["homeTeamTrends", "awayTeamTrends"],
+        "dataSource": "Calculate from /games (last 5 games per team)",
+        "files": ["components/matchup/team-trends.tsx"]
+      }
+    },
+    "expertPicks": {
+      "ExpertPicks": {
+        "description": "Analyst predictions",
+        "theme": "Next Down Metrics (HUD)",
+        "features": [
+          "Expert name and photo",
+          "Predicted winner",
+          "Predicted score",
+          "Confidence level",
+          "Key reasoning (1-2 sentences)"
+        ],
+        "props": ["experts[]"],
+        "dataSource": "Manual entry or external API",
+        "files": ["components/matchup/expert-picks.tsx"],
+        "note": "Requires manual expert picks or external data source"
+      }
+    },
+    "shared": {
+      "TeamVsTeamBadge": {
+        "description": "Visual team matchup indicator",
+        "variants": ["horizontal", "vertical"],
+        "props": ["homeTeam", "awayTeam"],
+        "files": ["components/ui/team-vs-team-badge.tsx"]
+      },
+      "CountdownTimer": {
+        "description": "Live countdown to kickoff",
+        "features": [
+          "Days, hours, minutes, seconds",
+          "Switches to 'LIVE' when game starts",
+          "Updates every second"
+        ],
+        "props": ["gameTime", "currentTime"],
+        "files": ["components/ui/countdown-timer.tsx"]
+      },
+      "ImpactMeter": {
+        "description": "Visual indicator for impact/importance",
+        "levels": ["Low", "Medium", "High", "Critical"],
+        "props": ["level", "label"],
+        "files": ["components/ui/impact-meter.tsx"]
+      }
+    }
+  },
+  "dataFlow": {
+    "initialLoad": {
+      "game": "GET /games/:gameId",
+      "teams": "GET /teams (home + away)",
+      "teamStats": "GET /team-season-stats?teamId=:id",
+      "keyPlayers": "GET /player-season-cumulative-stats?teamId=:id (top 7 per team)",
+      "injuries": "GET /player-injury-status?teamId=:id",
+      "weather": "GET /game-weather?gameId=:id",
+      "bettingLines": "GET /game-betting-lines?gameId=:id",
+      "recentMatchups": "GET /games (filter by both teams)"
+    },
+    "refreshStrategy": {
+      "bettingLines": "15 minutes (odds update frequently)",
+      "weather": "1 hour",
+      "injuries": "1 hour",
+      "static": "24 hours (team stats, history)"
+    }
+  },
+  "routing": {
+    "url": "/games/[gameId]/preview",
+    "seoTitle": "{awayTeam} vs {homeTeam} Preview - Odds, Stats, Predictions | {siteName}",
+    "seoDescription": "Complete matchup preview for {awayTeam} vs {homeTeam}. View betting lines, injury report, key players, weather forecast, and expert predictions."
+  },
+  "sections": [
+    {
+      "name": "Matchup Header",
+      "order": 1,
+      "component": "MatchupHeader"
+    },
+    {
+      "name": "Betting Lines",
+      "order": 2,
+      "component": "BettingLinesCard",
+      "condition": "If betting lines available"
+    },
+    {
+      "name": "Key Storylines",
+      "order": 3,
+      "component": "KeyStorylines"
+    },
+    {
+      "name": "Team Comparison",
+      "order": 4,
+      "component": "HeadToHeadStats"
+    },
+    {
+      "name": "Key Players",
+      "order": 5,
+      "component": "KeyPlayersToWatch"
+    },
+    {
+      "name": "Injury Report",
+      "order": 6,
+      "component": "InjuryReport"
+    },
+    {
+      "name": "Weather",
+      "order": 7,
+      "component": "WeatherForecast",
+      "condition": "If outdoor stadium"
+    },
+    {
+      "name": "Team Trends",
+      "order": 8,
+      "component": "TeamTrends"
+    },
+    {
+      "name": "Recent Matchups",
+      "order": 9,
+      "component": "RecentMatchups"
+    },
+    {
+      "name": "Game Prediction",
+      "order": 10,
+      "component": "GamePrediction",
+      "condition": "If prediction algorithm available"
+    },
+    {
+      "name": "Expert Picks",
+      "order": 11,
+      "component": "ExpertPicks",
+      "condition": "If expert picks available"
+    }
+  ],
+  "technicalNotes": {
+    "stateManagement": "SWR for data fetching with automatic revalidation",
+    "caching": "15-minute TTL for betting lines, 1-hour for weather/injuries, 24-hour for stats",
+    "accessibility": "WCAG 2.1 AA compliant",
+    "seo": "Dynamic meta tags with team names, odds, and game details"
+  }
+}

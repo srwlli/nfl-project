@@ -1,0 +1,42 @@
+{
+  "feature_id": "AGENT7-STADIUM-PAGES",
+  "feature_name": "Stadium Pages",
+  "phase": 2,
+  "priority": "P2",
+  "assigned_agent": "Agent-7",
+
+  "overview": {
+    "description": "Build Stadium Pages showing venue information, capacity, surface type, weather data, home team stats at venue, and historical games. Build components in Storybook, then integrate into Next.js pages",
+    "page_type": "Stadium Pages (30 NFL stadiums)",
+    "route": "/stadium/[stadiumId] (dynamic route)",
+    "user_story": "As a fan, I want to see detailed stadium information including specs, home team advantage stats, and historical games played at the venue"
+  },
+
+  "components_to_build": [
+    {"name": "StadiumPageLayout", "description": "Main wrapper for stadium pages"},
+    {"name": "StadiumHeroSection", "description": "Hero with stadium photo, name, location, capacity"},
+    {"name": "StadiumInfoCard", "description": "Venue specs (capacity, surface, roof type, opened year)"},
+    {"name": "HomeTeamStatsCard", "description": "Home team record at venue, home field advantage metrics"},
+    {"name": "RecentGamesAtVenue", "description": "Recent games played at stadium (last 10)"},
+    {"name": "VenueWeatherHistory", "description": "Historical weather conditions at venue"}
+  ],
+
+  "data_requirements": {
+    "tables": ["stadiums", "teams", "games", "game_weather"],
+    "transformations": ["Calculate home record at venue", "Calculate avg attendance", "Calculate weather patterns"]
+  },
+
+  "acceptance_criteria": [
+    "✅ All 6 components render in Storybook",
+    "✅ Stadium specs display",
+    "✅ Home team stats calculated",
+    "✅ Recent games list",
+    "✅ Page loads in <2 seconds"
+  ],
+
+  "estimated_hours": {"phase_2_components": 6, "phase_3_page_integration": 4, "total": 10},
+
+  "references": {
+    "components_spec": "coderef/finalizing-elements/stadium-pages/"
+  }
+}

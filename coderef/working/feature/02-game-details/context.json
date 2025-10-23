@@ -1,0 +1,219 @@
+{
+  "feature_id": "AGENT2-GAME-DETAILS",
+  "feature_name": "Game Details Pages (Live, Completed, Scheduled)",
+  "phase": 2,
+  "priority": "P0",
+  "assigned_agent": "Agent-2",
+
+  "overview": {
+    "description": "Build Game Details page with 3 variants (live, completed, scheduled) showing comprehensive game data including box scores, play-by-play, team stats, analytics, and betting results. Build components in Storybook, then integrate into Next.js page with Supabase data",
+    "page_type": "Game Details (3 variants)",
+    "routes": [
+      "/game/[id] (dynamic route)",
+      "/game/[id]/live (live game view)",
+      "/game/[id]/completed (final game view)",
+      "/game/[id]/scheduled (upcoming game preview)"
+    ],
+    "user_story": "As a fan, I want to see comprehensive game details including live scores, player stats, play-by-play, and analytics so I can deeply analyze games"
+  },
+
+  "dependencies": {
+    "blocks": ["AGENT3-PLAYER-PROFILES"],
+    "blocked_by": ["PHASE1-FOUNDATION"],
+    "requires": [
+      "Next.js 15 app running",
+      "Storybook 8 configured",
+      "Theme system available",
+      "Mock data library (lib/mock-data.ts)",
+      "Component generator",
+      "Templates at coderef/finalizing-elements/game-details/"
+    ]
+  },
+
+  "tech_stack": {
+    "framework": "Next.js 15 App Router",
+    "components": "shadcn/ui (Button, Card, Badge, Tabs, Table)",
+    "styling": "Tailwind CSS v4 + theme variants",
+    "data": "Supabase (games, player_game_stats, team_game_stats, scoring_plays, play_by_play, game_betting_lines, game_rosters)",
+    "real_time": "Supabase Realtime (WebSocket subscriptions for live games)",
+    "state": "React Context + SWR for data fetching",
+    "charts": "Recharts (for WinProbabilityChart, DriveChart)"
+  },
+
+  "design_variants": {
+    "template_source": "coderef/finalizing-elements/game-details/template-next-down-metrics.tsx",
+    "page_variants": [
+      "Live Game - Real-time score with pulsing indicators, auto-refresh every 5s",
+      "Completed Game - Final score with quarter breakdown, winner highlight",
+      "Scheduled Game - Matchup preview with betting lines, weather forecast"
+    ],
+    "recommended_themes": {
+      "live": ["Next Down Metrics (HUD)", "Sunday Lights", "Bold Vibrant"],
+      "completed": ["Next Down Metrics (HUD)", "Bold Vibrant", "Cyberpunk Holographic"],
+      "scheduled": ["Next Down Metrics (HUD)", "Tech Forward", "Glassmorphism"]
+    },
+    "default_theme": "Next Down Metrics (HUD)"
+  },
+
+  "components_to_build": [
+    {
+      "name": "GameDetailsLayout",
+      "description": "Main page wrapper for all game detail pages with responsive container",
+      "props": ["gameId", "gameStatus", "children"],
+      "features": ["Responsive container (max-width: 1400px)", "Consistent header/footer", "Real-time update subscription (live games)", "Theme-aware styling"],
+      "story": "stories/game/GameDetailsLayout.stories.tsx"
+    },
+    {
+      "name": "GameHeader",
+      "description": "Top section showing teams, score, game info (3 variants)",
+      "props": ["homeTeam", "awayTeam", "gameStatus", "venue", "gameDate"],
+      "variants": ["live", "completed", "scheduled"],
+      "story": "stories/game/GameHeader.stories.tsx"
+    },
+    {
+      "name": "TabNavigation",
+      "description": "8-tab navigation for organizing game content",
+      "tabs": ["Game Summary", "Box Score", "Play-by-Play", "Team Stats", "Player Stats", "Scoring Summary", "Game Info", "Videos"],
+      "props": ["activeTab", "onTabChange", "availableTabs"],
+      "story": "stories/game/TabNavigation.stories.tsx"
+    },
+    {
+      "name": "PassingStatsTable",
+      "description": "Passing statistics table with sortable columns",
+      "columns": ["Player", "C/ATT", "YDS", "AVG", "TD", "INT", "SACKS", "RTG", "LONG"],
+      "data_source": "GET /player-game-stats?gameId=:id&category=passing",
+      "story": "stories/game/PassingStatsTable.stories.tsx"
+    },
+    {
+      "name": "RushingStatsTable",
+      "description": "Rushing statistics table",
+      "columns": ["Player", "CAR", "YDS", "AVG", "TD", "LONG", "FUM", "1ST"],
+      "data_source": "GET /player-game-stats?gameId=:id&category=rushing",
+      "story": "stories/game/RushingStatsTable.stories.tsx"
+    },
+    {
+      "name": "ReceivingStatsTable",
+      "description": "Receiving statistics table",
+      "columns": ["Player", "REC", "TAR", "YDS", "AVG", "TD", "LONG", "1ST"],
+      "data_source": "GET /player-game-stats?gameId=:id&category=receiving",
+      "story": "stories/game/ReceivingStatsTable.stories.tsx"
+    },
+    {
+      "name": "DefenseStatsTable",
+      "description": "Defensive statistics table",
+      "columns": ["Player", "TACK", "AST", "SACKS", "TFL", "INT", "PD", "FF", "FR"],
+      "data_source": "GET /player-game-stats?gameId=:id&category=defense",
+      "story": "stories/game/DefenseStatsTable.stories.tsx"
+    },
+    {
+      "name": "TeamStatsComparison",
+      "description": "Side-by-side team stats with visual bars",
+      "stats": ["First Downs", "Total Yards", "Passing Yards", "Rushing Yards", "Penalties", "Turnovers", "Time of Possession", "3rd Down Efficiency", "Red Zone Efficiency"],
+      "data_source": "GET /team-game-stats?gameId=:id",
+      "story": "stories/game/TeamStatsComparison.stories.tsx"
+    },
+    {
+      "name": "ScoringTimeline",
+      "description": "Chronological list of all scoring plays",
+      "features": ["Vertical timeline with team colors", "Play description", "Score after each play", "Drive info (plays, yards, time)", "Quarter indicators"],
+      "data_source": "GET /scoring-plays?gameId=:id",
+      "story": "stories/game/ScoringTimeline.stories.tsx"
+    },
+    {
+      "name": "PlayByPlayFeed",
+      "description": "Drive-by-drive collapsible play-by-play",
+      "features": ["Collapsible drives", "Down & distance", "EPA/WPA badges", "Scoring play highlights", "Turnover highlights"],
+      "data_source": "GET /play-by-play?gameId=:id",
+      "story": "stories/game/PlayByPlayFeed.stories.tsx"
+    },
+    {
+      "name": "WinProbabilityChart",
+      "description": "Line chart showing win probability over time",
+      "library": "Recharts",
+      "features": ["Interactive line chart", "Hover to see exact probability", "Key moment indicators", "Team colors for lines"],
+      "data_source": "GET /play-by-play?gameId=:id (calculate WP from EPA)",
+      "story": "stories/game/WinProbabilityChart.stories.tsx"
+    },
+    {
+      "name": "GameInformationCard",
+      "description": "Game metadata (venue, weather, officials)",
+      "sections": ["Venue (stadium, city, attendance)", "Weather (temp, conditions, wind)", "Broadcast (network, announcers)", "Officials (referee, umpire, etc.)"],
+      "data_source": "GET /games/:gameId",
+      "story": "stories/game/GameInformationCard.stories.tsx"
+    }
+  ],
+
+  "data_requirements": {
+    "tables": [
+      "games (id, home_team_id, away_team_id, home_score, away_score, status, quarter, time_remaining, date, venue_id)",
+      "teams (id, team_abbr, team_name, team_logo_url, primary_color, record)",
+      "team_game_stats (game_id, team_id, first_downs, total_yards, passing_yards, rushing_yards, penalties, turnovers, possession_time, third_down_pct, red_zone_pct)",
+      "player_game_stats (player_id, game_id, passing_yards, rushing_yards, receiving_yards, touchdowns, interceptions, tackles, sacks, etc.)",
+      "scoring_plays (game_id, team_id, quarter, time, description, score_after, drive_plays, drive_yards, drive_time)",
+      "play_by_play (game_id, play_id, quarter, time, down, distance, yard_line, description, epa, wpa, success)",
+      "game_betting_lines (game_id, spread, over_under, moneyline_home, moneyline_away)",
+      "game_rosters (game_id, team_id, player_id, position, jersey_number, active)"
+    ],
+    "real_time": {
+      "subscribe_to": "games table (WHERE game_id = :id AND status = 'in_progress')",
+      "events": ["UPDATE"],
+      "refresh_interval": "5 seconds (fallback)"
+    }
+  },
+
+  "acceptance_criteria": [
+    "✅ All 12 components render in Storybook with mock data",
+    "✅ 3 page variants work (live, completed, scheduled)",
+    "✅ Theme switcher changes all components",
+    "✅ Controls in Storybook stories work",
+    "✅ Tables are sortable and filterable",
+    "✅ Charts render correctly (WinProbability with Recharts)",
+    "✅ Mobile responsive (breakpoints at 768px, 480px)",
+    "✅ Page integrates components with real Supabase data",
+    "✅ Real-time updates work for live games (WebSocket subscription)",
+    "✅ Page loads in <2 seconds",
+    "✅ Zero TypeScript errors",
+    "✅ Zero accessibility errors (a11y addon)"
+  ],
+
+  "estimated_hours": {
+    "phase_2_components": 10,
+    "phase_3_page_integration": 4,
+    "total": 14
+  },
+
+  "deliverables": [
+    {
+      "phase": 2,
+      "name": "Storybook Components",
+      "items": [
+        "12 components in components/game/ folder",
+        "12 stories in stories/game/ folder",
+        "All 3 page variants implemented",
+        "Mock data integration",
+        "Recharts integration for charts"
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Next.js Page",
+      "items": [
+        "app/(pages)/game/[id]/page.tsx (dynamic route with 3 variants)",
+        "Real Supabase data integration",
+        "WebSocket real-time updates for live games",
+        "Error handling and loading states",
+        "SWR caching for completed games (24 hours)"
+      ]
+    }
+  ],
+
+  "references": {
+    "template": "coderef/finalizing-elements/game-details/template-next-down-metrics.tsx",
+    "components_spec": "coderef/finalizing-elements/game-details/components.json",
+    "data_requirements_live": "coderef/finalizing-elements/game-details/live/live-game-data-requirements.md",
+    "data_requirements_completed": "coderef/finalizing-elements/game-details/completed/completed-game-data-requirements.md",
+    "data_requirements_scheduled": "coderef/finalizing-elements/game-details/scheduled/scheduled-game-data-requirements.md",
+    "themes_doc": "coderef/finalizing-elements/THEMES/README.md",
+    "backend_schema": "types/database.ts"
+  }
+}

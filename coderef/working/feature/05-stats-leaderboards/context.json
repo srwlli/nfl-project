@@ -1,0 +1,56 @@
+{
+  "feature_id": "AGENT5-STATS-LEADERBOARDS",
+  "feature_name": "Stats & Leaderboards Pages",
+  "phase": 2,
+  "priority": "P1",
+  "assigned_agent": "Agent-5",
+
+  "overview": {
+    "description": "Build Stats & Leaderboards pages showing season leaders, weekly top performers, player/team comparisons, stat trends, and record books. Build components in Storybook, then integrate into Next.js pages with Supabase data",
+    "page_type": "Stats & Leaderboards (Multiple categories)",
+    "routes": ["/stats/[category]", "/stats/weekly/[week]", "/stats/compare", "/stats/records"],
+    "user_story": "As a fan, I want to see statistical leaderboards and compare players/teams so I can analyze performance across the league"
+  },
+
+  "components_to_build": [
+    {"name": "StatsPageLayout", "description": "Main wrapper with category navigation and season selector"},
+    {"name": "LeaderboardTable", "description": "Main leaderboard table with rankings (Passing, Rushing, Receiving, Defense)"},
+    {"name": "WeeklyLeadersCard", "description": "Top 5 performers for specific week"},
+    {"name": "StatsFilterPanel", "description": "Filter sidebar (season, position, team, minimums)"},
+    {"name": "PlayerComparisonCard", "description": "Side-by-side player comparison with radar charts"},
+    {"name": "TeamComparisonGrid", "description": "All 32 teams stats comparison"},
+    {"name": "StatTrendChart", "description": "Line chart showing week-by-week stat progression"},
+    {"name": "PositionRadarChart", "description": "Radar chart for position-specific stats with percentiles"}
+  ],
+
+  "data_requirements": {
+    "tables": ["player_season_cumulative_stats", "player_game_stats", "team_season_stats", "weekly_leaders (view)"],
+    "transformations": [
+      "Calculate percentile rankings by position",
+      "Calculate active streaks from game logs",
+      "Calculate single-game/season/career records",
+      "Calculate league averages by position"
+    ]
+  },
+
+  "acceptance_criteria": [
+    "✅ All 8 components render in Storybook",
+    "✅ Tables sortable and filterable",
+    "✅ Charts render (Recharts line/radar charts)",
+    "✅ Rank badges styled (#1 gold, #2 silver, #3 bronze)",
+    "✅ Player/team comparison works (up to 3 players)",
+    "✅ Page loads in <2 seconds",
+    "✅ Zero TypeScript/console errors"
+  ],
+
+  "estimated_hours": {
+    "phase_2_components": 8,
+    "phase_3_page_integration": 4,
+    "total": 12
+  },
+
+  "references": {
+    "components_spec": "coderef/finalizing-elements/stats/components.json",
+    "themes_doc": "coderef/finalizing-elements/THEMES/README.md"
+  }
+}
