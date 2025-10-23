@@ -176,6 +176,123 @@ function detectRegimeChange(values, mean, stdDev, k = 0.5, h = 4) {
 }
 
 /**
+ * Task 8 (V4): RB Fantasy Decomposition
+ *
+ * Calculates RB fantasy floor using component model instead of pooled efficiency.
+ * Separates rushing fantasy, receiving fantasy, and TD scoring for independent projections.
+ *
+ * Theory:
+ * - Pooled efficiency ignores role changes (3rd-down back vs early-down back)
+ * - Mid-season script changes affect rushing vs receiving usage differently
+ * - Component model adapts to role shifts more accurately
+ *
+ * Components:
+ * 1. Rushing Fantasy = (projectedRushAttempts × rushYds/Att + projectedRushTDs × 6) × 0.1
+ * 2. Receiving Fantasy = (projectedTargets × recYds/Target + projectedRecTDs × 6) × 0.1
+ * 3. Total Fantasy = Rush + Rec
+ *
+ * @param {Array} seasonStats - Full season game stats
+ * @param {Array} recentGames - Recent form games
+ * @param {number} opponentFactor - Defensive matchup modifier
+ * @param {number} environmentMod - Weather/venue modifier
+ * @param {number} trendFactor - Trend momentum
+ * @returns {Object} { floor, expected, ceiling, components }
+ */
+async function calculateRBFantasyDecomposition(seasonStats, recentGames, opponentFactor, environmentMod, trendFactor) {
+  // Component 1: Rushing fantasy (yards + TDs)
+  const rushAttempts = {
+    season: seasonStats.map(g => g.rushing_attempts || 0).filter(v => v > 0),
+    recent: recentGames.map(g => g.rushing_attempts || 0).filter(v => v > 0)
+  }
+
+  const rushYards = {
+    season: seasonStats.map(g => g.rushing_yards || 0),
+    recent: recentGames.map(g => g.rushing_yards || 0)
+  }
+
+  const rushTDs = {
+    season: seasonStats.map(g => g.rushing_touchdowns || 0),
+    recent: recentGames.map(g => g.rushing_touchdowns || 0)
+  }
+
+  // Component 2: Receiving fantasy (yards + TDs)
+  const recTargets = {
+    season: seasonStats.map(g => g.receiving_targets || 0).filter(v => v > 0),
+    recent: recentGames.map(g => g.receiving_targets || 0).filter(v => v > 0)
+  }
+
+  const recYards = {
+    season: seasonStats.map(g => g.receiving_yards || 0),
+    recent: recentGames.map(g => g.receiving_yards || 0)
+  }
+
+  const recTDs = {
+    season: seasonStats.map(g => g.receiving_touchdowns || 0),
+    recent: recentGames.map(g => g.receiving_touchdowns || 0)
+  }
+
+  // Calculate projected opportunities (60% recent, 40% season)
+  const projRushAttempts = rushAttempts.recent.length > 0 && rushAttempts.season.length > 0
+    ? 0.6 * (rushAttempts.recent.reduce((a,b) => a+b, 0) / rushAttempts.recent.length) +
+      0.4 * (rushAttempts.season.reduce((a,b) => a+b, 0) / rushAttempts.season.length)
+    : 0
+
+  const projRecTargets = recTargets.recent.length > 0 && recTargets.season.length > 0
+    ? 0.6 * (recTargets.recent.reduce((a,b) => a+b, 0) / recTargets.recent.length) +
+      0.4 * (recTargets.season.reduce((a,b) => a+b, 0) / recTargets.season.length)
+    : 0
+
+  // Calculate efficiency rates (yards per opportunity)
+  const rushYdsPerAtt = rushAttempts.season.reduce((a,b) => a+b, 0) > 0
+    ? rushYards.season.reduce((a,b) => a+b, 0) / rushAttempts.season.reduce((a,b) => a+b, 0)
+    : 0
+
+  const recYdsPerTarget = recTargets.season.reduce((a,b) => a+b, 0) > 0
+    ? recYards.season.reduce((a,b) => a+b, 0) / recTargets.season.reduce((a,b) => a+b, 0)
+    : 0
+
+  // Calculate TD rates
+  const rushTDRate = rushAttempts.season.reduce((a,b) => a+b, 0) > 0
+    ? rushTDs.season.reduce((a,b) => a+b, 0) / rushAttempts.season.reduce((a,b) => a+b, 0)
+    : 0
+
+  const recTDRate = recTargets.season.reduce((a,b) => a+b, 0) > 0
+    ? recTDs.season.reduce((a,b) => a+b, 0) / recTargets.season.reduce((a,b) => a+b, 0)
+    : 0
+
+  // Project component yards with modifiers
+  const projRushYards = projRushAttempts * rushYdsPerAtt * opponentFactor * environmentMod * trendFactor
+  const projRecYards = projRecTargets * recYdsPerTarget * opponentFactor * environmentMod * trendFactor
+
+  // Project TDs
+  const projRushTDs = projRushAttempts * rushTDRate
+  const projRecTDs = projRecTargets * recTDRate
+
+  // Convert to fantasy points (0.1 per yard, 6 per TD)
+  const rushFantasy = (projRushYards * 0.1) + (projRushTDs * 6)
+  const recFantasy = (projRecYards * 0.1) + (projRecTDs * 6)
+  const totalFantasy = rushFantasy + recFantasy
+
+  return {
+    expected: totalFantasy,
+    components: {
+      rushing: {
+        attempts: projRushAttempts,
+        yards: projRushYards,
+        touchdowns: projRushTDs,
+        fantasy: rushFantasy
+      },
+      receiving: {
+        targets: projRecTargets,
+        yards: projRecYards,
+        touchdowns: projRecTDs,
+        fantasy: recFantasy
+      }
+    }
+  }
+}
+
+/**
  * Get opponent team for a game
  */
 function getOpponent(game, teamId) {
@@ -1175,9 +1292,30 @@ async function calculateStatFloor(seasonStats, recentGames, statField, opportuni
     }
   }
 
-  // Phase 2.2: Opportunity-based projections for volume-dependent stats
+  // Task 8 (V4): RB Fantasy Decomposition - special handling for RB fantasy_points
+  // Use component model instead of pooled total_touches efficiency
   let expected
-  if (opportunityField && (statField.includes('receiving') || statField.includes('rushing') || statField.includes('passing'))) {
+  let rbDecomposition = null
+
+  if (position === 'RB' && statField === 'fantasy_points') {
+    // Calculate opponent and environment modifiers first (needed for decomposition)
+    let opponentFactor = 1.0
+    if (opponentId) {
+      // For RBs, use rushing opponent factor (most of their fantasy comes from rushing)
+      opponentFactor = await calculateOpponentFactor(opponentId, 'rushing', position, season, week)
+    }
+
+    // Call decomposition function
+    rbDecomposition = await calculateRBFantasyDecomposition(
+      seasonStats,
+      recentGames,
+      opponentFactor,
+      environmentMod.modifier,
+      trendFactor
+    )
+
+    expected = rbDecomposition.expected
+  } else if (opportunityField && (statField.includes('receiving') || statField.includes('rushing') || statField.includes('passing'))) {
     // Phase 2.4 (V2): Special handling for RB total touches (rushing + receiving)
     let seasonOpportunities, recentOpportunities
 
@@ -1246,11 +1384,15 @@ async function calculateStatFloor(seasonStats, recentGames, statField, opportuni
   }
 
   // Phase 2.3 (V2): Apply trend momentum adjustment
-  expected = expected * trendFactor
+  // Task 8 (V4): Skip for RB fantasy_points (already applied in decomposition)
+  if (!(position === 'RB' && statField === 'fantasy_points')) {
+    expected = expected * trendFactor
+  }
 
   // Phase 1.1: Apply opponent defensive efficiency factor
+  // Task 8 (V4): Skip for RB fantasy_points (already applied in decomposition)
   let opponentFactor = 1.0
-  if (opponentId) {
+  if (opponentId && !(position === 'RB' && statField === 'fantasy_points')) {
     let statCategory = 'passing'
     if (statField.includes('rushing')) {
       statCategory = 'rushing'
