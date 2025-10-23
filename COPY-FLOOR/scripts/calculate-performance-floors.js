@@ -796,6 +796,7 @@ async function calculateStatFloor(seasonStats, recentGames, statField, opportuni
   const recentAvg = recentValues.reduce((a, b) => a + b, 0) / recentValues.length
 
   // Phase 2.3 (V2): Calculate trend momentum (simple slope)
+  // Task 3 (V4): Standardized trend factor - normalize by seasonStdDev for interpretable effect sizes
   let trendFactor = 1.0
   const minGamesForTrend = CONFIG.trend_momentum.min_games_for_trend
   if (recentGames.length >= minGamesForTrend) {
@@ -814,12 +815,18 @@ async function calculateStatFloor(seasonStats, recentGames, statField, opportuni
 
       const avgSlope = sumSlope / (values.length - 1)
 
-      // Convert slope to percentage change relative to recent average
-      if (recentAvg > 0) {
-        const slopePercent = avgSlope / recentAvg
-        const maxAdjustment = CONFIG.trend_momentum.max_trend_adjustment
-        // Apply configured cap based on momentum
-        trendFactor = 1 + (slopePercent * maxAdjustment)
+      // Task 3 (V4): Normalize slope by seasonStdDev instead of recentAvg
+      // This produces statistically interpretable effect sizes in σ units
+      // Example: slope = +10 yds/game, σ = 50 yds → +0.2σ trend
+      if (seasonStdDev > 0) {
+        const normalizedSlope = avgSlope / seasonStdDev // Effect size in σ units
+        const trendSensitivity = CONFIG.trend_momentum.trend_sensitivity || 0.5
+        // trendFactor = 1 + (normalizedSlope × sensitivity)
+        // Example: +0.3σ trend × 0.5 sensitivity = +15% boost
+        trendFactor = 1 + (normalizedSlope * trendSensitivity)
+
+        // Cap at ±30% to prevent extreme swings
+        const maxAdjustment = CONFIG.trend_momentum.max_trend_adjustment || 0.30
         const maxFactor = 1 + maxAdjustment
         const minFactor = 1 - maxAdjustment
         trendFactor = Math.min(maxFactor, Math.max(minFactor, trendFactor))

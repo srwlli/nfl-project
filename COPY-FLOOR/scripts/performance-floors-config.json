@@ -40,7 +40,8 @@
   },
   "trend_momentum": {
     "min_games_for_trend": 2,
-    "max_trend_adjustment": 0.2
+    "max_trend_adjustment": 0.30,
+    "trend_sensitivity": 0.5
   },
   "percentile_thresholds": {
     "floor_percentile": 0.15,
