@@ -1013,6 +1013,7 @@ async function calculateStatFloor(seasonStats, recentGames, statField, opportuni
 
   // Phase 2.3 (V2): Calculate trend momentum (simple slope)
   // Task 3 (V4): Standardized trend factor - normalize by seasonStdDev for interpretable effect sizes
+  // Task 4 (V4): Time-aware trend detection - exponential decay by actual days between games
   let trendFactor = 1.0
   const minGamesForTrend = CONFIG.trend_momentum.min_games_for_trend
   if (recentGames.length >= minGamesForTrend) {
@@ -1023,13 +1024,41 @@ async function calculateStatFloor(seasonStats, recentGames, statField, opportuni
       .filter(v => v !== null && v !== undefined && !isNaN(v))
 
     if (values.length >= minGamesForTrend) {
-      // Calculate simple slope (sum of differences between consecutive games)
-      let sumSlope = 0
+      // Task 4 (V4): Time-aware weighted slope using exponential decay
+      // Games are weighted by exp(-λ × days_ago), where λ ≈ 0.1 (10-day half-life)
+      // This properly accounts for bye weeks and calendar gaps
+
+      // Calculate time-weighted slope (weighted linear regression)
+      let sumWeightedSlope = 0
+      let sumWeights = 0
+
+      // Use exponential time decay: weight = exp(-decay_rate × days_ago)
+      // decay_rate = ln(2) / half_life, half_life ≈ 10 days → decay_rate ≈ 0.0693
+      const decayRate = 0.0693 // ~10-day half-life (game 10 days ago gets 50% weight)
+      const now = new Date()
+
       for (let i = 0; i < values.length - 1; i++) {
-        sumSlope += (values[i] - values[i + 1]) // Positive if improving (recent > older)
+        // Calculate days since this game
+        const gameDate = sortedRecentGames[i].game_date
+          ? new Date(sortedRecentGames[i].game_date)
+          : null
+
+        // If game_date not available, fall back to week-based approximation (7 days per week)
+        const daysAgo = gameDate
+          ? (now - gameDate) / (1000 * 60 * 60 * 24)
+          : 7 * (week - sortedRecentGames[i].week) // Approximate: 7 days per week
+
+        // Exponential decay weight
+        const weight = Math.exp(-decayRate * daysAgo)
+
+        // Weighted slope contribution
+        const slope = values[i] - values[i + 1] // Positive if improving
+        sumWeightedSlope += slope * weight
+        sumWeights += weight
       }
 
-      const avgSlope = sumSlope / (values.length - 1)
+      // Average weighted slope
+      const avgSlope = sumWeights > 0 ? sumWeightedSlope / sumWeights : 0
 
       // Task 3 (V4): Normalize slope by seasonStdDev instead of recentAvg
       // This produces statistically interpretable effect sizes in σ units
