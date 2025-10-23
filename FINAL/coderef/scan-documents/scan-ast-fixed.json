@@ -1,8 +1,2253 @@
-(node:14752) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/willh/Desktop/projects%20-%20current-location/coderef-system/packages/generators/dist/index.js is not specified and it doesn't parse as CommonJS.
+(node:44888) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/willh/Desktop/projects%20-%20current-location/coderef-system/packages/generators/dist/index.js is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to C:\Users\willh\Desktop\projects - current-location\coderef-system\packages\generators\package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)
-❌ Unexpected error: No files found matching patterns: ../next-scraper/FINAL/**/*.{js}, !**/node_modules/**, !**/dist/**, !**/build/**, !**/coverage/**
-💡 Use --verbose for detailed error information
-💡 Run with --help for usage information
-
+[
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\TEAMS\\scripts\\normalize-team-data.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "TEAMS\\scripts\\utils\\supabase-client.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "TEAMS\\scripts\\utils\\logger.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\TEAMS\\scripts\\get-team-roster.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\TEAMS\\scripts\\check-teams-with-stats.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\TEAMS\\scripts\\analyze-teams-schema.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\TEAMS\\scripts\\01-teams.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "TEAMS\\utils\\supabase-client.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "TEAMS\\utils\\logger.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\TEAM-SEASON-STATS\\scripts\\standings-scraper.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "TEAM-SEASON-STATS\\utils\\supabase-client.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "TEAM-SEASON-STATS\\utils\\logger.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\TEAM-GAME-STATS\\scripts\\game-stats-scraper.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "TEAM-GAME-STATS\\utils\\espn-api.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "TEAM-GAME-STATS\\utils\\supabase-client.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "TEAM-GAME-STATS\\utils\\logger.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "TEAM-GAME-STATS\\utils\\fantasy-calculator.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "TEAM-GAME-STATS\\utils\\player-creator.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\TEAM-ALIASES\\scripts\\team-normalizer.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "TEAM-ALIASES\\scripts\\supabase-client.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "TEAM-ALIASES\\scripts\\logger.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\STADIUMS\\scripts\\game-stats-scraper.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "STADIUMS\\utils\\espn-api.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "STADIUMS\\utils\\supabase-client.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "STADIUMS\\utils\\logger.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "STADIUMS\\utils\\fantasy-calculator.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "STADIUMS\\utils\\player-creator.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\STADIUMS\\scripts\\02-stadiums.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\SEASONS\\scripts\\04-schedule.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "SEASONS\\utils\\espn-api.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "SEASONS\\utils\\supabase-client.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "SEASONS\\utils\\logger.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\SCRIPTS\\FLOOR\\validate-floors.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "SCRIPTS\\FLOOR\\utils\\supabase-client.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "SCRIPTS\\FLOOR\\utils\\temporal-smoothing.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\SCRIPTS\\FLOOR\\train-feature-weights.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "SCRIPTS\\FLOOR\\utils\\feature-importance.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\SCRIPTS\\FLOOR\\debug-floor-query.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\SCRIPTS\\FLOOR\\calculate-performance-floors.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\SCRIPTS\\FLOOR\\calculate-performance-floors-props.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\SCRIPTS\\FLOOR\\utils\\feature-importance.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\SCORING-PLAYS\\scripts\\game-stats-scraper.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "SCORING-PLAYS\\utils\\espn-api.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "SCORING-PLAYS\\utils\\supabase-client.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "SCORING-PLAYS\\utils\\logger.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "SCORING-PLAYS\\utils\\fantasy-calculator.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "SCORING-PLAYS\\utils\\player-creator.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\POSITIONS\\scripts\\03-players.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "POSITIONS\\utils\\espn-api.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "POSITIONS\\utils\\supabase-client.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "POSITIONS\\utils\\logger.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\PLAYERS\\utils\\player-creator.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "PLAYERS\\utils\\logger.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "PLAYERS\\utils\\supabase-client.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\PLAYERS\\scripts\\list-missing-players.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "PLAYERS\\scripts\\utils\\supabase-client.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\PLAYERS\\scripts\\backfill-missing-players.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "PLAYERS\\scripts\\utils\\logger.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "PLAYERS\\scripts\\utils\\player-creator.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\PLAYERS\\scripts\\analyze-players-schema.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\PLAYERS\\scripts\\add-missing-players-by-id.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\PLAYERS\\scripts\\03-players.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "PLAYERS\\utils\\espn-api.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\PLAYER-TEAMS\\scripts\\roster-updates-scraper.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "PLAYER-TEAMS\\utils\\espn-api.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "PLAYER-TEAMS\\utils\\supabase-client.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "PLAYER-TEAMS\\utils\\logger.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\PLAYER-INJURIES\\scripts\\injuries-scraper.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "PLAYER-INJURIES\\utils\\espn-api.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "PLAYER-INJURIES\\utils\\supabase-client.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "PLAYER-INJURIES\\utils\\logger.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "PLAYER-INJURIES\\utils\\rate-limiter.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\PLAYER-GAME-STATS\\scripts\\weekly-aggregation.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "PLAYER-GAME-STATS\\utils\\supabase-client.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "PLAYER-GAME-STATS\\utils\\logger.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\PLAYER-GAME-STATS\\scripts\\game-stats-scraper.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "PLAYER-GAME-STATS\\utils\\espn-api.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "PLAYER-GAME-STATS\\utils\\fantasy-calculator.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "PLAYER-GAME-STATS\\utils\\player-creator.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\PLAYER-GAME-STATS\\scripts\\calculate-performance-floors.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "PLAYER-GAME-STATS\\scripts\\utils\\supabase-client.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\PLAYER-GAME-STATS\\scripts\\calculate-performance-floors-props.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\GAMES\\scripts\\live-games-scraper.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "GAMES\\utils\\espn-api.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "GAMES\\utils\\supabase-client.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "GAMES\\utils\\logger.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\GAMES\\scripts\\get-live-scoreboard.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "GAMES\\scripts\\utils\\supabase-client.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "GAMES\\scripts\\utils\\logger.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\GAMES\\scripts\\04-schedule.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\GAME-WEATHER\\scripts\\game-stats-scraper.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "GAME-WEATHER\\utils\\espn-api.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "GAME-WEATHER\\utils\\supabase-client.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "GAME-WEATHER\\utils\\logger.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "GAME-WEATHER\\utils\\fantasy-calculator.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "GAME-WEATHER\\utils\\player-creator.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\GAME-ROSTERS\\utils\\player-creator.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "GAME-ROSTERS\\utils\\logger.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "GAME-ROSTERS\\utils\\supabase-client.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\GAME-ROSTERS\\scripts\\get-gameday-roster.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "GAME-ROSTERS\\scripts\\utils\\supabase-client.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "GAME-ROSTERS\\scripts\\utils\\logger.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\GAME-ROSTERS\\scripts\\game-stats-scraper.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "GAME-ROSTERS\\utils\\espn-api.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "GAME-ROSTERS\\utils\\fantasy-calculator.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "GAME-ROSTERS\\utils\\player-creator.js",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "getSupabaseClient",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "log",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "repeat",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "eq",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "select",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "from",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "update",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "error",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "single",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "delete",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "exit",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "slice",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "includes",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "verifyNormalization",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "normalizeTeamData",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "deleteDuplicateTeam",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "main",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "toUpperCase",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "or",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "lte",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "map",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "in",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "forEach",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "filter",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "isArray",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "formatHeight",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateExperience",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "groupByPosition",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "order",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "fetchTeamRoster",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "push",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "keys",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "floor",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "getFullYear",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "padEnd",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "find",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "startsWith",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "split",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "stringify",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "displayRoster",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "fetchAllTeamRosters",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "replace",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "sort",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "join",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "checkTeams",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "limit",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "substring",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "padStart",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "toString",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "fileURLToPath",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "dirname",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "now",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "logScriptStart",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "info",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "parse",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "readFileSync",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "getRecordCount",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "warn",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "logScriptEnd",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "reduce",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "entries",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "insertBatch",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "toFixed",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "set",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "get",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "values",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "has",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "parseFloat",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateTeamRecords",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateDivisionRankings",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateConferenceRankings",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "transformToTeamSeasonStats",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "upsertBatch",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "parseInt",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "scrapeStandings",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "isNaN",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "parseNumber",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "parseTimeToSeconds",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "parseClockToSeconds",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "parseScore",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "upsert",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "match",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "toLowerCase",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "parseStat",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "round",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "max",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateFantasyPoints",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "assign",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "fetchGameSummary",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "extractAndUpsertVenue",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "extractQuarterScores",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "extractTeamStats",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "extractScoringPlays",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "extractGameWeather",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "extractPlayerStats",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "extractPlayerIdsFromGame",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "getExistingPlayers",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "autoCreatePlayers",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "extractGameRosters",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "scrapeGameStats",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "scrapeWeekStats",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "trim",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "debug",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "normalizeTeamId",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "getTeamAliases",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "getAllCanonicalTeamIds",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "fetchSchedule",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "transformGameData",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "localeCompare",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculatePositionStats",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateEWMAProjection",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "applyHierarchicalAdjustment",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateModifiedPredictionInterval",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "abs",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "min",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "toISOString",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "backtestWeek",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateMetrics",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "generateMarkdownReport",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "writeFileSync",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "catch",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "trainFeatureImportanceModel",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\SCRIPTS\\FLOOR\\format-floors-output.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\SCRIPTS\\FLOOR\\debug-performance-floors-data.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "config",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "createClient",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "lt",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "debugAllData",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "gte",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "debugQuery",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "logError",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "getModifierValue",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "validateDataCompleteness",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "getOpponent",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateEnvironmentModifier",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateTeamFloors",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "displayTeamFloors",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "all",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "getStatCategories",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculatePlayerFloors",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateStatFloor",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "sqrt",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "pow",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateOpponentFactor",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "assessConfidenceLevel",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateConfidence",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateFloorsForGame",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateFloorsForWeek",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculatePlayerProps",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "displayProps",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "getPropsForPosition",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateProp",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "roundFn",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "String",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\SCRIPTS\\FLOOR\\utils\\temporal-smoothing.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateEWMA",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "getPositionAlpha",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateAdaptiveEWMA",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateEWMATrend",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\SCRIPTS\\FLOOR\\utils\\hierarchical-stats.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateMean",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateVariance",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateWithinPlayerVariance",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateBetweenPlayerVariance",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "applyEmpiricalBayesShrinkage",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "flat",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "train",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "predict",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "meanSquaredError",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "random",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "convertToMatrixFormat",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "trainRandomForest",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateR2",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "prepareTrainingData",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "kFoldCrossValidation",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculatePermutationImportance",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\SCRIPTS\\FLOOR\\utils\\bootstrap-intervals.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "statistic",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "generateBootstrapSamples",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateStatistic",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "ceil",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateBootstrapDistribution",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "extractPercentile",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "fetchAllRosters",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "transformPlayerData",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "parseHeight",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "fetchPlayerFromESPN",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "createPlayer",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "indexOf",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "setTimeout",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "add",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\PLAYERS\\scripts\\verify-players-mapping.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "matchAll",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "listMissingPlayers",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "backfillMissingPlayers",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "not",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "analyzePlayersTable",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "some",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "addMissingPlayers",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "is",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "getCurrentDatabaseRoster",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "detectRosterChanges",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "createTransactionRecords",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "updatePlayerRecords",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "fetchTeams",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "processTeamRosterUpdates",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "scrapeRosterUpdates",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "createRateLimiter",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "execute",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "fetchTeamInjuries",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "transformInjuryData",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "scrapeInjuries",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "C:\\Users\\willh\\Desktop\\projects - current-location\\next-scraper\\FINAL\\PLAYER-GAME-STATS\\utils\\fantasy-calculator.js",
+    "line": 1,
+    "calls": [
+      "file"
+    ]
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateStandard",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateDraftKings",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateFanDuel",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateWeeklyLeaderboards",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateSeasonCumulative",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "getWeekStartDate",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "getWeekEndDate",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateDerivedLeaders",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "range",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculatePasserRating",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "calculateRankings",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "setDate",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "getDate",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "then",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "runWeeklyAggregation",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "execSync",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "cwd",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "extractGameUpdates",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "findNewlyCompletedGames",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "scrapeCompletedGameStats",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "scrapeLiveGames",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "poll",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "getCurrentWeek",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "watchMode",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "formatGameForScoreboard",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "toLocaleTimeString",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "displayGame",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "fetchScoreboardData",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "displayScoreboard",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "formatPlayerStats",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "sortRoster",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "fetchGameDayRoster",
+    "line": 1
+  },
+  {
+    "type": "file",
+    "name": "file",
+    "file": "displayGameDayRoster",
+    "line": 1
+  }
+]
