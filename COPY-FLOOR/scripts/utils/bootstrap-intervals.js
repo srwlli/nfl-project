@@ -197,6 +197,46 @@ export function calculatePredictionInterval(observedData, options = {}) {
     };
   }
 
+  const n = observedData.length;
+
+  // Task 6 (V4): Small-sample detection and percentile method fallback
+  // For n < 5, parametric bootstrap assumes normality which fails badly
+  // Use direct percentile method instead (no distributional assumptions)
+  if (n < 5) {
+    // Percentile Method: Resample many times, calculate floor directly from resampled distribution
+    // This is more robust for small samples (n=2,3,4)
+    const bootstrapDistribution = calculateBootstrapDistribution(
+      observedData,
+      numSamples,
+      statistic
+    );
+
+    // Sort for percentile extraction
+    const sorted = [...bootstrapDistribution].sort((a, b) => a - b);
+
+    // Calculate percentiles directly from resampled distribution
+    // For 80% interval: 10th percentile (floor) to 90th percentile (ceiling)
+    const lowerPercentile = (1 - bootstrapPercentile) / 2;
+    const upperPercentile = 1 - lowerPercentile;
+
+    const floor = extractPercentile(sorted, lowerPercentile);
+    const expected = extractPercentile(sorted, 0.5); // Median
+    const ceiling = extractPercentile(sorted, upperPercentile);
+
+    return {
+      floor: Math.round(floor * 10) / 10,
+      expected: Math.round(expected * 10) / 10,
+      ceiling: Math.round(ceiling * 10) / 10,
+      bootstrapPercentile,
+      sampleSize: n,
+      bootstrapSamples: numSamples,
+      intervalWidth: Math.round((ceiling - floor) * 10) / 10,
+      coefficientOfVariation: expected > 0 ? Math.round((ceiling - floor) / expected * 100) / 100 : 0,
+      method: 'percentile' // Flag for small-sample method
+    };
+  }
+
+  // Standard parametric bootstrap for n >= 5
   // Generate bootstrap distribution
   const bootstrapDistribution = calculateBootstrapDistribution(
     observedData,
@@ -225,7 +265,8 @@ export function calculatePredictionInterval(observedData, options = {}) {
     bootstrapSamples: numSamples,
     // Additional diagnostics
     intervalWidth: Math.round((ceiling - floor) * 10) / 10,
-    coefficientOfVariation: expected > 0 ? Math.round((ceiling - floor) / expected * 100) / 100 : 0
+    coefficientOfVariation: expected > 0 ? Math.round((ceiling - floor) / expected * 100) / 100 : 0,
+    method: 'parametric' // Flag for standard method
   };
 }
 
@@ -267,6 +308,8 @@ export function calculateModifiedPredictionInterval(observedData, modifier = 1.0
     };
   }
 
+  const n = observedData.length;
+
   // Generate bootstrap distribution
   let bootstrapDistribution = calculateBootstrapDistribution(
     observedData,
@@ -294,9 +337,10 @@ export function calculateModifiedPredictionInterval(observedData, modifier = 1.0
     ceiling: Math.round(ceiling * 10) / 10,
     bootstrapPercentile,
     modifier: Math.round(modifier * 100) / 100,
-    sampleSize: observedData.length,
+    sampleSize: n,
     bootstrapSamples: numSamples,
-    intervalWidth: Math.round((ceiling - floor) * 10) / 10
+    intervalWidth: Math.round((ceiling - floor) * 10) / 10,
+    method: n < 5 ? 'percentile' : 'parametric' // Task 6 (V4): Flag small-sample method
   };
 }
 
