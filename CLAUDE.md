@@ -165,6 +165,18 @@ next-scraper/
   - **Schedule**: Weekly Tuesday at 6:00 AM ET (after nflverse data updates)
   - **Data Source**: nflverse GitHub releases (free, no API key)
 
+- ✅ **snap-counts-scraper.js** - Player snap count tracking (NEW)
+  - Downloads nflverse snap counts data
+  - Offensive snaps per player (count + percentage)
+  - Defensive snaps per player (count + percentage)
+  - Special teams snaps per player (count + percentage)
+  - Identifies inactive players (0 snaps = healthy scratch)
+  - Tracks playing time opportunity for all positions
+  - **Database**: New snap_counts table
+  - **Schedule**: Weekly Tuesday at 7:00 AM ET (after nflverse snap counts update)
+  - **Data Source**: nflverse GitHub releases (free, no API key)
+  - **Team Mapping**: Includes LA→LAR alias handling
+
 ### Phase 5: Automation ✅
 - ✅ **scheduler.js** - Automated orchestration (ENHANCED)
   - **Daily 6:00 AM ET**: Injuries scraper
@@ -174,6 +186,7 @@ next-scraper/
   - **Game days (30s intervals)**: Live games scraper
   - **Weekly Monday 3:00 AM ET**: Schedule refresh
   - **Weekly Tuesday 6:00 AM ET**: Advanced analytics scraper (NEW)
+  - **Weekly Tuesday 7:00 AM ET**: Snap counts scraper (NEW)
   - Production & development modes
   - Status monitoring (hourly reports)
   - Graceful shutdown
@@ -311,6 +324,10 @@ npm run scrape:betting
 
 # Fetch advanced analytics (downloads nflverse data)
 npm run scrape:analytics -- --week=7
+
+# Fetch snap counts (downloads nflverse snap counts)
+npm run scrape:snap-counts
+npm run scrape:snap-counts -- --week=7
 ```
 
 ### Automated Mode
@@ -352,6 +369,7 @@ node scripts/generate-comprehensive-index.js
 - `player_season_stats` - Season-long player stats
 - `scoring_plays` - Play-by-play scoring (917 records)
 - `play_by_play` - Play-by-play with EPA/WPA
+- `snap_counts` - **NEW** Player snap counts (offensive, defensive, special teams)
 
 ### Management Tables
 - `roster_transactions` - Player moves (160 records)
@@ -394,10 +412,16 @@ node scripts/generate-comprehensive-index.js
 ### nflverse Data
 - Base URL: `https://github.com/nflverse/nflverse-data/releases`
 - Free, no API key required
-- Play-by-play CSV: `download/pbp/play_by_play_2025.csv`
-- Updated: Weekly (Tuesdays)
-- Size: ~100-500MB per season
-- Format: CSV with 200+ columns
+- **Play-by-play CSV**: `download/pbp/play_by_play_2025.csv`
+  - Updated: Weekly (Tuesdays)
+  - Size: ~100-500MB per season
+  - Format: CSV with 200+ columns
+  - Contains: EPA, WPA, success rate, play descriptions
+- **Snap Counts CSV**: `download/snap_counts/snap_counts_2025.csv`
+  - Updated: Weekly (Tuesdays)
+  - Format: CSV with player snap data
+  - Contains: Offensive snaps, defensive snaps, special teams snaps (count + percentage)
+  - Team mapping: Uses 'LA' for Rams (mapped to 'LAR' in our DB)
 
 ### Database Schema
 - **Partitioned tables**: `games` (by season), `player_game_stats` (by season), `play_by_play` (by season)

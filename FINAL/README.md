@@ -1,8 +1,8 @@
 # NFL Database Documentation - Table Index
 
 > **Purpose**: User-facing reference for all documented database tables
-> **Last Updated**: October 22, 2025
-> **Total Tables Documented**: 29 (+ 8 future enhancements)
+> **Last Updated**: October 23, 2025
+> **Total Tables Documented**: 30 (+ 8 future enhancements)
 > **Documentation Coverage**: 100% of active 2025 season tables
 
 ---
@@ -10,16 +10,17 @@
 ## Quick Metrics
 
 ### Documentation Stats
-- **Total Tables**: 37 documented (29 active + 8 future)
-- **Total Fields**: 500+ fields documented
+- **Total Tables**: 38 documented (30 active + 8 future)
+- **Total Fields**: 517+ fields documented
 - **Documentation Files**: 90+ markdown files
 - **Total Lines**: 50,000+ lines of documentation
 
 ### Database Stats (2025 Season)
-- **Total Records**: 27,000+ across all tables
+- **Total Records**: 37,000+ across all tables
 - **Players**: 2,571 players
 - **Games**: 272 games (106 completed)
 - **Player Stats**: 6,842 game records
+- **Snap Counts**: 10,079 records
 - **Transactions**: 2,161 roster moves
 - **Data Coverage**: 100% of completed games
 
@@ -44,7 +45,7 @@
 
 ---
 
-### 🟡 IMPORTANT - Enhanced Features (10 tables)
+### 🟡 IMPORTANT - Enhanced Features (11 tables)
 
 **Add significant value to user experience**
 
@@ -53,13 +54,14 @@
 | 9 | [SCORING-PLAYS](SCORING-PLAYS/) | 12 | 917 | ✅ Active | Play-by-play scoring events |
 | 10 | [ROSTER-TRANSACTIONS](ROSTER-TRANSACTIONS/) | 9 | 2,161 | ✅ Active | Player moves (signings/releases) |
 | 11 | [GAME-ROSTERS](GAME-ROSTERS/) | 9 | 5,995 | ✅ Active | Game-day roster snapshots |
-| 12 | [STADIUMS](STADIUMS/) | 11 | 30 | ✅ Active | NFL venues |
-| 13 | [PLAYER-SEASON-STATS](PLAYER-SEASON-STATS/) | 75 | 1,516 | ✅ Active | Season cumulative stats |
-| 14 | [TEAM-SEASON-STATS](TEAM-SEASON-STATS/) | 24 | 32 | ✅ Active | Team season totals |
-| 15 | [WEEKLY-STATS](WEEKLY-STATS/) | 14 | Varies | ✅ Active | Weekly stat leaders |
-| 16 | [GAME-WEATHER](GAME-WEATHER/) | 11 | 106 | ✅ Active | Weather conditions per game |
-| 17 | [PLAY-BY-PLAY](PLAY-BY-PLAY/) | 25+ | 0 | ⚠️ Planned | Detailed play-by-play data |
-| 18 | [BETTING-LINES](BETTING-LINES/) | 15 | 0 | ⚠️ Planned | Betting odds and spreads |
+| 12 | [SNAP-COUNTS](SNAP-COUNTS/) | 17 | 10,079 | ✅ Active | Player snap counts (OFF/DEF/ST) |
+| 13 | [STADIUMS](STADIUMS/) | 11 | 30 | ✅ Active | NFL venues |
+| 14 | [PLAYER-SEASON-STATS](PLAYER-SEASON-STATS/) | 75 | 1,516 | ✅ Active | Season cumulative stats |
+| 15 | [TEAM-SEASON-STATS](TEAM-SEASON-STATS/) | 24 | 32 | ✅ Active | Team season totals |
+| 16 | [WEEKLY-STATS](WEEKLY-STATS/) | 14 | Varies | ✅ Active | Weekly stat leaders |
+| 17 | [GAME-WEATHER](GAME-WEATHER/) | 11 | 106 | ✅ Active | Weather conditions per game |
+| 18 | [PLAY-BY-PLAY](PLAY-BY-PLAY/) | 25+ | 0 | ⚠️ Planned | Detailed play-by-play data |
+| 19 | [BETTING-LINES](BETTING-LINES/) | 15 | 0 | ⚠️ Planned | Betting odds and spreads |
 
 ---
 
@@ -69,12 +71,12 @@
 
 | # | Table | Fields | Records | Status | Purpose |
 |---|-------|--------|---------|--------|---------|
-| 19 | [TEAM-ALIASES](TEAM-ALIASES/) | 5 | 132 | ✅ Active | Team name normalization |
-| 20 | [DIVISIONS](DIVISIONS/) | 4 | 0 | ⚠️ Empty | AFC/NFC divisions |
-| 21 | [CONFERENCES](CONFERENCES/) | 3 | 0 | ⚠️ Empty | AFC/NFC conferences |
-| 22 | [PLAYER-INJURIES](PLAYER-INJURIES/) | 8 | 0 | ⚠️ Planned | Injury reports |
-| 23 | [STAT-CATEGORIES](STAT-CATEGORIES/) | 9 | 0 | ⚠️ Empty | Stat metadata for UI |
-| 24 | [SCRIPTS](SCRIPTS/) | N/A | N/A | ✅ Active | All scraper/seed scripts |
+| 20 | [TEAM-ALIASES](TEAM-ALIASES/) | 5 | 132 | ✅ Active | Team name normalization |
+| 21 | [DIVISIONS](DIVISIONS/) | 6 | 8 | ✅ Active | AFC/NFC divisions |
+| 22 | [CONFERENCES](CONFERENCES/) | 6 | 2 | ✅ Active | AFC/NFC conferences |
+| 23 | [PLAYER-INJURIES](PLAYER-INJURIES/) | 8 | 0 | ⚠️ Planned | Injury reports |
+| 24 | [STAT-CATEGORIES](STAT-CATEGORIES/) | 9 | 0 | ⚠️ Empty | Stat metadata for UI |
+| 25 | [SCRIPTS](SCRIPTS/) | N/A | N/A | ✅ Active | All scraper/seed scripts |
 
 ---
 
@@ -84,11 +86,11 @@
 
 | # | Table | Fields | Records | Status | Purpose |
 |---|-------|--------|---------|--------|---------|
-| 25 | [GAME-DRIVES](GAME-DRIVES/) | 11 | 0 | ⚠️ Future | Drive-by-drive breakdown |
-| 26 | [PLAYER-NEWS](PLAYER-NEWS/) | 15 | 0 | ⚠️ Future | Player news articles |
-| 27 | [TEAM-NEWS](TEAM-NEWS/) | 9 | 0 | ⚠️ Future | Team news articles |
-| 28 | [COACHES](COACHES/) | 20 | 0 | ⚠️ Empty | Coach profiles and records |
-| 29 | [GAME-OFFICIALS](GAME-OFFICIALS/) | 7 | 0 | ⚠️ Empty | Referee crews per game |
+| 26 | [GAME-DRIVES](GAME-DRIVES/) | 11 | 0 | ⚠️ Future | Drive-by-drive breakdown |
+| 27 | [PLAYER-NEWS](PLAYER-NEWS/) | 15 | 0 | ⚠️ Future | Player news articles |
+| 28 | [TEAM-NEWS](TEAM-NEWS/) | 9 | 0 | ⚠️ Future | Team news articles |
+| 29 | [COACHES](COACHES/) | 20 | 0 | ⚠️ Empty | Coach profiles and records |
+| 30 | [GAME-OFFICIALS](GAME-OFFICIALS/) | 7 | 0 | ⚠️ Empty | Referee crews per game |
 
 ---
 
@@ -119,8 +121,8 @@
 **Performance Stats (6 tables):**
 - PLAYER-GAME-STATS, TEAM-GAME-STATS, PLAYER-SEASON-STATS, TEAM-SEASON-STATS, WEEKLY-STATS, SCORING-PLAYS
 
-**Roster Management (3 tables):**
-- PLAYER-TEAMS, ROSTER-TRANSACTIONS, GAME-ROSTERS
+**Roster Management (4 tables):**
+- PLAYER-TEAMS, ROSTER-TRANSACTIONS, GAME-ROSTERS, SNAP-COUNTS
 
 **Game Details (5 tables):**
 - PLAY-BY-PLAY, GAME-WEATHER, BETTING-LINES, GAME-DRIVES, GAME-OFFICIALS
@@ -268,8 +270,6 @@ Each table folder contains:
 - **Season Stats**: 1,516 players (updated weekly)
 
 ### ❌ Empty (Schema ready, no data)
-- **Divisions**: 0/8 expected
-- **Conferences**: 0/2 expected
 - **Betting Lines**: 0 (requires API key)
 - **Play-by-Play**: 0 (requires nflverse integration)
 - **Injuries**: 0 (scraper fixed, needs execution)

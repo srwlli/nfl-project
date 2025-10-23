@@ -11,6 +11,7 @@
  * - Game Days: Live games scraper (30-second intervals during game windows)
  * - Weekly Monday 3:00 AM ET: Schedule refresh
  * - Weekly Tuesday 6:00 AM ET: Advanced analytics scraper (EPA, WP)
+ * - Weekly Tuesday 7:00 AM ET: Snap counts scraper (offensive, defensive, ST snaps)
  *
  * Usage:
  * - Start scheduler: npm run scheduler
@@ -287,6 +288,25 @@ function scheduleAnalyticsScraper() {
 }
 
 /**
+ * Schedule: Weekly snap counts scraper (Tuesday 7:00 AM ET)
+ * (After nflverse snap counts updated, runs 1 hour after analytics scraper)
+ */
+function scheduleSnapCountsScraper() {
+  // Cron: 0 7 * * 2 (7 AM every Tuesday)
+  const schedule = MODE === 'development' ? '*/32 * * * *' : '0 7 * * 2'
+
+  cron.schedule(schedule, async () => {
+    logger.info('⏰ Scheduled task: Snap counts scraper')
+    // Import all available snap counts (nflverse updates weekly)
+    await runScript('snap-counts-scraper.js')
+  }, {
+    timezone: TIMEZONE
+  })
+
+  logger.info(`✓ Scheduled: Snap counts scraper (${MODE === 'development' ? 'every 32 min' : 'Tuesday 7 AM ET'})`)
+}
+
+/**
  * Manual trigger: Run specific scraper on demand
  */
 function setupManualTriggers() {
@@ -353,6 +373,7 @@ async function main() {
   scheduleStandingsScraper()
   scheduleBettingScraper()
   scheduleAnalyticsScraper()
+  scheduleSnapCountsScraper()
   setupManualTriggers()
   startStatusMonitoring()
 

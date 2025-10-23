@@ -105,6 +105,105 @@ function parseTimeToSeconds(timeStr) {
 }
 
 /**
+ * V5 Improvement #1: Calculate position-specific defensive stats from player stats
+ * Aggregates receiving/rushing stats allowed by position (RB/WR/TE)
+ *
+ * @param {Array} playerStats - Array of all player game stats
+ * @param {Array} teamStats - Array of team stats to enhance (will mutate)
+ * @returns {void} - Modifies teamStats in place
+ */
+function enhanceTeamStatsWithPositionDefense(playerStats, teamStats) {
+  // Get team IDs in the game (exactly 2 teams)
+  const teamIds = teamStats.map(t => t.team_id)
+  if (teamIds.length !== 2) {
+    logger.warn('Cannot calculate position-specific defense without exactly 2 teams')
+    return
+  }
+
+  // Create a map of team defensive stats allowed
+  const defenseMap = new Map()
+
+  // Initialize defense stats for each team in the game
+  teamStats.forEach(team => {
+    defenseMap.set(team.team_id, {
+      // Receiving yards allowed by position
+      receiving_yards_allowed_rb: 0,
+      receiving_yards_allowed_wr: 0,
+      receiving_yards_allowed_te: 0,
+      // Receiving TDs allowed by position
+      receiving_touchdowns_allowed_rb: 0,
+      receiving_touchdowns_allowed_wr: 0,
+      receiving_touchdowns_allowed_te: 0,
+      // Fantasy points allowed by position (PPR)
+      rb_fantasy_points_allowed: 0,
+      wr_fantasy_points_allowed: 0,
+      te_fantasy_points_allowed: 0,
+      qb_fantasy_points_allowed: 0,
+      // General defensive stats (for QB opponent factor)
+      passing_yards_allowed: 0,
+      passing_touchdowns_allowed: 0,
+      rushing_yards_allowed: 0,
+      rushing_touchdowns_allowed: 0
+    })
+  })
+
+  // Aggregate stats from player performance against each defense
+  playerStats.forEach(player => {
+    // Find opponent team (the defense that allowed these stats)
+    // The opponent is the OTHER team in teamIds (not the player's team)
+    const playerTeamId = player.team_id
+    const opponentTeamId = teamIds.find(id => id !== playerTeamId)
+
+    if (!opponentTeamId || !defenseMap.has(opponentTeamId)) return
+
+    const defense = defenseMap.get(opponentTeamId)
+    const position = player.position
+
+    if (!position) return // Skip players without position data
+
+    // Aggregate passing stats (for QB opponent factor)
+    if (position === 'QB') {
+      defense.passing_yards_allowed += player.passing_yards || 0
+      defense.passing_touchdowns_allowed += player.passing_touchdowns || 0
+      defense.qb_fantasy_points_allowed += player.fantasy_points_ppr || 0
+    }
+
+    // Aggregate rushing stats (for RB rushing, QB rushing)
+    if (position === 'RB' || position === 'QB') {
+      defense.rushing_yards_allowed += player.rushing_yards || 0
+      defense.rushing_touchdowns_allowed += player.rushing_touchdowns || 0
+    }
+
+    // Aggregate receiving stats by position (V5 enhancement)
+    const receivingYards = player.receiving_yards || 0
+    const receivingTDs = player.receptions && (player.receiving_touchdowns || 0)
+    const fantasyPPR = player.fantasy_points_ppr || 0
+
+    if (position === 'RB') {
+      defense.receiving_yards_allowed_rb += receivingYards
+      defense.receiving_touchdowns_allowed_rb += receivingTDs
+      defense.rb_fantasy_points_allowed += fantasyPPR
+    } else if (position === 'WR') {
+      defense.receiving_yards_allowed_wr += receivingYards
+      defense.receiving_touchdowns_allowed_wr += receivingTDs
+      defense.wr_fantasy_points_allowed += fantasyPPR
+    } else if (position === 'TE') {
+      defense.receiving_yards_allowed_te += receivingYards
+      defense.receiving_touchdowns_allowed_te += receivingTDs
+      defense.te_fantasy_points_allowed += fantasyPPR
+    }
+  })
+
+  // Merge defensive stats back into teamStats
+  teamStats.forEach(team => {
+    const defense = defenseMap.get(team.team_id)
+    if (defense) {
+      Object.assign(team, defense)
+    }
+  })
+}
+
+/**
  * Extract scoring plays from game summary
  * Maps to scoring_plays table schema
  */
@@ -345,6 +444,18 @@ function extractPlayerStats(gameSummary, gameId) {
       return parseFloat(statStr) || 0
     }
 
+    // V5: Helper to infer position from stat category (fallback if athlete.position missing)
+    const inferPositionFromCategory = (categoryName) => {
+      const lowerCategory = categoryName.toLowerCase()
+      if (lowerCategory.includes('passing')) return 'QB'
+      if (lowerCategory.includes('rushing')) return 'RB' // Could also be QB, but RB is common
+      if (lowerCategory.includes('receiving')) return 'WR' // Could also be RB/TE
+      if (lowerCategory.includes('defensive')) return 'DEF'
+      if (lowerCategory.includes('kicking') || lowerCategory.includes('field goal')) return 'K'
+      if (lowerCategory.includes('punting')) return 'P'
+      return null
+    }
+
     // Build a map of player stats by player ID
     const playerStatsMap = new Map()
 
@@ -356,6 +467,10 @@ function extractPlayerStats(gameSummary, gameId) {
       athletes.forEach(athleteData => {
         const playerId = `espn-${athleteData.athlete?.id}`
         const stats = athleteData.stats || []
+        // V5: Try to get position from athlete data, fallback to category inference
+        const position = athleteData.athlete?.position?.abbreviation ||
+                         athleteData.athlete?.position ||
+                         inferPositionFromCategory(categoryName)
 
         // Get or create player stats record (ENHANCED with all new fields)
         if (!playerStatsMap.has(playerId)) {
@@ -365,6 +480,7 @@ function extractPlayerStats(gameSummary, gameId) {
             season: SEASON_YEAR,
             team_id: teamAbbr,
             opponent_team_id: opponentTeamId,
+            position: position, // V5: Add position for defensive aggregation
             started: false, // ESPN doesn't provide this easily
 
             // Basic passing
@@ -642,6 +758,36 @@ async function scrapeGameStats(gameId) {
       logger.info('ℹ No quarter scores available')
     }
 
+    // V5: Extract game rosters FIRST to build position map
+    logger.info('Processing game-day rosters (for position data)...')
+    const season = gameSummary.header?.season?.year || 2025
+    const supabase = getSupabaseClient()
+    const { data: gameData } = await supabase
+      .from('games')
+      .select('home_team_id, away_team_id')
+      .eq('game_id', `espn-${gameId}`)
+      .single()
+    const teamIds = gameData ? [gameData.home_team_id, gameData.away_team_id] : []
+    const gameRosters = extractGameRosters(gameSummary, gameId, season, teamIds)
+
+    // Build position map from roster data
+    const positionMap = new Map()
+    gameRosters.forEach(roster => {
+      positionMap.set(roster.player_id, roster.position)
+    })
+    logger.info(`  Built position map for ${positionMap.size} players`)
+
+    // V5: Extract player statistics with position enrichment
+    logger.info('Processing player statistics...')
+    const playerStats = extractPlayerStats(gameSummary, gameId)
+
+    // V5: Enrich player stats with position data from roster
+    playerStats.forEach(player => {
+      if (!player.position && positionMap.has(player.player_id)) {
+        player.position = positionMap.get(player.player_id)
+      }
+    })
+
     // Extract and insert team statistics
     logger.info('Processing team statistics...')
     const teamStats = extractTeamStats(gameSummary, gameId)
@@ -652,6 +798,13 @@ async function scrapeGameStats(gameId) {
         teamStats[1].turnovers_forced = teamStats[0].turnovers
         teamStats[0].total_yards_allowed = teamStats[1].total_yards
         teamStats[1].total_yards_allowed = teamStats[0].total_yards
+      }
+
+      // V5 Improvement #1: Enhance team stats with position-specific defensive stats
+      if (playerStats.length > 0 && teamStats.length === 2) {
+        logger.info('  V5: Calculating position-specific defensive stats...')
+        enhanceTeamStatsWithPositionDefense(playerStats, teamStats)
+        logger.info(`  ✓ Enhanced team stats with RB/WR/TE defensive splits`)
       }
 
       const result = await upsertBatch('team_game_stats', teamStats, ['team_id', 'game_id'])
@@ -685,9 +838,8 @@ async function scrapeGameStats(gameId) {
       logger.info('ℹ No weather data available')
     }
 
-    // Extract and insert player statistics
-    logger.info('Processing player statistics...')
-    const playerStats = extractPlayerStats(gameSummary, gameId)
+    // Insert player statistics (already extracted earlier for V5 defensive stats)
+    logger.info('Upserting player statistics to database...')
     if (playerStats.length > 0) {
       logger.info(`Extracted stats for ${playerStats.length} players with fantasy points`)
 
@@ -721,21 +873,8 @@ async function scrapeGameStats(gameId) {
       logger.info('ℹ No player stats available')
     }
 
-    // Extract and insert game-day rosters
-    logger.info('Processing game-day rosters...')
-    const season = gameSummary.header?.season?.year || 2025 // Default to 2025 season
-
-    // Get team IDs from the game record (we need the correct team_id format)
-    const supabase = getSupabaseClient()
-    const { data: gameData } = await supabase
-      .from('games')
-      .select('home_team_id, away_team_id')
-      .eq('game_id', `espn-${gameId}`)
-      .single()
-
-    const teamIds = gameData ? [gameData.home_team_id, gameData.away_team_id] : []
-
-    const gameRosters = extractGameRosters(gameSummary, gameId, season, teamIds)
+    // Insert game-day rosters (already extracted earlier for position data)
+    logger.info('Upserting game-day rosters to database...')
     if (gameRosters.length > 0) {
       const result = await upsertBatch('game_rosters', gameRosters, ['game_id', 'season', 'team_id', 'player_id'])
       results.gameRosters = result.success
