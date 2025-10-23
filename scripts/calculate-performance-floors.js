@@ -1033,20 +1033,65 @@ function getStatCategories(position) {
 }
 
 /**
+ * Task 21 (V4): Winsorize outliers using IQR method
+ *
+ * Caps extreme values at IQR boundaries instead of removing them.
+ * Preserves sample size while reducing outlier influence.
+ *
+ * @param {Array<number>} values - Data to winsorize
+ * @returns {Array<number>} Winsorized values
+ */
+function winsorizeIQR(values) {
+  if (!values || values.length < 4) {
+    return values; // Need at least 4 values for quartiles
+  }
+
+  // Sort values to calculate quartiles
+  const sorted = [...values].sort((a, b) => a - b);
+  const n = sorted.length;
+
+  // Calculate Q1 (25th percentile) and Q3 (75th percentile)
+  const q1Index = Math.floor(n * 0.25);
+  const q3Index = Math.floor(n * 0.75);
+
+  const q1 = sorted[q1Index];
+  const q3 = sorted[q3Index];
+  const iqr = q3 - q1;
+
+  // Calculate bounds (Tukey's fences)
+  const lowerBound = q1 - (1.5 * iqr);
+  const upperBound = q3 + (1.5 * iqr);
+
+  // Winsorize: cap values at bounds
+  return values.map(v => {
+    if (v < lowerBound) return lowerBound;
+    if (v > upperBound) return upperBound;
+    return v;
+  });
+}
+
+/**
  * Calculate floor for specific stat (Enhanced with Phase 1.1, 1.4, 2.1, 2.2, and Task 12 V4)
  */
 async function calculateStatFloor(seasonStats, recentGames, statField, opportunityField, position, opponentId, week, season, environmentMod = { modifier: 1.0 }, positionStats = null, playerId = null) {
   // Filter out null values
-  const seasonValues = seasonStats
+  let seasonValues = seasonStats
     .map(g => g[statField])
     .filter(v => v !== null && v !== undefined && !isNaN(v))
 
-  const recentValues = recentGames
+  let recentValues = recentGames
     .map(g => g[statField])
     .filter(v => v !== null && v !== undefined && !isNaN(v))
 
   if (seasonValues.length === 0 || recentValues.length === 0) {
     return null
+  }
+
+  // Task 21 (V4): Winsorize outliers using IQR method
+  // Apply if enabled in config (default: true)
+  if (CONFIG.winsorize_outliers !== false) {
+    seasonValues = winsorizeIQR(seasonValues);
+    recentValues = winsorizeIQR(recentValues);
   }
 
   // Calculate season average and standard deviation
