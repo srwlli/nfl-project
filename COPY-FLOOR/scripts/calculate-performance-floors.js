@@ -242,23 +242,64 @@ async function calculateRBFantasyDecomposition(seasonStats, recentGames, opponen
       0.4 * (recTargets.season.reduce((a,b) => a+b, 0) / recTargets.season.length)
     : 0
 
-  // Calculate efficiency rates (yards per opportunity)
-  const rushYdsPerAtt = rushAttempts.season.reduce((a,b) => a+b, 0) > 0
+  // Task 11 (V4): Dynamic RB Efficiency - Rolling 4-6 game windows with Bayesian blend
+  // Calculate season-long efficiency rates (baseline)
+  const seasonRushYdsPerAtt = rushAttempts.season.reduce((a,b) => a+b, 0) > 0
     ? rushYards.season.reduce((a,b) => a+b, 0) / rushAttempts.season.reduce((a,b) => a+b, 0)
     : 0
 
-  const recYdsPerTarget = recTargets.season.reduce((a,b) => a+b, 0) > 0
+  const seasonRecYdsPerTarget = recTargets.season.reduce((a,b) => a+b, 0) > 0
     ? recYards.season.reduce((a,b) => a+b, 0) / recTargets.season.reduce((a,b) => a+b, 0)
     : 0
 
-  // Calculate TD rates
-  const rushTDRate = rushAttempts.season.reduce((a,b) => a+b, 0) > 0
+  const seasonRushTDRate = rushAttempts.season.reduce((a,b) => a+b, 0) > 0
     ? rushTDs.season.reduce((a,b) => a+b, 0) / rushAttempts.season.reduce((a,b) => a+b, 0)
     : 0
 
-  const recTDRate = recTargets.season.reduce((a,b) => a+b, 0) > 0
+  const seasonRecTDRate = recTargets.season.reduce((a,b) => a+b, 0) > 0
     ? recTDs.season.reduce((a,b) => a+b, 0) / recTargets.season.reduce((a,b) => a+b, 0)
     : 0
+
+  // Task 11 (V4): Calculate rolling 4-6 game efficiency (recent form)
+  // Use last 5 games for RBs (balances recency vs stability)
+  const rollingWindow = 5
+  const rollingGames = seasonStats.slice(-Math.min(rollingWindow, seasonStats.length))
+
+  const rollingRushAttempts = rollingGames.map(g => g.rushing_attempts || 0).filter(v => v > 0)
+  const rollingRushYards = rollingGames.map(g => g.rushing_yards || 0)
+  const rollingRushTDs = rollingGames.map(g => g.rushing_touchdowns || 0)
+
+  const rollingRecTargets = rollingGames.map(g => g.receiving_targets || 0).filter(v => v > 0)
+  const rollingRecYards = rollingGames.map(g => g.receiving_yards || 0)
+  const rollingRecTDs = rollingGames.map(g => g.receiving_touchdowns || 0)
+
+  const rollingRushYdsPerAtt = rollingRushAttempts.reduce((a,b) => a+b, 0) > 0
+    ? rollingRushYards.reduce((a,b) => a+b, 0) / rollingRushAttempts.reduce((a,b) => a+b, 0)
+    : seasonRushYdsPerAtt
+
+  const rollingRecYdsPerTarget = rollingRecTargets.reduce((a,b) => a+b, 0) > 0
+    ? rollingRecYards.reduce((a,b) => a+b, 0) / rollingRecTargets.reduce((a,b) => a+b, 0)
+    : seasonRecYdsPerTarget
+
+  const rollingRushTDRate = rollingRushAttempts.reduce((a,b) => a+b, 0) > 0
+    ? rollingRushTDs.reduce((a,b) => a+b, 0) / rollingRushAttempts.reduce((a,b) => a+b, 0)
+    : seasonRushTDRate
+
+  const rollingRecTDRate = rollingRecTargets.reduce((a,b) => a+b, 0) > 0
+    ? rollingRecTDs.reduce((a,b) => a+b, 0) / rollingRecTargets.reduce((a,b) => a+b, 0)
+    : seasonRecTDRate
+
+  // Task 11 (V4): Bayesian blend - weight rolling efficiency based on sample size
+  // More rolling games → trust rolling more, fewer games → shrink toward season
+  // Formula: blendedRate = (rolling × rollingWeight) + (season × (1 - rollingWeight))
+  // rollingWeight = min(0.75, rollingGames / 6) to cap at 75% rolling weight
+  const rollingWeight = Math.min(0.75, rollingGames.length / 6)
+  const seasonWeight = 1 - rollingWeight
+
+  const rushYdsPerAtt = (rollingRushYdsPerAtt * rollingWeight) + (seasonRushYdsPerAtt * seasonWeight)
+  const recYdsPerTarget = (rollingRecYdsPerTarget * rollingWeight) + (seasonRecYdsPerTarget * seasonWeight)
+  const rushTDRate = (rollingRushTDRate * rollingWeight) + (seasonRushTDRate * seasonWeight)
+  const recTDRate = (rollingRecTDRate * rollingWeight) + (seasonRecTDRate * seasonWeight)
 
   // Project component yards with modifiers
   const projRushYards = projRushAttempts * rushYdsPerAtt * opponentFactor * environmentMod * trendFactor
