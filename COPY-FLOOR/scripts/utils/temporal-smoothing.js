@@ -62,8 +62,15 @@ export function calculateEWMA(games, statField, alpha = 0.3) {
 /**
  * Calculate EWMA with adaptive alpha based on variance
  *
- * Uses higher alpha (more responsive) when recent variance is high,
- * indicating player's performance is changing.
+ * Task 9 (V4): Enhanced adaptive alpha using player CV and game count.
+ *
+ * Theory:
+ * - High-variance players (boom/bust WRs) benefit from MORE smoothing (lower alpha)
+ * - Low-variance players (consistent targets) benefit from LESS smoothing (higher alpha)
+ * - More games = more confidence = less smoothing needed (higher alpha)
+ *
+ * Formula:
+ * alpha_adaptive = alpha_base × (1 - CV/2) × (1 + log(gameCount)/10)
  *
  * @param {Array<Object>} games - Game objects
  * @param {string} statField - Stat field
@@ -78,24 +85,39 @@ export function calculateAdaptiveEWMA(games, statField, baseAlpha = 0.3) {
     };
   }
 
-  // Calculate recent variance (last 3 games)
-  const recent = games.slice(-3);
-  const recentValues = recent.map(g => g[statField]).filter(v => v !== null && !isNaN(v));
+  // Task 9 (V4): Calculate player-level CV from ALL games (not just recent 3)
+  const allValues = games.map(g => g[statField]).filter(v => v !== null && !isNaN(v));
 
-  if (recentValues.length < 2) {
+  if (allValues.length < 2) {
     return { ewma: calculateEWMA(games, statField, baseAlpha), alpha: baseAlpha };
   }
 
-  const mean = recentValues.reduce((a, b) => a + b, 0) / recentValues.length;
-  const variance = recentValues.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / recentValues.length;
-  const cv = mean > 0 ? Math.sqrt(variance) / mean : 0;
+  const mean = allValues.reduce((a, b) => a + b, 0) / allValues.length;
+  const variance = allValues.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / allValues.length;
+  const stdDev = Math.sqrt(variance);
+  const cv = mean > 0 ? stdDev / mean : 0;
 
-  // Adaptive alpha: higher CV = higher alpha (more responsive to changes)
-  const adaptiveAlpha = Math.min(0.6, Math.max(0.2, baseAlpha + (cv * 0.3)));
+  // Task 9 (V4): Adaptive alpha formula
+  // Component 1: CV adjustment - higher CV → LOWER alpha (more smoothing)
+  // Example: CV = 0.5 → multiply by (1 - 0.5/2) = 0.75 (25% reduction)
+  const cvAdjustment = Math.max(0.5, 1 - (cv / 2));
+
+  // Component 2: Game count adjustment - more games → HIGHER alpha (less smoothing)
+  // Example: 10 games → multiply by (1 + log(10)/10) = 1.23 (23% increase)
+  const gameCount = allValues.length;
+  const gameCountAdjustment = 1 + (Math.log(gameCount) / 10);
+
+  // Combined adaptive alpha
+  let adaptiveAlpha = baseAlpha * cvAdjustment * gameCountAdjustment;
+
+  // Clamp to reasonable range [0.15, 0.65]
+  adaptiveAlpha = Math.min(0.65, Math.max(0.15, adaptiveAlpha));
 
   return {
     ewma: calculateEWMA(games, statField, adaptiveAlpha),
-    alpha: adaptiveAlpha
+    alpha: adaptiveAlpha,
+    cv: cv,
+    gameCount: gameCount
   };
 }
 
