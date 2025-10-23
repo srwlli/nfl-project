@@ -852,16 +852,48 @@ function getStatCategories(position) {
  */
 async function calculateStatFloor(seasonStats, recentGames, statField, opportunityField, position, opponentId, week, season, environmentMod = { modifier: 1.0 }, positionStats = null) {
   // Filter out null values
-  const seasonValues = seasonStats
+  let seasonValues = seasonStats
     .map(g => g[statField])
     .filter(v => v !== null && v !== undefined && !isNaN(v))
 
-  const recentValues = recentGames
+  let recentValues = recentGames
     .map(g => g[statField])
     .filter(v => v !== null && v !== undefined && !isNaN(v))
 
   if (seasonValues.length === 0 || recentValues.length === 0) {
     return null
+  }
+
+  // Task 10 (V4): Refined IQR outlier detection
+  // Calculate IQR on SEASON data only, then apply fences to both season and recent separately
+  // This prevents recent role changes (e.g., backup → starter) from being flagged as outliers
+  if (seasonValues.length >= 4) {
+    // Calculate Q1, Q3, IQR from season data
+    const sortedSeason = [...seasonValues].sort((a, b) => a - b)
+    const q1Index = Math.floor(sortedSeason.length * 0.25)
+    const q3Index = Math.floor(sortedSeason.length * 0.75)
+    const q1 = sortedSeason[q1Index]
+    const q3 = sortedSeason[q3Index]
+    const iqr = q3 - q1
+
+    // Calculate fences: Q1 - 1.5×IQR and Q3 + 1.5×IQR
+    const lowerFence = q1 - (1.5 * iqr)
+    const upperFence = q3 + (1.5 * iqr)
+
+    // Apply fences to season data (remove outliers)
+    const seasonBeforeRemoval = seasonValues.length
+    seasonValues = seasonValues.filter(v => v >= lowerFence && v <= upperFence)
+
+    // Apply same fences to recent data but DON'T remove
+    // Instead, flag outliers (preserve legitimate role changes)
+    // For now, we just keep recent data as-is to avoid removing breakout performances
+    // Future enhancement (V4 Task 7): Use regime detection to distinguish outliers from role changes
+
+    // Log outlier removal if any
+    const removed = seasonBeforeRemoval - seasonValues.length
+    if (removed > 0 && JSON_MODE) {
+      // Could add to warnings array if needed
+    }
   }
 
   // Calculate season average and standard deviation
