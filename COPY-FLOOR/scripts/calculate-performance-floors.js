@@ -119,6 +119,63 @@ function logError(...args) {
 }
 
 /**
+ * Task 7 (V4): CUSUM Regime Change Detection
+ *
+ * Detects structural breaks in player performance using Cumulative Sum control chart.
+ * Used to identify role changes, injury returns, or coaching adjustments that make
+ * historical data less relevant.
+ *
+ * Theory:
+ * - CUSUM accumulates deviations from mean: S_t = max(0, S_{t-1} + (x_t - μ - k))
+ * - k = allowance (typically 0.5σ) filters noise
+ * - h = threshold (typically 3-5σ) triggers detection
+ * - When S_t > h, regime change detected
+ *
+ * @citation Page, E. S. (1954). "Continuous Inspection Schemes."
+ *           Biometrika, 41(1/2), 100-115.
+ *
+ * @param {Array<number>} values - Time series data (chronologically ordered)
+ * @param {number} mean - Historical mean to detect deviations from
+ * @param {number} stdDev - Standard deviation for normalization
+ * @param {number} k - Allowance factor (default: 0.5σ noise filter)
+ * @param {number} h - Threshold factor (default: 4σ detection trigger)
+ * @returns {Object} { detected: boolean, changepoint: number|null }
+ *
+ * @example
+ * const games = [45, 50, 48, 52, 95, 88, 92]; // RB yards (role change at game 5)
+ * const detection = detectRegimeChange(games, 48.75, 18.5);
+ * // Returns: { detected: true, changepoint: 4 } (index of first post-change game)
+ */
+function detectRegimeChange(values, mean, stdDev, k = 0.5, h = 4) {
+  if (!values || values.length < 4 || stdDev === 0) {
+    return { detected: false, changepoint: null }
+  }
+
+  // CUSUM for upward shift (positive deviations)
+  let cumulativeSum = 0
+  let changepoint = null
+
+  for (let i = 0; i < values.length; i++) {
+    // Deviation from mean, adjusted by allowance
+    const deviation = (values[i] - mean) / stdDev - k
+
+    // Accumulate positive deviations (reset to 0 if negative)
+    cumulativeSum = Math.max(0, cumulativeSum + deviation)
+
+    // Check if threshold exceeded
+    if (cumulativeSum > h && changepoint === null) {
+      changepoint = i
+      break // First detection is the changepoint
+    }
+  }
+
+  return {
+    detected: changepoint !== null,
+    changepoint: changepoint
+  }
+}
+
+/**
  * Get opponent team for a game
  */
 function getOpponent(game, teamId) {
@@ -1002,11 +1059,50 @@ async function calculateStatFloor(seasonStats, recentGames, statField, opportuni
     }
   }
 
-  // Calculate season average and standard deviation
-  const seasonAvg = seasonValues.reduce((a, b) => a + b, 0) / seasonValues.length
-  const seasonStdDev = Math.sqrt(
+  // Calculate season average and standard deviation (before regime detection)
+  let seasonAvg = seasonValues.reduce((a, b) => a + b, 0) / seasonValues.length
+  let seasonStdDev = Math.sqrt(
     seasonValues.reduce((sum, val) => sum + Math.pow(val - seasonAvg, 2), 0) / seasonValues.length
   )
+
+  // Task 7 (V4): CUSUM Regime Change Detection
+  // Detect if player performance has fundamentally shifted (role change, injury return, etc.)
+  // If detected, weight recent games 80% to avoid contaminating projections with stale data
+  let regimeDetected = false
+  let regimeChangepoint = null
+
+  if (seasonStats.length >= 5 && seasonStdDev > 0) {
+    // Sort season stats chronologically (oldest first) for CUSUM
+    const chronologicalStats = [...seasonStats].sort((a, b) => a.week - b.week)
+    const chronologicalValues = chronologicalStats
+      .map(g => g[statField])
+      .filter(v => v !== null && v !== undefined && !isNaN(v))
+
+    if (chronologicalValues.length >= 5) {
+      const regime = detectRegimeChange(chronologicalValues, seasonAvg, seasonStdDev)
+
+      if (regime.detected) {
+        regimeDetected = true
+        regimeChangepoint = regime.changepoint
+
+        // Post-regime stats (from changepoint onward)
+        const postRegimeValues = chronologicalValues.slice(regimeChangepoint)
+
+        if (postRegimeValues.length >= 2) {
+          // Weight recent games 80% by recalculating avg/stdDev from post-regime data
+          // and blending with full-season stats
+          const postRegimeAvg = postRegimeValues.reduce((a, b) => a + b, 0) / postRegimeValues.length
+          const postRegimeStdDev = postRegimeValues.length > 1
+            ? Math.sqrt(postRegimeValues.reduce((sum, val) => sum + Math.pow(val - postRegimeAvg, 2), 0) / postRegimeValues.length)
+            : seasonStdDev
+
+          // Blend: 80% post-regime, 20% full-season
+          seasonAvg = 0.8 * postRegimeAvg + 0.2 * seasonAvg
+          seasonStdDev = 0.8 * postRegimeStdDev + 0.2 * seasonStdDev
+        }
+      }
+    }
+  }
 
   // Calculate recent form average
   const recentAvg = recentValues.reduce((a, b) => a + b, 0) / recentValues.length
