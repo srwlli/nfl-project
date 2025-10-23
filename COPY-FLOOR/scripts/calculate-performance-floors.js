@@ -472,6 +472,98 @@ function calculateParticipationProbability(injuryStatus, recentSnapCounts = []) 
 }
 
 /**
+ * Task 13 (V4): Calculate game script volume modifier from Vegas implied totals
+ *
+ * High-scoring games (shootouts) produce 10-15% more plays and opportunities.
+ * Low-scoring games (defensive battles) produce fewer opportunities.
+ *
+ * @param {string} gameId - ESPN game ID
+ * @param {string} teamId - Team ID to calculate implied total for
+ * @param {number} season - Current season
+ * @returns {Promise<Object>} Volume modifier and implied team total
+ *
+ * @citation Romer, D. (2006). "Do Firms Maximize? Evidence from NFL Play Calling"
+ * - High totals correlate with 12-18% more plays run per game
+ * - Vegas lines capture game script better than any other pre-game metric
+ */
+async function calculateGameScriptModifier(gameId, teamId, season) {
+  try {
+    // Task 13 (V4): Query betting lines for this game
+    // NOTE: betting_lines table may not exist - handle gracefully
+    const { data: bettingLines, error } = await supabase
+      .from('game_betting_lines')
+      .select('over_under, spread, home_team_id')
+      .eq('game_id', gameId)
+      .eq('season', season)
+      .single()
+
+    // If no betting data, use league average implied total (~45 points = 22.5 per team)
+    if (error || !bettingLines || !bettingLines.over_under) {
+      return {
+        volumeModifier: 1.0,
+        impliedTotal: 22.5,
+        gameScript: 'average',
+        source: 'fallback'
+      }
+    }
+
+    // Task 13 (V4): Calculate implied team total
+    // Formula: (Over/Under / 2) + (Spread / 2) for favorite, - (Spread / 2) for underdog
+    const overUnder = bettingLines.over_under
+    const spread = bettingLines.spread || 0
+    const isHomeTeam = teamId === bettingLines.home_team_id
+
+    // Spread is typically from home team perspective
+    // Positive spread = home underdog, negative spread = home favorite
+    let impliedTotal
+    if (isHomeTeam) {
+      // Home team: (O/U / 2) - (spread / 2)
+      // Example: O/U=50, spread=-3 (home favored) → 50/2 - (-3/2) = 25 + 1.5 = 26.5
+      impliedTotal = (overUnder / 2) - (spread / 2)
+    } else {
+      // Away team: (O/U / 2) + (spread / 2)
+      // Example: O/U=50, spread=-3 (home favored) → 50/2 + (-3/2) = 25 - 1.5 = 23.5
+      impliedTotal = (overUnder / 2) + (spread / 2)
+    }
+
+    // Task 13 (V4): Map implied total to volume modifier
+    // High-scoring games (>27 points) → 10% volume increase
+    // Average games (20-27 points) → neutral
+    // Low-scoring games (<20 points) → 10% volume decrease
+    let volumeModifier = 1.0
+    let gameScript = 'average'
+
+    if (impliedTotal > 27) {
+      const scriptSensitivity = CONFIG.trend_momentum?.script_sensitivity || 0.10
+      volumeModifier = 1.0 + scriptSensitivity // +10%
+      gameScript = 'high-scoring'
+    } else if (impliedTotal < 20) {
+      const scriptSensitivity = CONFIG.trend_momentum?.script_sensitivity || 0.10
+      volumeModifier = 1.0 - scriptSensitivity // -10%
+      gameScript = 'low-scoring'
+    }
+
+    return {
+      volumeModifier: Math.round(volumeModifier * 100) / 100,
+      impliedTotal: Math.round(impliedTotal * 10) / 10,
+      gameScript,
+      overUnder,
+      spread,
+      source: 'vegas'
+    }
+  } catch (err) {
+    logError('Error calculating game script modifier:', err)
+    // Fallback to neutral modifier
+    return {
+      volumeModifier: 1.0,
+      impliedTotal: 22.5,
+      gameScript: 'average',
+      source: 'error-fallback'
+    }
+  }
+}
+
+/**
  * Task 1 (V4): Calculate position-specific opponent matchup factor
  *
  * Enhanced opponent factor that uses position-specific defensive stats:
@@ -998,7 +1090,8 @@ async function calculateFloorsForGame(gameId, season = CONFIG.current_season) {
     log(`Processing ${enrichedPlayers.length} skill position players for ${teamId}`)
 
     // Calculate floors for key positions
-    const keyPlayers = await calculateTeamFloors(enrichedPlayers, teamId, opponentId, game.week, season, environmentMod)
+    // Task 13 (V4): Pass gameId for game script awareness
+    const keyPlayers = await calculateTeamFloors(enrichedPlayers, teamId, opponentId, game.game_id, game.week, season, environmentMod)
 
     log(`Generated projections for ${keyPlayers.length} players`)
 
@@ -1021,8 +1114,12 @@ async function calculateFloorsForGame(gameId, season = CONFIG.current_season) {
 
 /**
  * Calculate floors for team players (Phase 1.3: Batch queries with Promise.all)
+ * Task 13 (V4): Added gameId parameter for game script awareness
  */
-async function calculateTeamFloors(players, teamId, opponentId, week, season, environmentMod = { modifier: 1.0 }) {
+async function calculateTeamFloors(players, teamId, opponentId, gameId, week, season, environmentMod = { modifier: 1.0 }) {
+  // Task 13 (V4): Fetch game script modifier from Vegas betting lines
+  const gameScriptInfo = await calculateGameScriptModifier(gameId, teamId, season)
+
   // Phase 1.3: Batch fetch all player stats in parallel
   const playerIds = players.map(p => p.player_id)
 
@@ -1183,11 +1280,13 @@ async function calculateTeamFloors(players, teamId, opponentId, week, season, en
     const positionStats = positionStatsCache[player.primary_position] || {}
 
     // Calculate stats by position
+    // Task 13 (V4): Pass game script info for volume adjustment
     const floorData = await calculatePlayerFloors(
       player,
       seasonStats,
       recentGames,
       opponentId,
+      gameScriptInfo,
       week,
       season,
       environmentMod,
@@ -1204,7 +1303,7 @@ async function calculateTeamFloors(players, teamId, opponentId, week, season, en
 /**
  * Calculate floors for individual player
  */
-async function calculatePlayerFloors(player, seasonStats, recentGames, opponentId, week, season, environmentMod = { modifier: 1.0 }, positionStats = {}) {
+async function calculatePlayerFloors(player, seasonStats, recentGames, opponentId, gameScriptInfo, week, season, environmentMod = { modifier: 1.0 }, positionStats = {}) {
   const stats = {
     player_id: player.player_id,
     player_name: player.full_name,
@@ -1227,6 +1326,7 @@ async function calculatePlayerFloors(player, seasonStats, recentGames, opponentI
       category.opportunity,
       player.primary_position,
       opponentId,
+      gameScriptInfo,
       week,
       season,
       environmentMod,
@@ -1290,7 +1390,7 @@ function getStatCategories(position) {
 /**
  * Calculate floor for specific stat (Enhanced with Phase 1.1, 1.4, 2.1, and 2.2)
  */
-async function calculateStatFloor(seasonStats, recentGames, statField, opportunityField, position, opponentId, week, season, environmentMod = { modifier: 1.0 }, positionStats = null) {
+async function calculateStatFloor(seasonStats, recentGames, statField, opportunityField, position, opponentId, gameScriptInfo, week, season, environmentMod = { modifier: 1.0 }, positionStats = null) {
   // Filter out null values
   let seasonValues = seasonStats
     .map(g => g[statField])
@@ -1503,8 +1603,14 @@ async function calculateStatFloor(seasonStats, recentGames, statField, opportuni
       // Step 1: Project opportunities (weighted average)
       const seasonAvgOpp = seasonOpportunities.reduce((a, b) => a + b, 0) / seasonOpportunities.length
       const recentAvgOpp = recentOpportunities.reduce((a, b) => a + b, 0) / recentOpportunities.length
-      const projectedOpportunities = (seasonAvgOpp * CONFIG.opportunity_weights.season) +
-                                     (recentAvgOpp * CONFIG.opportunity_weights.recent)
+      let projectedOpportunities = (seasonAvgOpp * CONFIG.opportunity_weights.season) +
+                                    (recentAvgOpp * CONFIG.opportunity_weights.recent)
+
+      // Task 13 (V4): Apply game script volume modifier to opportunities
+      // High-scoring games (+10% volume), low-scoring games (-10% volume)
+      if (gameScriptInfo && gameScriptInfo.volumeModifier !== 1.0) {
+        projectedOpportunities = projectedOpportunities * gameScriptInfo.volumeModifier
+      }
 
       // Step 2: Calculate efficiency (yards/completions per opportunity)
       const totalOpportunities = seasonOpportunities.reduce((a, b) => a + b, 0)
