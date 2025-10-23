@@ -1195,6 +1195,9 @@ async function calculateStatFloor(seasonStats, recentGames, statField, opportuni
   // Task 12 (V4): Calculate combined modifier for bootstrap (opponent × environment × player-specific)
   const combinedModifier = opponentFactor * environmentMod.modifier * playerEnvironmentFactor
 
+  // Task 17 (V4): Calculate player CV for bootstrap width scaling
+  const playerCV = seasonAvg > 0 ? seasonStdDev / seasonAvg : 0
+
   // Generate bootstrap prediction interval with modifiers applied
   const bootstrapInterval = calculateModifiedPredictionInterval(
     seasonValues,
@@ -1202,7 +1205,8 @@ async function calculateStatFloor(seasonStats, recentGames, statField, opportuni
     {
       numSamples: CONFIG.bootstrap_samples || 500,
       confidence: CONFIG.bootstrap_confidence || 0.80,
-      statistic: 'mean'
+      statistic: 'mean',
+      playerCV: playerCV  // Task 17 (V4): Pass player CV for interval width scaling
     }
   );
 
