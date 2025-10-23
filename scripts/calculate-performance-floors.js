@@ -169,35 +169,35 @@ async function calculateOpponentFactor(opponentId, statCategory, season, beforeW
     // Calculate opponent's average yards allowed per game
     const opponentAvg = filteredGames.reduce((sum, g) => sum + (g.total_yards_allowed || 0), 0) / filteredGames.length
 
-    // Phase 3.3 (V2): Calculate league average only if not cached
+    // Task 16 (V4): Always fetch league-wide data for empirical Bayes (even if cached)
+    // Get league-wide average for normalization
+    const { data: allTeamStats } = await supabase
+      .from('team_game_stats')
+      .select('game_id, team_id, total_yards_allowed')  // Task 16 (V4): Include team_id for empirical Bayes
+      .eq('season', season)
+
+    if (!allTeamStats || allTeamStats.length === 0) {
+      return 1.0
+    }
+
+    // Filter to completed games before current week
+    const { data: allGameWeeks } = await supabase
+      .from('games')
+      .select('game_id, week')
+      .eq('season', season)
+      .lt('week', beforeWeek)
+      .eq('status', 'final')
+
+    const validAllGameIds = new Set(allGameWeeks?.map(g => g.game_id) || [])
+    const filteredAllGames = allTeamStats.filter(g => validAllGameIds.has(g.game_id))
+
+    if (filteredAllGames.length === 0) {
+      return 1.0
+    }
+
+    // Calculate league average if not cached
     if (!leagueAvg) {
-      // Get league-wide average for normalization
-      const { data: allTeamStats } = await supabase
-        .from('team_game_stats')
-        .select('game_id, total_yards_allowed')
-        .eq('season', season)
-
-      if (!allTeamStats || allTeamStats.length === 0) {
-        return 1.0
-      }
-
-      // Filter to completed games before current week
-      const { data: allGameWeeks } = await supabase
-        .from('games')
-        .select('game_id, week')
-        .eq('season', season)
-        .lt('week', beforeWeek)
-        .eq('status', 'final')
-
-      const validAllGameIds = new Set(allGameWeeks?.map(g => g.game_id) || [])
-      const filteredAllGames = allTeamStats.filter(g => validAllGameIds.has(g.game_id))
-
-      if (filteredAllGames.length === 0) {
-        return 1.0
-      }
-
       leagueAvg = filteredAllGames.reduce((sum, g) => sum + (g.total_yards_allowed || 0), 0) / filteredAllGames.length
-
       // Cache the league average
       LEAGUE_AVG_CACHE.set(cacheKey, leagueAvg)
     }
@@ -210,14 +210,66 @@ async function calculateOpponentFactor(opponentId, statCategory, season, beforeW
     // Higher yards allowed = easier matchup (weaker defense) = factor > 1
     const rawFactor = opponentAvg / leagueAvg
 
-    // Phase 2.1 (V2): Bayesian shrinkage for small samples
-    // Regress toward league average when sample size < min_sample_size games
-    const minSampleSize = CONFIG.bayesian_shrinkage.min_sample_size
+    // Task 16 (V4): Empirical Bayes opponent factor shrinkage
+    // Replaces heuristic shrinkage with data-driven optimal shrinkage
     let adjustedFactor = rawFactor
 
-    if (filteredGames.length < minSampleSize) {
-      const weight = filteredGames.length / minSampleSize
-      adjustedFactor = (rawFactor * weight) + (CONFIG.bayesian_shrinkage.target_mean * (1 - weight))
+    if (CONFIG.empirical_bayes?.enabled !== false) {
+      // Calculate between-team variance (τ²): variance of team defensive means
+      // Get all teams' average yards allowed
+      const teamMeans = []
+      const teamStatsMap = new Map()
+
+      // Group games by team
+      for (const game of filteredAllGames) {
+        if (!teamStatsMap.has(game.team_id)) {
+          teamStatsMap.set(game.team_id, [])
+        }
+        teamStatsMap.get(game.team_id).push(game.total_yards_allowed || 0)
+      }
+
+      // Calculate mean for each team
+      for (const [teamId, yards] of teamStatsMap.entries()) {
+        if (yards.length > 0) {
+          const teamMean = yards.reduce((a, b) => a + b, 0) / yards.length
+          teamMeans.push(teamMean)
+        }
+      }
+
+      // Between-team variance τ²
+      const grandMean = teamMeans.reduce((a, b) => a + b, 0) / teamMeans.length
+      const betweenTeamVariance = teamMeans.reduce((sum, mean) => sum + Math.pow(mean - grandMean, 2), 0) / (teamMeans.length - 1)
+
+      // Calculate within-team variance (σ²): pooled variance within teams
+      let totalSquaredDev = 0
+      let totalGames = 0
+
+      for (const [teamId, yards] of teamStatsMap.entries()) {
+        if (yards.length > 1) {
+          const teamMean = yards.reduce((a, b) => a + b, 0) / yards.length
+          const squaredDev = yards.reduce((sum, val) => sum + Math.pow(val - teamMean, 2), 0)
+          totalSquaredDev += squaredDev
+          totalGames += yards.length
+        }
+      }
+
+      const withinTeamVariance = totalGames > teamMeans.length ? totalSquaredDev / (totalGames - teamMeans.length) : 0
+
+      // Optimal shrinkage factor: B = τ² / (τ² + σ²/n)
+      const n = filteredGames.length
+      const shrinkageFactor = betweenTeamVariance / (betweenTeamVariance + (withinTeamVariance / n))
+
+      // Apply empirical Bayes shrinkage
+      // shrunkFactor = B × observedFactor + (1-B) × pooledMean
+      const pooledMean = CONFIG.bayesian_shrinkage?.target_mean || 1.0
+      adjustedFactor = (shrinkageFactor * rawFactor) + ((1 - shrinkageFactor) * pooledMean)
+    } else {
+      // Fallback: Phase 2.1 (V2) heuristic Bayesian shrinkage
+      const minSampleSize = CONFIG.bayesian_shrinkage.min_sample_size
+      if (filteredGames.length < minSampleSize) {
+        const weight = filteredGames.length / minSampleSize
+        adjustedFactor = (rawFactor * weight) + (CONFIG.bayesian_shrinkage.target_mean * (1 - weight))
+      }
     }
 
     // Cap factor between configured min/max (default: 0.7-1.3)
