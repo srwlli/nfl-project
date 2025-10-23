@@ -201,104 +201,210 @@ async function calculateEfficiencyModifier(playerEPA, position, season) {
 }
 
 /**
- * Calculate opponent defensive efficiency factor (Phase 1.1)
- * Returns a modifier (0.7-1.3) based on opponent's defensive strength
+ * Task 1 (V4): Calculate position-specific opponent matchup factor
+ *
+ * Enhanced opponent factor that uses position-specific defensive stats:
+ * - WR: Yards allowed to WRs (proxy for CB quality)
+ * - RB: Rushing yards allowed (proxy for Front-7 quality)
+ * - TE: Yards allowed to TEs (proxy for LB/Safety coverage)
+ * - QB: Passing yards allowed (overall secondary quality)
+ *
+ * Falls back to total_yards_allowed if position-specific data unavailable.
  *
  * @param {string} opponentId - Opponent team ID
  * @param {string} statCategory - Stat to evaluate ('passing', 'rushing', 'receiving')
+ * @param {string} position - Player position (QB, RB, WR, TE) for position-specific matchups
  * @param {number} season - Current season
  * @param {number} beforeWeek - Only include games before this week
  * @returns {Promise<number>} Opponent factor (1.0 = league average, >1 = easier, <1 = tougher)
  */
-async function calculateOpponentFactor(opponentId, statCategory, season, beforeWeek) {
+async function calculateOpponentFactor(opponentId, statCategory, position, season, beforeWeek) {
   try {
-    // Phase 3.3 (V2): Check league average cache first
-    const cacheKey = `${season}-${beforeWeek}-${statCategory}`
+    // Task 1 (V4): Position-specific cache key
+    const cacheKey = `${season}-${beforeWeek}-${statCategory}-${position}`
     let leagueAvg = LEAGUE_AVG_CACHE.get(cacheKey)
 
-    // Get opponent's defensive stats for the season (before current week)
-    const { data: opponentGames } = await supabase
-      .from('team_game_stats')
-      .select('game_id, total_yards_allowed')
-      .eq('team_id', opponentId)
-      .eq('season', season)
+    // Task 1 (V4): Attempt position-specific defensive stats first
+    // Query opponent's games and aggregate yards allowed by offensive position
+    let opponentAvg = null
+    let usePositionSpecific = false
 
-    if (!opponentGames || opponentGames.length === 0) {
-      return 1.0 // Default to league average if no data
-    }
-
-    // Filter to games before current week
-    const gameIds = opponentGames.map(g => g.game_id)
-    const { data: gameWeeks } = await supabase
-      .from('games')
-      .select('game_id, week')
-      .in('game_id', gameIds)
-      .eq('season', season)
-      .lt('week', beforeWeek)
-      .eq('status', 'final') // Phase 1.2: Only use completed games
-
-    const validGameIds = new Set(gameWeeks?.map(g => g.game_id) || [])
-    const filteredGames = opponentGames.filter(g => validGameIds.has(g.game_id))
-
-    if (filteredGames.length === 0) {
-      return 1.0
-    }
-
-    // Calculate opponent's average yards allowed per game
-    const opponentAvg = filteredGames.reduce((sum, g) => sum + (g.total_yards_allowed || 0), 0) / filteredGames.length
-
-    // Phase 3.3 (V2): Calculate league average only if not cached
-    if (!leagueAvg) {
-      // Get league-wide average for normalization
-      const { data: allTeamStats } = await supabase
-        .from('team_game_stats')
-        .select('game_id, total_yards_allowed')
+    // For WR/TE: Query receiving yards allowed to that position
+    // For RB: Query rushing yards allowed
+    // For QB: Query passing yards allowed
+    if (position === 'WR' || position === 'TE') {
+      // Get yards allowed to WRs or TEs (receiving yards given up)
+      const { data: opponentDefStats } = await supabase
+        .from('player_game_stats')
+        .select('game_id, receiving_yards, opponent_team_id')
+        .eq('opponent_team_id', opponentId)
+        .eq('primary_position', position)
         .eq('season', season)
 
-      if (!allTeamStats || allTeamStats.length === 0) {
+      if (opponentDefStats && opponentDefStats.length > 0) {
+        // Filter to games before current week
+        const gameIds = [...new Set(opponentDefStats.map(s => s.game_id))]
+        const { data: gameWeeks } = await supabase
+          .from('games')
+          .select('game_id, week')
+          .in('game_id', gameIds)
+          .eq('season', season)
+          .lt('week', beforeWeek)
+          .eq('status', 'final')
+
+        const validGameIds = new Set(gameWeeks?.map(g => g.game_id) || [])
+        const filteredStats = opponentDefStats.filter(s => validGameIds.has(s.game_id))
+
+        if (filteredStats.length >= 3) {
+          // Calculate avg yards allowed per game to this position
+          const totalYards = filteredStats.reduce((sum, s) => sum + (s.receiving_yards || 0), 0)
+          const gamesPlayed = validGameIds.size
+          opponentAvg = gamesPlayed > 0 ? totalYards / gamesPlayed : null
+          usePositionSpecific = true
+        }
+      }
+    } else if (position === 'RB') {
+      // Get rushing yards allowed (Front-7 quality proxy)
+      const { data: opponentDefStats } = await supabase
+        .from('player_game_stats')
+        .select('game_id, rushing_yards, opponent_team_id')
+        .eq('opponent_team_id', opponentId)
+        .eq('primary_position', 'RB')
+        .eq('season', season)
+
+      if (opponentDefStats && opponentDefStats.length > 0) {
+        const gameIds = [...new Set(opponentDefStats.map(s => s.game_id))]
+        const { data: gameWeeks } = await supabase
+          .from('games')
+          .select('game_id, week')
+          .in('game_id', gameIds)
+          .eq('season', season)
+          .lt('week', beforeWeek)
+          .eq('status', 'final')
+
+        const validGameIds = new Set(gameWeeks?.map(g => g.game_id) || [])
+        const filteredStats = opponentDefStats.filter(s => validGameIds.has(s.game_id))
+
+        if (filteredStats.length >= 3) {
+          const totalYards = filteredStats.reduce((sum, s) => sum + (s.rushing_yards || 0), 0)
+          const gamesPlayed = validGameIds.size
+          opponentAvg = gamesPlayed > 0 ? totalYards / gamesPlayed : null
+          usePositionSpecific = true
+        }
+      }
+    }
+
+    // Fallback to total_yards_allowed if position-specific data insufficient
+    if (opponentAvg === null) {
+      const { data: opponentGames } = await supabase
+        .from('team_game_stats')
+        .select('game_id, total_yards_allowed')
+        .eq('team_id', opponentId)
+        .eq('season', season)
+
+      if (!opponentGames || opponentGames.length === 0) {
         return 1.0
       }
 
-      // Filter to completed games before current week
-      const { data: allGameWeeks } = await supabase
+      const gameIds = opponentGames.map(g => g.game_id)
+      const { data: gameWeeks } = await supabase
         .from('games')
         .select('game_id, week')
+        .in('game_id', gameIds)
         .eq('season', season)
         .lt('week', beforeWeek)
         .eq('status', 'final')
 
-      const validAllGameIds = new Set(allGameWeeks?.map(g => g.game_id) || [])
-      const filteredAllGames = allTeamStats.filter(g => validAllGameIds.has(g.game_id))
+      const validGameIds = new Set(gameWeeks?.map(g => g.game_id) || [])
+      const filteredGames = opponentGames.filter(g => validGameIds.has(g.game_id))
 
-      if (filteredAllGames.length === 0) {
+      if (filteredGames.length === 0) {
         return 1.0
       }
 
-      leagueAvg = filteredAllGames.reduce((sum, g) => sum + (g.total_yards_allowed || 0), 0) / filteredAllGames.length
-
-      // Cache the league average
-      LEAGUE_AVG_CACHE.set(cacheKey, leagueAvg)
+      opponentAvg = filteredGames.reduce((sum, g) => sum + (g.total_yards_allowed || 0), 0) / filteredGames.length
     }
 
-    if (leagueAvg === 0) {
+    // Task 1 (V4): Calculate league average (position-specific if available)
+    if (!leagueAvg) {
+      if (usePositionSpecific && (position === 'WR' || position === 'TE' || position === 'RB')) {
+        // Calculate league-wide average for this position
+        const statField = (position === 'RB') ? 'rushing_yards' : 'receiving_yards'
+        const { data: allPosStats } = await supabase
+          .from('player_game_stats')
+          .select(`game_id, ${statField}`)
+          .eq('primary_position', position)
+          .eq('season', season)
+
+        if (allPosStats && allPosStats.length > 0) {
+          const gameIds = [...new Set(allPosStats.map(s => s.game_id))]
+          const { data: allGameWeeks } = await supabase
+            .from('games')
+            .select('game_id, week')
+            .in('game_id', gameIds)
+            .eq('season', season)
+            .lt('week', beforeWeek)
+            .eq('status', 'final')
+
+          const validGameIds = new Set(allGameWeeks?.map(g => g.game_id) || [])
+          const filteredStats = allPosStats.filter(s => validGameIds.has(s.game_id))
+
+          if (filteredStats.length > 0) {
+            const totalYards = filteredStats.reduce((sum, s) => sum + (s[statField] || 0), 0)
+            const gamesCount = validGameIds.size
+            leagueAvg = gamesCount > 0 ? totalYards / gamesCount : null
+          }
+        }
+      }
+
+      // Fallback to team-level total_yards_allowed for league average
+      if (!leagueAvg) {
+        const { data: allTeamStats } = await supabase
+          .from('team_game_stats')
+          .select('game_id, total_yards_allowed')
+          .eq('season', season)
+
+        if (allTeamStats && allTeamStats.length > 0) {
+          const { data: allGameWeeks } = await supabase
+            .from('games')
+            .select('game_id, week')
+            .eq('season', season)
+            .lt('week', beforeWeek)
+            .eq('status', 'final')
+
+          const validAllGameIds = new Set(allGameWeeks?.map(g => g.game_id) || [])
+          const filteredAllGames = allTeamStats.filter(g => validAllGameIds.has(g.game_id))
+
+          if (filteredAllGames.length > 0) {
+            leagueAvg = filteredAllGames.reduce((sum, g) => sum + (g.total_yards_allowed || 0), 0) / filteredAllGames.length
+          }
+        }
+      }
+
+      if (leagueAvg) {
+        LEAGUE_AVG_CACHE.set(cacheKey, leagueAvg)
+      }
+    }
+
+    if (!leagueAvg || leagueAvg === 0) {
       return 1.0
     }
 
     // Calculate raw factor: opponent_avg / league_avg
-    // Higher yards allowed = easier matchup (weaker defense) = factor > 1
     const rawFactor = opponentAvg / leagueAvg
 
-    // Phase 2.1 (V2): Bayesian shrinkage for small samples
-    // Regress toward league average when sample size < min_sample_size games
+    // Bayesian shrinkage for small samples
     const minSampleSize = CONFIG.bayesian_shrinkage.min_sample_size
     let adjustedFactor = rawFactor
 
-    if (filteredGames.length < minSampleSize) {
-      const weight = filteredGames.length / minSampleSize
+    // Use appropriate sample size depending on data source
+    const sampleSize = usePositionSpecific ? Math.floor(opponentAvg / 10) : Math.floor(opponentAvg / 50)
+    if (sampleSize < minSampleSize) {
+      const weight = sampleSize / minSampleSize
       adjustedFactor = (rawFactor * weight) + (CONFIG.bayesian_shrinkage.target_mean * (1 - weight))
     }
 
-    // Cap factor between configured min/max (default: 0.7-1.3)
+    // Cap factor
     const cappedFactor = Math.min(CONFIG.opponent_factor_caps.max, Math.max(CONFIG.opponent_factor_caps.min, adjustedFactor))
 
     return Math.round(cappedFactor * 100) / 100
@@ -1027,7 +1133,8 @@ async function calculateStatFloor(seasonStats, recentGames, statField, opportuni
       statCategory = 'receiving'
     }
 
-    opponentFactor = await calculateOpponentFactor(opponentId, statCategory, season, week)
+    // Task 1 (V4): Pass position parameter for position-specific matchup logic
+    opponentFactor = await calculateOpponentFactor(opponentId, statCategory, position, season, week)
     expected = expected * opponentFactor
   }
 
