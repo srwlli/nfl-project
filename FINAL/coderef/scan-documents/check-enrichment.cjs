@@ -1,10 +1,7 @@
 const fs = require('fs');
 
-// Read the JSON file (skip warnings at start)
-const content = fs.readFileSync('./scan-full-advanced.json', 'utf8');
-const jsonStart = content.indexOf('[');
-const jsonContent = content.substring(jsonStart);
-const data = JSON.parse(jsonContent);
+// Read the cleaned JSON file
+const data = JSON.parse(fs.readFileSync('./scan-full-enriched-clean.json', 'utf8'));
 
 console.log(`Total elements: ${data.length}\n`);
 

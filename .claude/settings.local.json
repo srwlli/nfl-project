@@ -21,7 +21,8 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(node:*)",
-      "Bash(npm run scrape:snap-counts:*)"
+      "Bash(npm run scrape:snap-counts:*)",
+      "Bash(npm run floors:*)"
     ],
     "deny": [],
     "ask": []

@@ -57,7 +57,7 @@
   "bootstrap_confidence": 0.80,
   "winsorize_outliers": true,
   "v5_features": {
-    "position_specific_matchups": false,
+    "position_specific_matchups": true,
     "block_bootstrap": true,
     "dynamic_rb_efficiency": false,
     "game_script_adjustment": false,

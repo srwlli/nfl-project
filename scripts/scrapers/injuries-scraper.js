@@ -1,7 +1,7 @@
 /**
- * Injuries Scraper
+ * Injuries Scraper (NFL.com)
  *
- * Fetches current injury reports and player status from ESPN.
+ * Fetches current injury reports and player status from NFL.com official injury report.
  * Updates the player_injuries table with latest player availability.
  *
  * NFL injury reports are typically updated:
@@ -11,224 +11,269 @@
  *
  * Usage:
  * - Daily check: npm run scrape:injuries
- * - Specific team: npm run scrape:injuries -- --team=PHI
  *
- * Data Source: ESPN API
+ * Data Source: https://www.nfl.com/injuries/ (Official NFL injury report)
  */
 
-import { fetchTeams } from '../utils/espn-api.js'
 import { getSupabaseClient, upsertBatch } from '../utils/supabase-client.js'
 import { logger, logScriptStart, logScriptEnd } from '../utils/logger.js'
 import axios from 'axios'
-import { createRateLimiter } from '../utils/rate-limiter.js'
+import * as cheerio from 'cheerio'
 
 const SCRIPT_NAME = 'injuries-scraper.js'
 const SEASON_YEAR = 2025
-const ESPN_API_BASE = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl'
+const NFL_INJURIES_URL = 'https://www.nfl.com/injuries/'
 
-const rateLimiter = createRateLimiter(1) // 1 request per second
+// Team abbreviation mapping (NFL.com → our database)
+const TEAM_MAP = {
+  'ARI': 'ARI', 'ATL': 'ATL', 'BAL': 'BAL', 'BUF': 'BUF',
+  'CAR': 'CAR', 'CHI': 'CHI', 'CIN': 'CIN', 'CLE': 'CLE',
+  'DAL': 'DAL', 'DEN': 'DEN', 'DET': 'DET', 'GB': 'GB',
+  'HOU': 'HOU', 'IND': 'IND', 'JAX': 'JAX', 'KC': 'KC',
+  'LV': 'LV', 'LAC': 'LAC', 'LAR': 'LAR', 'MIA': 'MIA',
+  'MIN': 'MIN', 'NE': 'NE', 'NO': 'NO', 'NYG': 'NYG',
+  'NYJ': 'NYJ', 'PHI': 'PHI', 'PIT': 'PIT', 'SF': 'SF',
+  'SEA': 'SEA', 'TB': 'TB', 'TEN': 'TEN', 'WAS': 'WAS',
+  'WSH': 'WAS'  // Washington alias
+}
 
 /**
- * Fetch injuries for a specific team
+ * Fetch and parse NFL.com injury report
  */
-async function fetchTeamInjuries(teamId) {
-  return rateLimiter.execute(async () => {
-    try {
-      const response = await axios.get(`${ESPN_API_BASE}/teams/${teamId}`, {
-        params: {
-          enable: 'injuries'
+async function fetchNFLInjuries() {
+  try {
+    logger.info('Fetching injury report from NFL.com...')
+    const response = await axios.get(NFL_INJURIES_URL, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    })
+
+    const $ = cheerio.load(response.data)
+    const injuries = []
+
+    // Find all injury tables (one per team per game)
+    $('div[class*="nfl-o-matchup-injury"]').each((_, matchupDiv) => {
+      // Each matchup has two teams
+      $(matchupDiv).find('table').each((_, table) => {
+        const $table = $(table)
+
+        // Get team abbreviation from header
+        const teamHeader = $table.closest('div').find('h3, h4').first().text()
+        const teamMatch = teamHeader.match(/\b([A-Z]{2,3})\b/)
+        const teamAbbr = teamMatch ? TEAM_MAP[teamMatch[1]] || teamMatch[1] : null
+
+        if (!teamAbbr) {
+          logger.debug('Could not extract team from header:', teamHeader)
+          return
         }
+
+        // Parse each player row
+        $table.find('tbody tr').each((_, row) => {
+          const $row = $(row)
+          const cells = $row.find('td')
+
+          if (cells.length >= 4) {
+            const playerName = $(cells[0]).text().trim()
+            const position = $(cells[1]).text().trim()
+            const injuryType = $(cells[2]).text().trim()
+            const practiceStatus = $(cells[3]).text().trim()
+            const gameStatus = $(cells[4]).text().trim() || 'Active' // Column 5 if exists
+
+            if (playerName && injuryType) {
+              injuries.push({
+                team_id: teamAbbr,
+                player_name: playerName,
+                position: position,
+                injury_type: injuryType,
+                injury_status: mapInjuryStatus(gameStatus, practiceStatus),
+                practice_status: practiceStatus,
+                injury_description: `${injuryType} - ${practiceStatus}`
+              })
+            }
+          }
+        })
       })
+    })
 
-      const injuries = response.data.team?.injuries || []
-      logger.debug(`Fetched ${injuries.length} injuries for team ${teamId}`)
-      return injuries
+    logger.info(`✓ Parsed ${injuries.length} injuries from NFL.com`)
+    return injuries
 
-    } catch (error) {
-      logger.error(`Failed to fetch injuries for team ${teamId}:`, error.message)
-      return []
-    }
-  })
-}
-
-/**
- * Map ESPN injury status to our database enum
- */
-function mapInjuryStatus(espnStatus) {
-  const statusMap = {
-    'Out': 'out',
-    'Questionable': 'questionable',
-    'Doubtful': 'doubtful',
-    'IR': 'injured_reserve',
-    'PUP': 'physically_unable_to_perform',
-    'Suspended': 'out',
-    'Day-To-Day': 'questionable',
-    'Active': 'active'
+  } catch (error) {
+    logger.error('Failed to fetch NFL.com injuries:', error.message)
+    throw error
   }
-
-  return statusMap[espnStatus] || 'questionable'
 }
 
 /**
- * Transform ESPN injury data to our schema
+ * Map NFL.com injury status to our database enum
  */
-function transformInjuryData(injury, teamId) {
-  const athlete = injury.athlete || {}
+function mapInjuryStatus(gameStatus, practiceStatus) {
+  const statusLower = gameStatus.toLowerCase()
+  const practiceLower = practiceStatus.toLowerCase()
 
-  // Build injury description from available data
-  const bodyPart = injury.details?.detail || injury.details?.side || ''
-  const status = injury.status || ''
-  const comment = injury.longComment || injury.details?.fantasyStatus || ''
+  // Game status takes priority
+  if (statusLower.includes('out')) return 'out'
+  if (statusLower.includes('doubtful')) return 'doubtful'
+  if (statusLower.includes('questionable')) return 'questionable'
+  if (statusLower.includes('ir')) return 'injured_reserve'
 
-  const injuryDescription = [bodyPart, status, comment]
-    .filter(Boolean)
-    .join(' - ')
+  // Fallback to practice status
+  if (practiceLower.includes('did not')) return 'out'
+  if (practiceLower.includes('limited')) return 'questionable'
+  if (practiceLower.includes('full')) return 'questionable' // Listed but practicing
 
-  return {
-    player_id: `espn-${athlete.id}`,
-    season: SEASON_YEAR,
-    injury_type: injury.type || injury.details?.type || 'Unknown',
-    injury_description: injuryDescription || null,
-    injury_date: injury.date || new Date().toISOString().split('T')[0],
-    return_date: injury.details?.returnDate || null,
-    games_missed: 0  // Will be calculated separately if needed
+  return 'questionable' // Default for listed players
+}
+
+/**
+ * Match player name to database player_id
+ */
+async function matchPlayerToDatabase(injury, supabase) {
+  try {
+    // Try exact name match first
+    let { data: players, error } = await supabase
+      .from('players')
+      .select('player_id, player_name, primary_position')
+      .eq('player_name', injury.player_name)
+      .limit(1)
+
+    // If no exact match, try fuzzy match on last name
+    if (!players || players.length === 0) {
+      const lastName = injury.player_name.split(' ').pop()
+      const { data: fuzzyPlayers } = await supabase
+        .from('players')
+        .select('player_id, player_name, primary_position')
+        .ilike('player_name', `%${lastName}%`)
+        .limit(5)
+
+      // Filter by position if available
+      if (fuzzyPlayers && fuzzyPlayers.length > 0) {
+        players = fuzzyPlayers.filter(p =>
+          !injury.position || p.primary_position === injury.position
+        )
+
+        if (players.length === 0) {
+          players = [fuzzyPlayers[0]] // Take first match if position doesn't match
+        }
+      }
+    }
+
+    if (players && players.length > 0) {
+      return players[0].player_id
+    }
+
+    logger.warn(`Could not match player to database: ${injury.player_name} (${injury.team_id})`)
+    return null
+
+  } catch (error) {
+    logger.error(`Error matching player ${injury.player_name}:`, error.message)
+    return null
   }
 }
 
 /**
  * Main scraper function
  */
-async function scrapeInjuries(specificTeamId = null) {
+async function scrapeInjuries() {
+  const supabase = getSupabaseClient()
+  const startTime = Date.now()
+  let successCount = 0
+  let failCount = 0
+
   try {
+    logScriptStart(SCRIPT_NAME)
     logger.info('Starting injury report scrape...')
 
-    // Get all teams or specific team
-    let teams
-    if (specificTeamId) {
-      teams = [{ id: specificTeamId, abbreviation: specificTeamId }]
-      logger.info(`Scraping injuries for team: ${specificTeamId}`)
-    } else {
-      logger.info('Fetching all NFL teams...')
-      const allTeams = await fetchTeams()
-      teams = allTeams
-      logger.info(`Found ${teams.length} teams`)
+    // Fetch injuries from NFL.com
+    const injuries = await fetchNFLInjuries()
+
+    if (injuries.length === 0) {
+      logger.info('No injuries found')
+      return { success: 0, failed: 0, total: 0 }
     }
 
-    let allInjuries = []
-    let teamsWithInjuries = 0
-    let totalInjuredPlayers = 0
+    logger.info(`Processing ${injuries.length} injuries...`)
 
-    // Fetch injuries for each team
-    for (let i = 0; i < teams.length; i++) {
-      const team = teams[i]
-      const teamAbbr = team.abbreviation
+    // Match players and prepare records
+    const injuryRecords = []
+    for (const injury of injuries) {
+      const playerId = await matchPlayerToDatabase(injury, supabase)
 
-      logger.info(`[${i + 1}/${teams.length}] Fetching injuries for ${teamAbbr}...`)
-
-      const injuries = await fetchTeamInjuries(team.id)
-
-      if (injuries.length > 0) {
-        teamsWithInjuries++
-        totalInjuredPlayers += injuries.length
-
-        // Transform and add to collection
-        const transformed = injuries.map(inj => transformInjuryData(inj, teamAbbr))
-        allInjuries.push(...transformed)
-
-        logger.info(`  ✓ Found ${injuries.length} injured player(s)`)
+      if (playerId) {
+        injuryRecords.push({
+          player_id: playerId,
+          season: SEASON_YEAR,
+          injury_type: injury.injury_type,
+          injury_description: injury.injury_description,
+          injury_status: injury.injury_status,
+          injury_date: new Date().toISOString().split('T')[0],
+          return_date: null,
+          games_missed: 0
+        })
+        successCount++
       } else {
-        logger.debug(`  - No injuries reported`)
+        failCount++
       }
     }
+
+    // Batch upsert to database
+    if (injuryRecords.length > 0) {
+      logger.info(`Upserting ${injuryRecords.length} injury records...`)
+
+      const { data, error } = await supabase
+        .from('player_injuries')
+        .upsert(injuryRecords, {
+          onConflict: 'player_id, season',
+          ignoreDuplicates: false
+        })
+        .select()
+
+      if (error) {
+        logger.error('Failed to upsert injuries:', error)
+        throw error
+      }
+
+      logger.info(`✓ Updated ${injuryRecords.length} injuries in database`)
+    }
+
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2)
 
     logger.info('')
-    logger.info(`Total: ${totalInjuredPlayers} injuries across ${teamsWithInjuries} teams`)
+    logger.info('═'.repeat(60))
+    logger.info('INJURY SCRAPER SUMMARY')
+    logger.info('═'.repeat(60))
+    logger.info(`✓ Injuries found: ${injuries.length}`)
+    logger.info(`✓ Successfully matched: ${successCount}`)
+    logger.info(`✓ Failed to match: ${failCount}`)
+    logger.info(`✓ Updated in database: ${injuryRecords.length}`)
+    logger.info(`✓ Duration: ${duration}s`)
+    logger.info('═'.repeat(60))
 
-    // Update database
-    if (allInjuries.length > 0) {
-      logger.info('Updating player_injuries table...')
-
-      // First, clear old injuries for this season (optional - keeps historical data)
-      // We'll just upsert and let old records stay unless we explicitly delete them
-
-      const result = await upsertBatch(
-        'player_injuries',
-        allInjuries,
-        ['player_id', 'season']
-      )
-
-      logger.info(`✓ Upserted ${result.success} injury records`)
-
-      return {
-        success: result.success,
-        failed: result.errors.length,
-        total: allInjuries.length,
-        teamsWithInjuries: teamsWithInjuries
-      }
-    } else {
-      logger.info('No injuries to update')
-      return {
-        success: 0,
-        failed: 0,
-        total: 0,
-        teamsWithInjuries: 0
-      }
+    return {
+      success: successCount,
+      failed: failCount,
+      total: injuries.length
     }
 
   } catch (error) {
     logger.error('Injury scraper failed:', error)
     throw error
+  } finally {
+    logScriptEnd(SCRIPT_NAME, successCount, failCount)
   }
 }
 
-/**
- * Main execution
- */
-async function main() {
-  const startTime = Date.now()
-  logScriptStart(SCRIPT_NAME)
-
-  try {
-    // Parse command line arguments
-    const args = process.argv.slice(2)
-    const teamArg = args.find(arg => arg.startsWith('--team='))
-    const teamId = teamArg ? teamArg.split('=')[1] : null
-
-    const result = await scrapeInjuries(teamId)
-
-    // Summary
-    const duration = Date.now() - startTime
-    logger.info('')
-    logger.info('═'.repeat(60))
-    logger.info('INJURY SCRAPER SUMMARY')
-    logger.info('═'.repeat(60))
-    logger.info(`✓ Injuries found: ${result.total}`)
-    logger.info(`✓ Teams with injuries: ${result.teamsWithInjuries}`)
-    logger.info(`✓ Updated in database: ${result.success}`)
-    if (result.failed > 0) {
-      logger.error(`✗ Failed: ${result.failed}`)
-    }
-    logger.info(`✓ Duration: ${(duration / 1000).toFixed(2)}s`)
-    logger.info('═'.repeat(60))
-
-    logScriptEnd(SCRIPT_NAME, {
-      success: result.success,
-      failed: result.failed,
-      total: result.total,
-      duration
+// Run if called directly
+if (import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}`) {
+  scrapeInjuries()
+    .then(result => {
+      process.exit(result.failed > 0 ? 1 : 0)
     })
-
-    process.exit(0)
-
-  } catch (error) {
-    logger.error('Injury scraper failed:', error)
-    logScriptEnd(SCRIPT_NAME, {
-      success: 0,
-      failed: 1,
-      duration: Date.now() - startTime
+    .catch(error => {
+      logger.error('Fatal error:', error)
+      process.exit(1)
     })
-    process.exit(1)
-  }
 }
 
-main()
+export { scrapeInjuries }
